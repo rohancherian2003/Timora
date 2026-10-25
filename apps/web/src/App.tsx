@@ -524,12 +524,12 @@ export function App() {
                 <BrandLogo size="md" variant="dark" lang={lang} />
                 <p className="text-xs text-stone-400 leading-relaxed">
                   {lang === 'en'
-                    ? "Kerala's dedicated B2B timber trading exchange connecting verified timber yards, sawmills, and buyers across 14 districts."
-                    : 'കേരളത്തിലെ 14 ജില്ലകളിലെ തടി ഡിപ്പോകളെയും മില്ലുകളെയും ഉപഭോക്താക്കളെയും ബന്ധിപ്പിക്കുന്ന ഡിജിറ്റൽ തടി വിപണി.'}
+                    ? "Kerala's smart timber marketplace connecting verified timber yards, sawmills, and home builders across 14 districts."
+                    : 'കേരളത്തിലെ 14 ജില്ലകളിലെ തടി ഡിപ്പോകളെയും മില്ലുകളെയും വീടുപണിയുന്നവരെയും ബന്ധിപ്പിക്കുന്ന സ്മാർട്ട് തടി വിപണി.'}
                 </p>
                 <div className="text-[11px] text-amber-400 font-semibold flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>{lang === 'en' ? '100% Certified Raw Timber Focus' : 'തടി ഉൽപ്പന്നങ്ങൾ മാത്രം — ഫർണിച്ചർ ഇല്ല'}</span>
+                  <span>{lang === 'en' ? 'Smart Timber Marketplace • Direct Mill Pricing' : 'നേരിട്ടുള്ള തടി വ്യാപാരം — ഫർണിച്ചർ ഇല്ല'}</span>
                 </div>
               </div>
 
@@ -594,7 +594,7 @@ export function App() {
                     : 'എല്ലാ തടി ഇടപാടുകളും കേരള വനം ഉൽപ്പന്ന ട്രാൻസിറ്റ് ചട്ടങ്ങൾ പ്രകാരമാണ് നടക്കുന്നത്.'}
                 </p>
                 <div className="text-[11px] text-stone-500">
-                  © {new Date().getFullYear()} Timora Exchange. All rights reserved.
+                  © {new Date().getFullYear()} Timora Smart Timber Marketplace. All rights reserved.
                 </div>
               </div>
             </div>

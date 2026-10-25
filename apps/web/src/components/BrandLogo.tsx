@@ -1,4 +1,5 @@
 import React from 'react';
+import { TIMORA_T_LOGO } from './logoBase64';
 
 interface BrandLogoProps {
   className?: string;
@@ -31,41 +32,36 @@ export function BrandLogo({
 
   return (
     <div className={`flex items-center gap-2.5 sm:gap-3 ${className}`}>
-      {/* Official Timora Carved Wooden 'T' Emblem with Green Leaves (from poster) */}
+      {/* Official Carved Wooden 'T' with Green Leaves from the Founder's Poster */}
       <div
-        className={`${iconSizes[size]} relative rounded-2xl bg-gradient-to-br from-amber-50 to-stone-100 p-1 flex items-center justify-center shadow-md shadow-stone-900/10 ring-1.5 ring-amber-700/30 flex-shrink-0 group-hover:scale-105 transition-transform overflow-hidden`}
+        className={`${iconSizes[size]} relative flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform`}
       >
         <img
-          src="/images/brand/timora-t-emblem-transparent.png"
-          alt="Timora Carved 'T' Emblem"
-          className="w-full h-full object-contain filter drop-shadow-xs"
-          onError={(e) => {
-            // Fallback to original image if needed
-            (e.target as HTMLImageElement).src = '/images/brand/timora-t-emblem.png';
-          }}
+          src={TIMORA_T_LOGO}
+          alt="Timora Logo"
+          className="w-full h-full object-contain filter drop-shadow-sm"
         />
       </div>
 
       <div>
-        <div className="flex items-baseline gap-1.5 leading-none">
-          {/* TIMORA with leaf inside 'O' styling */}
+        <div className="flex items-baseline gap-1 leading-none">
           <span
-            className={`${textSizes[size]} font-serif font-black tracking-wider ${
+            className={`${textSizes[size]} font-serif font-black tracking-wide ${
               isDark ? 'text-white' : 'text-[#2e170c]'
             }`}
             style={{ fontFamily: 'Georgia, serif' }}
           >
-            TIM<span className="text-[#15803d]">O</span>RA
+            TIM<span className="text-[#16a34a]">O</span>RA
           </span>
           <span className="text-[10px] font-bold text-amber-700">™</span>
         </div>
         {showSubtitle && (
           <span
-            className={`block text-[8px] sm:text-[9.5px] font-bold uppercase tracking-widest ${
+            className={`block text-[8.5px] sm:text-[10px] font-bold uppercase tracking-widest ${
               isDark ? 'text-amber-300' : 'text-[#166534]'
             } mt-0.5`}
           >
-            {lang === 'en' ? 'Smart Timber Marketplace' : 'സ്മാർട്ട് തടി വിപണി'}
+            {lang === 'en' ? 'Smart Timber Marketplace' : 'സ്മാർട്ട് ടിംബർ മാർക്കറ്റ് പ്ലേസ്'}
           </span>
         )}
       </div>

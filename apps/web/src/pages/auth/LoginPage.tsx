@@ -57,11 +57,11 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setLoading(true);
     setRedirecting(role);
 
+    loginAsDemo(role);
+    const destination = getDestination(role);
     setTimeout(() => {
-      loginAsDemo(role);
-      const destination = getDestination(role);
       navigate(destination, { replace: true });
-    }, 350);
+    }, 150);
   };
 
   // Regular Phone & PIN Login & Automatic Redirection
@@ -89,7 +89,7 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         const targetPath = getDestination(res.role);
         setTimeout(() => {
           navigate(targetPath, { replace: true });
-        }, 400);
+        }, 150);
       } else {
         setError(res.error || (lang === 'en' ? 'Authentication failed. Please verify credentials.' : 'ലോഗിൻ പരാജയപ്പെട്ടു. വിവരങ്ങൾ ശരിയാണോ എന്ന് പരിശോധിക്കുക.'));
         setLoading(false);
