@@ -590,54 +590,105 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         </div>
       </div>
 
-      {/* REFINED TIMBER HERO BANNER WITH HARMONIZED COLORS & CRISP CONTRAST */}
-      <section className="relative bg-gradient-to-br from-[#122017] via-[#1a2c20] to-[#20150e] text-white overflow-hidden py-14 sm:py-20 border-b border-[#a16207]/30 shadow-inner">
-        {/* Subtle wood texture background overlay */}
-        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:24px_24px]" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#d97706]/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#15803d]/15 rounded-full blur-3xl pointer-events-none" />
+      {/* WARM, ATTRACTIVE DAYLIGHT TIMBER HERO BANNER (നല്ല ആകർഷകമായ കളറും പുതിയ ടൈപ്പോഗ്രാഫിയും) */}
+      <section className="relative bg-gradient-to-br from-[#faf6ee] via-[#f4ebe0] to-[#ecdcc8] text-stone-900 overflow-hidden py-12 sm:py-16 border-b border-[#c2843b]/40 shadow-xs">
+        {/* Subtle warm wood grain background pattern overlay */}
+        <div className="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(#b45309_1.2px,transparent_1.2px)] [background-size:24px_24px]" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6">
-          {/* Top Trust Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-900/80 backdrop-blur-md border border-[#d97706]/50 text-[#fde68a] text-xs font-semibold tracking-wide shadow-sm">
-            <Award className="w-3.5 h-3.5 text-[#f59e0b]" />
+          {/* Top Trust Badge with Green Leaf & Wood Accent */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-amber-600/30 text-[#854d0e] text-xs font-bold tracking-wide shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
             <span>
               {lang === 'en'
-                ? 'Kerala Forest Produce Transit Rules Compliant • 14 Districts Active'
-                : 'കേരള ഫോറസ്റ്റ് ട്രാൻസിറ്റ് ചട്ടങ്ങൾ പാലിക്കുന്ന വിപണി'}
+                ? 'Smart Timber Marketplace • Timber. People. Possibilities.'
+                : 'കേരളത്തിലെ സ്മാർട്ട് തടി വിപണി • വീടുപണിക്കും മില്ലുകൾക്കും'}
             </span>
           </div>
 
-          {/* Heading with Harmonized Font Colors matching the dark wood background */}
+          {/* Heading with Unique Styling: Buy, Sell & Source Timber */}
           <div className="max-w-3xl space-y-3">
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-[#f9f8f6]">
+            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight text-[#2c160b]" style={{ fontFamily: 'Georgia, serif' }}>
               {lang === 'en' ? (
                 <>
-                  Kerala’s Premier Raw <span className="text-[#f59e0b] drop-shadow-[0_2px_12px_rgba(245,158,11,0.25)]">Timber Exchange</span>
+                  Buy, Sell & Source Raw Timber <br />
+                  <span className="text-[#b45309] underline decoration-amber-400/60 decoration-wavy decoration-2">
+                    Direct From Kerala Sawmills
+                  </span>
                 </>
               ) : (
                 <>
-                  കേരളത്തിലെ വിശ്വസനീയമായ <span className="text-[#f59e0b] drop-shadow-[0_2px_12px_rgba(245,158,11,0.25)]">തടി വിപണി</span>
+                  വീടുപണിക്കും ആവശ്യങ്ങൾക്കും <br />
+                  <span className="text-[#b45309]">
+                    തടി നേരിട്ട് വാങ്ങാനും വിൽക്കാനും
+                  </span>
                 </>
               )}
             </h1>
-            <p className="text-sm sm:text-base text-[#e2e8f0] font-normal leading-relaxed max-w-2xl">
+            <p className="text-sm sm:text-base text-stone-700 font-medium leading-relaxed max-w-2xl">
               {lang === 'en'
-                ? 'Direct marketplace for authentic round logs and rough-sawn planks. Harvested Nilambur Teak, African Mahogany, Wild Jack (Anjili), and Rubberwood from verified sawmills. Strictly no plywood or furniture.'
-                : 'അംഗീകൃത മില്ലുകളിൽ നിന്നും നേരിട്ട് തേക്ക്, മഹാഗണി, ആഞ്ഞിലി, റബർ തടികൾ വാങ്ങാം. പക്കാ വെട്ടിയ ഉരുണ്ട തടികളും അറുത്ത പലകകളും മാത്രം.'}
+                ? 'Connecting timber buyers, house owners, and licensed sawmills across 14 Kerala districts. Genuine Nilambur Teak, Mahogany, Anjili & Rubberwood — zero middlemen, verified transit passes.'
+                : 'കേരളത്തിലെ 14 ജില്ലകളിലെ തടി ഡിപ്പോകളും വീടുപണിയുന്നവരും തമ്മിൽ നേരിട്ട് ബന്ധപ്പെടുന്നു. അംഗീകൃത തേക്ക്, മഹാഗണി, ആഞ്ഞിലി, റബർ തടികൾ — കൃത്യമായ സി.എഫ്.ടി അളവുകളോടെ.'}
             </p>
           </div>
 
+          {/* 3 Practical Value Cards from the Official Poster */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl pt-1">
+            <div className="p-3 rounded-2xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100/90 text-amber-900 flex items-center justify-center font-bold flex-shrink-0">
+                🪵
+              </div>
+              <div className="text-xs">
+                <span className="font-extrabold text-stone-900 block leading-tight">
+                  {lang === 'en' ? 'Buy Raw Timber' : 'തടി വാങ്ങാം'}
+                </span>
+                <span className="text-[11px] text-stone-600">
+                  {lang === 'en' ? 'Round logs & sawn beams' : 'ഉരുണ്ട തടികളും പലകകളും'}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100/90 text-emerald-900 flex items-center justify-center font-bold flex-shrink-0">
+                📄
+              </div>
+              <div className="text-xs">
+                <span className="font-extrabold text-stone-900 block leading-tight">
+                  {lang === 'en' ? 'Compare Quotes' : 'വിലകൾ അറിയാം'}
+                </span>
+                <span className="text-[11px] text-stone-600">
+                  {lang === 'en' ? 'Direct yard rates / CFT' : 'നേരിട്ടുള്ള സി.എഫ്.ടി നിരക്ക്'}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100/90 text-amber-900 flex items-center justify-center font-bold flex-shrink-0">
+                🔨
+              </div>
+              <div className="text-xs">
+                <span className="font-extrabold text-stone-900 block leading-tight">
+                  {lang === 'en' ? 'Find Wood Experts' : 'വിദഗ്ദ്ധ ആശാരിമാർ'}
+                </span>
+                <span className="text-[11px] text-stone-600">
+                  {lang === 'en' ? 'Roofing & joinery masters' : 'മേൽക്കൂര & വാതിലുകൾ'}
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Search Box with Interactive Validation Feedback */}
-          <div className="max-w-2xl bg-white/95 backdrop-blur-md rounded-2xl p-2 shadow-2xl border border-white/30 flex flex-col sm:flex-row gap-2">
+          <div className="max-w-2xl bg-white rounded-2xl p-2 shadow-lg border border-amber-300/80 flex flex-col sm:flex-row gap-2">
             <div className="relative flex-grow flex items-center">
               <Search className="w-5 h-5 text-stone-500 absolute left-3.5" />
               <input
                 type="text"
                 placeholder={
                   lang === 'en'
-                    ? 'Search real timber (e.g. Nilambur Teak, Anjili, Mahogany)...'
-                    : 'തടിയുടെ പേര് തിരയുക (ഉദാ: തേക്ക്, മഹാഗണി, ആഞ്ഞിലി)...'
+                    ? 'Search timber for your home (e.g. Nilambur Teak, Anjili, Mahogany)...'
+                    : 'വീടുപണിക്കുള്ള തടി തിരയുക (ഉദാ: തേക്ക്, മഹാഗണി, ആഞ്ഞിലി)...'
                 }
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
@@ -655,52 +706,52 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             </div>
             <button
               onClick={() => setQuickCalcOpen(true)}
-              className="px-4 py-2.5 rounded-xl bg-[#d97706] hover:bg-[#b45309] text-stone-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition shadow-sm flex-shrink-0"
+              className="px-5 py-2.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition shadow-sm flex-shrink-0"
             >
-              <Calculator className="w-4 h-4 text-stone-950" />
+              <Calculator className="w-4 h-4 text-amber-200" />
               <span>{lang === 'en' ? 'Quick Calculate' : 'തടി അളവ് കണക്കാക്കുക'}</span>
             </button>
           </div>
 
           {/* Metrics Counters Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-white/10 max-w-4xl text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-amber-900/10 max-w-4xl text-xs">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#f59e0b] font-bold">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-900 flex items-center justify-center font-bold">
                 14
               </div>
               <div>
-                <span className="block font-bold text-white">{lang === 'en' ? 'Districts' : 'ജില്ലകൾ'}</span>
-                <span className="text-stone-300 text-[11px]">{lang === 'en' ? 'Statewide Coverage' : 'കേരളത്തിലുടനീളം'}</span>
+                <span className="block font-bold text-stone-900">{lang === 'en' ? 'Districts' : 'ജില്ലകൾ'}</span>
+                <span className="text-stone-600 text-[11px]">{lang === 'en' ? 'Statewide Coverage' : 'കേരളത്തിലുടനീളം'}</span>
               </div>
             </div>
 
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-emerald-400 font-bold">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-900 flex items-center justify-center font-bold">
                 0%
               </div>
               <div>
-                <span className="block font-bold text-white">{lang === 'en' ? 'Middleman Fee' : 'ഇടനിലക്കാരില്ല'}</span>
-                <span className="text-stone-300 text-[11px]">{lang === 'en' ? 'Direct Mill Pricing' : 'നേരിട്ടുള്ള വില'}</span>
+                <span className="block font-bold text-stone-900">{lang === 'en' ? 'Middleman Fee' : 'ഇടനിലക്കാരില്ല'}</span>
+                <span className="text-stone-600 text-[11px]">{lang === 'en' ? 'Direct Mill Pricing' : 'നേരിട്ടുള്ള വില'}</span>
               </div>
             </div>
 
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#f59e0b] font-bold">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-900 flex items-center justify-center font-bold">
                 100%
               </div>
               <div>
-                <span className="block font-bold text-white">{lang === 'en' ? 'Raw Timber Only' : 'തടി മാത്രം'}</span>
-                <span className="text-stone-300 text-[11px]">{lang === 'en' ? 'No Plywood or Furniture' : 'ഫർണിച്ചർ ഇല്ല'}</span>
+                <span className="block font-bold text-stone-900">{lang === 'en' ? 'Raw Timber Only' : 'തടി മാത്രം'}</span>
+                <span className="text-stone-600 text-[11px]">{lang === 'en' ? 'No Plywood or Furniture' : 'ഫർണിച്ചർ ഇല്ല'}</span>
               </div>
             </div>
 
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-emerald-400 font-bold">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-900 flex items-center justify-center font-bold">
                 CFT
               </div>
               <div>
-                <span className="block font-bold text-white">{lang === 'en' ? 'Hoppus Standard' : 'ഹോപ്പസ് റൂൾ'}</span>
-                <span className="text-stone-300 text-[11px]">{lang === 'en' ? 'Verified Formula' : 'കൃത്യമായ അളവ്'}</span>
+                <span className="block font-bold text-stone-900">{lang === 'en' ? 'Hoppus Standard' : 'ഹോപ്പസ് റൂൾ'}</span>
+                <span className="text-stone-600 text-[11px]">{lang === 'en' ? 'Verified Formula' : 'കൃത്യമായ അളവ്'}</span>
               </div>
             </div>
           </div>
