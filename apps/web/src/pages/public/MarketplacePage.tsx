@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search,
@@ -15,7 +15,10 @@ import {
   ChevronRight,
   Flame,
   Layers,
-  Award
+  Award,
+  AlertTriangle,
+  X,
+  HelpCircle
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 
@@ -40,110 +43,137 @@ export interface TimberListingItem {
   moisture: string;
 }
 
+// AUTHENTIC RAW TIMBER PHOTOS (തടി മില്ലിലും ഡിപ്പോയിലും വെട്ടിയിട്ടിരിക്കുന്ന പക്കാ തടിയുടെ ഫോട്ടോകൾ)
 const EXTENDED_LISTINGS: TimberListingItem[] = [
   {
     id: '1',
-    title: 'First-Grade Nilambur Teak Planks (A-Class Heartwood)',
+    title: 'First-Grade Nilambur Teak Round Logs (A-Class Heartwood)',
     species: 'Teak',
     species_ml: 'തേക്ക്',
-    type: 'Rough-sawn Planks',
-    type_ml: 'അറുത്ത പലകകൾ',
+    type: 'Round Logs',
+    type_ml: 'ഉരുണ്ട തടികൾ',
     district: 'Malappuram (മലപ്പുറം)',
-    locality: 'Nilambur Division',
-    quantity: 45,
+    locality: 'Nilambur Forest Depot',
+    quantity: 65,
     unit: 'CFT',
-    price_per_cft: 2800,
-    seller_name: 'Nilambur Wood Mart',
+    price_per_cft: 2850,
+    seller_name: 'Nilambur Government Approved Wood Mart',
     seller_verified: true,
-    image_url: 'https://images.unsplash.com/photo-1546484396-fb3fc6f95f98?auto=format&fit=crop&w=800&q=80',
-    dimensions: '10 ft × 8 in × 2 in',
-    grade: 'A-Grade Heartwood',
+    // Real cut heavy teak round logs stacked in depot with authentic growth rings and bark
+    image_url: '/images/timber/teak-logs.png',
+    dimensions: '14 ft Length × 42 in Girth',
+    grade: 'A-Grade Nilambur Heartwood',
     transit_pass: true,
-    moisture: 'Air-Dried (12%)',
+    moisture: 'Air-Dried Round Log',
   },
   {
     id: '2',
-    title: 'Seasoned African Mahogany Squared Beams (Heavy Joinery)',
+    title: 'Seasoned African Mahogany Squared Beams & Heavy Logs',
     species: 'Mahogany',
     species_ml: 'മഹാഗണി',
     type: 'Squared Beams',
     type_ml: 'ചതുര കഴുക്കോലുകൾ',
     district: 'Kottayam (കോട്ടയം)',
-    locality: 'Pala Town',
+    locality: 'Pala Timber Yard',
     quantity: 80,
     unit: 'CFT',
     price_per_cft: 1850,
-    seller_name: 'Meenachil Timber Mart',
+    seller_name: 'Meenachil Timber Mart & Sawmill',
     seller_verified: true,
-    image_url: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80',
+    // Rough cut hardwood lumber and heavy structural beams stacked in sawmill
+    image_url: '/images/timber/mahogany-logs.jpg',
     dimensions: '12 ft × 6 in × 6 in',
-    grade: 'Select Prime',
+    grade: 'Select Prime Sawn',
     transit_pass: true,
-    moisture: 'Kiln Seasoned',
+    moisture: 'Naturally Seasoned',
   },
   {
     id: '3',
-    title: 'Old-Growth Wild Jack (Anjili) Heavy Round Logs',
+    title: 'Old-Growth Wild Jack (Anjili) Heavy Round Tree Trunks',
     species: 'Anjili',
     species_ml: 'ആഞ്ഞിലി',
     type: 'Round Logs',
     type_ml: 'ഉരുണ്ട തടികൾ',
     district: 'Ernakulam (എറണാകുളം)',
-    locality: 'Perumbavoor Industrial Area',
+    locality: 'Perumbavoor Sawmill Zone',
     quantity: 120,
     unit: 'CFT',
     price_per_cft: 1400,
-    seller_name: 'Perumbavoor Saw Mills',
+    seller_name: 'Perumbavoor Raw Saw Mills',
     seller_verified: true,
-    image_url: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=80',
+    // Giant felled raw tree trunk log lying at depot with natural thick bark
+    image_url: '/images/timber/anjili-logs.jpg',
     dimensions: '16 ft Length × 48 in Mid-Girth',
-    grade: 'Forest Grade I',
+    grade: 'Forest Grade I (Heavy)',
     transit_pass: true,
-    moisture: 'Natural Green Log',
+    moisture: 'Green Log Harvest',
   },
   {
     id: '4',
-    title: 'Treated Rubberwood Kiln-Dried Planks (Vacuum Impregnated)',
+    title: 'Estate Harvest Rubberwood Round Logs (Bulk Lot)',
     species: 'Rubberwood',
     species_ml: 'റബർ',
-    type: 'Rough-sawn Planks',
-    type_ml: 'അറുത്ത പലകകൾ',
+    type: 'Round Logs',
+    type_ml: 'ഉരുണ്ട തടികൾ',
     district: 'Pathanamthitta (പത്തനംതിട്ട)',
-    locality: 'Adoor Agro Depot',
-    quantity: 200,
+    locality: 'Adoor Agro Timber Yard',
+    quantity: 240,
     unit: 'CFT',
     price_per_cft: 650,
-    seller_name: 'Adoor Agro Timber',
+    seller_name: 'Adoor Plantation Wood Depot',
     seller_verified: false,
-    image_url: 'https://images.unsplash.com/photo-1520697830682-bbb6e85e2b0b?auto=format&fit=crop&w=800&q=80',
-    dimensions: '8 ft × 4 in × 1.5 in',
-    grade: 'Commercial Grade',
+    // Felled rubber and hardwood plantation logs stacked outdoors
+    image_url: '/images/timber/rubberwood-logs.jpg',
+    dimensions: '10 ft × 32 in Avg Girth',
+    grade: 'Commercial Saw Log',
     transit_pass: true,
-    moisture: 'Kiln Dried (10%)',
+    moisture: 'Fresh Felled',
   },
   {
     id: '5',
-    title: 'Heritage Jackfruit Wood (Varikka Plavu) Door Frame Planks',
+    title: 'Heritage Jackfruit (Varikka Plavu) Heavy Balks & Planks',
     species: 'Jackfruit',
     species_ml: 'പ്ലാവ്',
     type: 'Rough-sawn Planks',
     type_ml: 'അറുത്ത പലകകൾ',
     district: 'Thrissur (തൃശ്ശൂർ)',
-    locality: 'Wadakkanchery',
+    locality: 'Wadakkanchery Depot',
     quantity: 65,
     unit: 'CFT',
     price_per_cft: 2200,
     seller_name: 'Central Kerala Timber Yards',
     seller_verified: true,
-    image_url: 'https://images.unsplash.com/photo-1541123437800-1bb1317badc2?auto=format&fit=crop&w=800&q=80',
+    // Solid thick timber trunks and rough cut balks at yard
+    image_url: '/images/timber/jackfruit-logs.jpg',
     dimensions: '9 ft × 6 in × 3 in',
-    grade: 'Heritage Heartwood',
+    grade: 'Heritage Yellow Heartwood',
     transit_pass: true,
     moisture: 'Naturally Seasoned',
   },
   {
     id: '6',
-    title: 'High-Calorie Split Firewood & Boiler Timber Blocks',
+    title: 'Authentic Kerala Rosewood (Veetti) Premium Heavy Round Logs',
+    species: 'Rosewood',
+    species_ml: 'ഈട്ടി / റോസ്വുഡ്',
+    type: 'Round Logs',
+    type_ml: 'ഉരുണ്ട തടികൾ',
+    district: 'Wayanad (വയനാട്)',
+    locality: 'Mananthavady Depot',
+    quantity: 35,
+    unit: 'CFT',
+    price_per_cft: 4800,
+    seller_name: 'Malabar Heritage Hardwoods',
+    seller_verified: true,
+    // Dark purple-brown Kerala rosewood round logs with prominent bark and grain
+    image_url: '/images/timber/rosewood-logs.jpg',
+    dimensions: '12 ft Length × 38 in Girth',
+    grade: 'Super Grade Heartwood (Veetti)',
+    transit_pass: true,
+    moisture: 'Air-Dried Seasoned',
+  },
+  {
+    id: '7',
+    title: 'Split Firewood & Heavy Industrial Boiler Timber Blocks',
     species: 'Rubberwood',
     species_ml: 'റബർ / വിറക്',
     type: 'Firewood',
@@ -153,11 +183,12 @@ const EXTENDED_LISTINGS: TimberListingItem[] = [
     quantity: 15,
     unit: 'Tonnes',
     price_per_cft: 280,
-    seller_name: 'Punalur Wood Fuel Mart',
+    seller_name: 'Punalur Wood Fuel Depot',
     seller_verified: true,
-    image_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
+    // Stacked split firewood tree logs
+    image_url: '/images/timber/firewood-logs.jpg',
     dimensions: 'Split Logs (2 to 3 ft)',
-    grade: 'Dry Boiler Ready',
+    grade: 'High-Calorie Split Timber',
     transit_pass: true,
     moisture: 'Sun Dried',
   },
@@ -167,17 +198,23 @@ const SPECIES_PILLS = [
   { key: 'all', label: 'All Species', ml: 'എല്ലാം' },
   { key: 'teak', label: 'Teak', ml: 'തേക്ക്' },
   { key: 'mahogany', label: 'Mahogany', ml: 'മഹാഗണി' },
+  { key: 'rosewood', label: 'Rosewood', ml: 'ഈട്ടി' },
   { key: 'anjili', label: 'Anjili', ml: 'ആഞ്ഞിലി' },
   { key: 'jackfruit', label: 'Jackfruit', ml: 'പ്ലാവ്' },
   { key: 'rubberwood', label: 'Rubberwood', ml: 'റബർ' },
 ];
 
 const TYPE_TABS = [
-  { key: 'all', label: 'All Timber Stock', ml: 'എല്ലാ തടികളും' },
-  { key: 'Rough-sawn Planks', label: 'Rough Planks', ml: 'അറുത്ത പലകകൾ' },
-  { key: 'Round Logs', label: 'Round Logs', ml: 'ഉരുണ്ട തടികൾ' },
-  { key: 'Squared Beams', label: 'Squared Beams', ml: 'കഴുക്കോലുകൾ' },
-  { key: 'Firewood', label: 'Firewood', ml: 'വിറക്' },
+  { key: 'all', label: 'All Raw Timber Stock', ml: 'എല്ലാ തടികളും' },
+  { key: 'Round Logs', label: 'Round Logs (ഉരുണ്ട തടി)', ml: 'ഉരുണ്ട തടികൾ' },
+  { key: 'Rough-sawn Planks', label: 'Rough Planks (പലക)', ml: 'അറുത്ത പലകകൾ' },
+  { key: 'Squared Beams', label: 'Squared Beams (ബീം)', ml: 'കഴുക്കോലുകൾ' },
+  { key: 'Firewood', label: 'Firewood (വിറക്)', ml: 'വിറക്' },
+];
+
+const DISALLOWED_FURNITURE_KEYWORDS = [
+  'plywood', 'ply', 'chair', 'table', 'bed', 'sofa', 'desk', 'door lock',
+  'furniture', 'കട്ടിൽ', 'കസേര', 'മേശ', 'പ്ലൈവുഡ്', 'ഫർണിച്ചർ'
 ];
 
 export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
@@ -185,6 +222,52 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  // Validation Popup State
+  const [validationAlert, setValidationAlert] = useState<{
+    type: 'warning' | 'info';
+    title: string;
+    message: string;
+  } | null>(null);
+
+  // Handle Search Input with Validation
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+
+    const lower = value.toLowerCase().trim();
+
+    // 1. Check for disallowed furniture keywords
+    const matchedDisallowed = DISALLOWED_FURNITURE_KEYWORDS.find((kw) => lower.includes(kw));
+    if (matchedDisallowed) {
+      setValidationAlert({
+        type: 'warning',
+        title: lang === 'en' ? 'Raw Timber Only Platform' : 'റോ തടികൾ മാത്രമുള്ള വിപണി',
+        message:
+          lang === 'en'
+            ? 'Timora exclusively trades raw timber logs and rough-sawn lumber. Finished furniture, doors, and plywood are not listed. Search for Teak, Mahogany, Anjili, or Rubberwood instead.'
+            : 'ടിമോറയിൽ ഉരുണ്ട തടികളും അറുത്ത മരങ്ങളും മാത്രമാണ് വ്യാപാരം ചെയ്യുന്നത്. ഫർണിച്ചറോ പ്ലൈവുഡോ ലഭ്യമല്ല. തേക്ക്, മഹാഗണി, ആഞ്ഞിലി, റബർ എന്നിവ തിരയുക.',
+      });
+      return;
+    }
+
+    // 2. Check for invalid symbols
+    if (/[!@#$%^&*()_+=\[\]{};':"\\|,.<>\/?]+/.test(value)) {
+      setValidationAlert({
+        type: 'warning',
+        title: lang === 'en' ? 'Invalid Search Character' : 'അസാധുവായ അക്ഷരങ്ങൾ',
+        message:
+          lang === 'en'
+            ? 'Please use standard timber species names like Teak, Mahogany, or Anjili.'
+            : 'ദയവായി തടി ഇനങ്ങളുടെ പേര് മാത്രം നൽകുക (ഉദാ: തേക്ക്, മഹാഗണി, ആഞ്ഞിലി).',
+      });
+      return;
+    }
+
+    // Clear alert if valid
+    if (validationAlert) {
+      setValidationAlert(null);
+    }
+  };
 
   const filtered = EXTENDED_LISTINGS.filter((item) => {
     if (selectedSpecies !== 'all' && !item.species.toLowerCase().includes(selectedSpecies.toLowerCase())) {
@@ -207,19 +290,97 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     return true;
   });
 
+  // Trigger alert if valid search yields 0 matches
+  useEffect(() => {
+    if (searchQuery.trim().length >= 3 && filtered.length === 0 && !validationAlert) {
+      setValidationAlert({
+        type: 'info',
+        title: lang === 'en' ? 'No Timber Stock Found' : 'തടികൾ ഒന്നും കണ്ടെത്തിയില്ല',
+        message:
+          lang === 'en'
+            ? `No live timber listings matched "${searchQuery}". Try selecting one of the certified species below:`
+            : `"${searchQuery}" എന്ന പേരിൽ തടികൾ ലഭ്യമല്ല. താഴെ കാണുന്ന അംഗീകൃത ഇനങ്ങൾ തിരഞ്ഞെടുക്കുക:`,
+      });
+    }
+  }, [searchQuery, filtered.length, validationAlert, lang]);
+
   return (
     <div className="space-y-8 pb-12">
-      {/* RICH HERO SECTION */}
-      <section className="relative bg-gradient-to-br from-forest-950 via-forest-900 to-stone-900 text-white overflow-hidden py-14 sm:py-20 border-b border-amber-900/30">
-        {/* Subtle woodgrain & light glow background overlay */}
-        <div className="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:20px_20px]" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      
+      {/* FLOATING POPUP NOTIFICATION FOR SEARCH VALIDATION */}
+      {validationAlert && (
+        <div className="fixed top-20 right-4 sm:right-8 z-50 max-w-md w-full animate-fadeIn">
+          <div
+            className={`p-4 rounded-2xl shadow-2xl border flex items-start gap-3 backdrop-blur-md ${
+              validationAlert.type === 'warning'
+                ? 'bg-amber-950/90 border-amber-500/50 text-amber-100'
+                : 'bg-stone-900/90 border-stone-600 text-stone-100'
+            }`}
+          >
+            {validationAlert.type === 'warning' ? (
+              <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            ) : (
+              <HelpCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1 text-xs">
+              <div className="font-bold text-sm text-white mb-0.5">{validationAlert.title}</div>
+              <p className="leading-relaxed opacity-90">{validationAlert.message}</p>
+              
+              {/* Quick suggestions on 0 results */}
+              <div className="flex flex-wrap gap-1.5 mt-2.5">
+                <button
+                  onClick={() => {
+                    setSelectedSpecies('teak');
+                    setSearchQuery('Teak');
+                    setValidationAlert(null);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold transition text-[11px]"
+                >
+                  തേക്ക് (Teak)
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedSpecies('mahogany');
+                    setSearchQuery('Mahogany');
+                    setValidationAlert(null);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold transition text-[11px]"
+                >
+                  മഹാഗണി (Mahogany)
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedSpecies('anjili');
+                    setSearchQuery('Anjili');
+                    setValidationAlert(null);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold transition text-[11px]"
+                >
+                  ആഞ്ഞിലി (Anjili)
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={() => setValidationAlert(null)}
+              className="text-stone-400 hover:text-white p-1 rounded-lg transition"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* REFINED TIMBER HERO BANNER WITH HARMONIZED COLORS & CRISP CONTRAST */}
+      <section className="relative bg-gradient-to-br from-[#122017] via-[#1a2c20] to-[#20150e] text-white overflow-hidden py-14 sm:py-20 border-b border-[#a16207]/30 shadow-inner">
+        {/* Subtle wood texture background overlay */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:24px_24px]" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#d97706]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#15803d]/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6">
           {/* Top Trust Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-amber-400/30 text-amber-300 text-xs font-semibold tracking-wide shadow-sm">
-            <Award className="w-3.5 h-3.5 text-amber-400" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-900/80 backdrop-blur-md border border-[#d97706]/50 text-[#fde68a] text-xs font-semibold tracking-wide shadow-sm">
+            <Award className="w-3.5 h-3.5 text-[#f59e0b]" />
             <span>
               {lang === 'en'
                 ? 'Kerala Forest Produce Transit Rules Compliant • 14 Districts Active'
@@ -227,60 +388,69 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             </span>
           </div>
 
-          {/* Heading */}
+          {/* Heading with Harmonized Font Colors matching the dark wood background */}
           <div className="max-w-3xl space-y-3">
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-white">
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-[#f9f8f6]">
               {lang === 'en' ? (
                 <>
-                  Kerala’s Premier Raw <span className="text-amber-400">Timber Exchange</span>
+                  Kerala’s Premier Raw <span className="text-[#f59e0b] drop-shadow-[0_2px_12px_rgba(245,158,11,0.25)]">Timber Exchange</span>
                 </>
               ) : (
                 <>
-                  കേരളത്തിലെ വിശ്വസനീയമായ <span className="text-amber-400">തടി വിപണി</span>
+                  കേരളത്തിലെ വിശ്വസനീയമായ <span className="text-[#f59e0b] drop-shadow-[0_2px_12px_rgba(245,158,11,0.25)]">തടി വിപണി</span>
                 </>
               )}
             </h1>
-            <p className="text-sm sm:text-base text-stone-300 font-normal leading-relaxed max-w-2xl">
+            <p className="text-sm sm:text-base text-[#e2e8f0] font-normal leading-relaxed max-w-2xl">
               {lang === 'en'
-                ? 'Source certified Teak, African Mahogany, Wild Jack (Anjili), and Rubberwood directly from vetted sawmills. Hoppus-calculated, transit-permitted raw timber only.'
-                : 'അംഗീകൃത മില്ലുകളിൽ നിന്നും നേരിട്ട് തേക്ക്, മഹാഗണി, ആഞ്ഞിലി, റബർ തടികൾ വാങ്ങാം. കൃത്യമായ സി.എഫ്.ടി കണക്കുകൾ, ട്രാൻസിറ്റ് പാസ്സ് സഹിതം.'}
+                ? 'Direct marketplace for authentic round logs and rough-sawn planks. Harvested Nilambur Teak, African Mahogany, Wild Jack (Anjili), and Rubberwood from verified sawmills. Strictly no plywood or furniture.'
+                : 'അംഗീകൃത മില്ലുകളിൽ നിന്നും നേരിട്ട് തേക്ക്, മഹാഗണി, ആഞ്ഞിലി, റബർ തടികൾ വാങ്ങാം. പക്കാ വെട്ടിയ ഉരുണ്ട തടികളും അറുത്ത പലകകളും മാത്രം.'}
             </p>
           </div>
 
-          {/* Search Box in Hero */}
-          <div className="max-w-2xl bg-white/95 backdrop-blur-md rounded-2xl p-2 shadow-2xl border border-white/20 flex flex-col sm:flex-row gap-2">
+          {/* Search Box with Interactive Validation Feedback */}
+          <div className="max-w-2xl bg-white/95 backdrop-blur-md rounded-2xl p-2 shadow-2xl border border-white/30 flex flex-col sm:flex-row gap-2">
             <div className="relative flex-grow flex items-center">
-              <Search className="w-5 h-5 text-stone-400 absolute left-3.5" />
+              <Search className="w-5 h-5 text-stone-500 absolute left-3.5" />
               <input
                 type="text"
                 placeholder={
                   lang === 'en'
-                    ? 'Search by species, depot, or district (e.g. Nilambur Teak)...'
-                    : 'തടി ഇനം, ഡിപ്പോ, അല്ലെങ്കിൽ ജില്ല തിരയുക...'
+                    ? 'Search real timber (e.g. Nilambur Teak, Anjili, Mahogany)...'
+                    : 'തടിയുടെ പേര് തിരയുക (ഉദാ: തേക്ക്, മഹാഗണി, ആഞ്ഞിലി)...'
                 }
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-transparent text-stone-900 text-sm font-medium focus:outline-none placeholder:text-stone-400"
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full pl-11 pr-10 py-2.5 rounded-xl bg-transparent text-stone-900 text-sm font-semibold focus:outline-none placeholder:text-stone-400 placeholder:font-normal"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => handleSearchChange('')}
+                  className="absolute right-3 text-stone-400 hover:text-stone-700"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
             <Link
               to="/calculator"
-              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition shadow-sm flex-shrink-0"
+              className="px-4 py-2.5 rounded-xl bg-[#d97706] hover:bg-[#b45309] text-stone-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition shadow-sm flex-shrink-0"
             >
-              <Calculator className="w-4 h-4" />
+              <Calculator className="w-4 h-4 text-stone-950" />
               <span>{lang === 'en' ? 'CFT Calculator' : 'തടി അളവ് കണക്കാക്കുക'}</span>
             </Link>
           </div>
 
-          {/* Metrics Bar */}
+          {/* Metrics Counters Bar */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-white/10 max-w-4xl text-xs">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-400 font-bold">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#f59e0b] font-bold">
                 14
               </div>
               <div>
                 <span className="block font-bold text-white">{lang === 'en' ? 'Districts' : 'ജില്ലകൾ'}</span>
-                <span className="text-stone-400 text-[11px]">{lang === 'en' ? 'Statewide Coverage' : 'കേരളത്തിലുടനീളം'}</span>
+                <span className="text-stone-300 text-[11px]">{lang === 'en' ? 'Statewide Coverage' : 'കേരളത്തിലുടനീളം'}</span>
               </div>
             </div>
 
@@ -290,17 +460,17 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               </div>
               <div>
                 <span className="block font-bold text-white">{lang === 'en' ? 'Middleman Fee' : 'ഇടനിലക്കാരില്ല'}</span>
-                <span className="text-stone-400 text-[11px]">{lang === 'en' ? 'Direct Mill Pricing' : 'നേരിട്ടുള്ള വില'}</span>
+                <span className="text-stone-300 text-[11px]">{lang === 'en' ? 'Direct Mill Pricing' : 'നേരിട്ടുള്ള വില'}</span>
               </div>
             </div>
 
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-400 font-bold">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#f59e0b] font-bold">
                 100%
               </div>
               <div>
                 <span className="block font-bold text-white">{lang === 'en' ? 'Raw Timber Only' : 'തടി മാത്രം'}</span>
-                <span className="text-stone-400 text-[11px]">{lang === 'en' ? 'No Plywood or Furniture' : 'ഫർണിച്ചർ ഇല്ല'}</span>
+                <span className="text-stone-300 text-[11px]">{lang === 'en' ? 'No Plywood or Furniture' : 'ഫർണിച്ചർ ഇല്ല'}</span>
               </div>
             </div>
 
@@ -310,7 +480,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               </div>
               <div>
                 <span className="block font-bold text-white">{lang === 'en' ? 'Hoppus Standard' : 'ഹോപ്പസ് റൂൾ'}</span>
-                <span className="text-stone-400 text-[11px]">{lang === 'en' ? 'Verified Formula' : 'കൃത്യമായ അളവ്'}</span>
+                <span className="text-stone-300 text-[11px]">{lang === 'en' ? 'Verified Formula' : 'കൃത്യമായ അളവ്'}</span>
               </div>
             </div>
           </div>
@@ -329,7 +499,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 onClick={() => setSelectedType(tab.key)}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                   selectedType === tab.key
-                    ? 'bg-forest-800 text-white shadow-sm'
+                    ? 'bg-forest-900 text-white shadow-sm'
                     : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
                 }`}
               >
@@ -339,7 +509,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </div>
 
           <span className="text-xs font-bold text-stone-500 whitespace-nowrap hidden sm:inline">
-            {filtered.length} {lang === 'en' ? 'Lots Available' : 'തടികൾ ലഭ്യമാണ്'}
+            {filtered.length} {lang === 'en' ? 'Raw Lots Available' : 'തടികൾ ലഭ്യമാണ്'}
           </span>
         </div>
 
@@ -392,7 +562,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </div>
         </div>
 
-        {/* LISTINGS GRID */}
+        {/* LISTINGS GRID WITH AUTHENTIC CUT TIMBER IMAGES */}
         {filtered.length === 0 ? (
           <div className="bg-white rounded-3xl border border-stone-200 p-12 text-center space-y-4">
             <Trees className="w-12 h-12 text-stone-400 mx-auto" />
@@ -410,6 +580,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 setSelectedType('all');
                 setSelectedDistrict('all');
                 setSearchQuery('');
+                setValidationAlert(null);
               }}
               className="px-4 py-2 bg-forest-800 text-white rounded-xl text-xs font-bold hover:bg-forest-900 transition"
             >
@@ -421,9 +592,9 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             {filtered.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-xs hover:shadow-xl hover:border-amber-400/50 transition-all duration-300 flex flex-col group"
+                className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-xs hover:shadow-xl hover:border-amber-500/50 transition-all duration-300 flex flex-col group"
               >
-                {/* Image Section */}
+                {/* Real Timber Photography Section */}
                 <div className="relative aspect-[16/10] bg-stone-100 overflow-hidden">
                   <img
                     src={item.image_url}
@@ -443,13 +614,13 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   </div>
 
                   {item.transit_pass && (
-                    <div className="absolute top-3 right-3 bg-emerald-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+                    <div className="absolute top-3 right-3 bg-emerald-700/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
                       <CheckCircle2 className="w-3 h-3" />
                       <span>{lang === 'en' ? 'Form IV Transit' : 'പാസ്സ് ഉണ്ട്'}</span>
                     </div>
                   )}
 
-                  <div className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] font-mono px-2 py-0.5 rounded-md backdrop-blur-xs">
+                  <div className="absolute bottom-2 right-2 bg-black/70 text-amber-300 text-[10px] font-mono px-2 py-0.5 rounded-md backdrop-blur-xs font-bold">
                     {item.quantity} {item.unit}
                   </div>
                 </div>

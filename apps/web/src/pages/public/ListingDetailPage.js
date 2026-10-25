@@ -30,8 +30,8 @@ export function ListingDetailPage({ lang = 'en' }) {
         seller_phone: '+919847120001',
         seller_verified: true,
         images: [
-            'https://images.unsplash.com/photo-1546484396-fb3fc6f95f98?auto=format&fit=crop&w=1000&q=80',
-            'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=1000&q=80',
+            '/images/timber/teak-logs.png',
+            '/images/timber/mahogany-logs.jpg',
         ],
     };
     const handleSendEnquiry = (e) => {

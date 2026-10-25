@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Phone, KeyRound, AlertCircle, ArrowRight, Shield, Store, ShoppingBag, Loader2, CheckCircle2 } from 'lucide-react';
 import { validateIndianPhone } from '@timora/shared';
@@ -7,7 +7,7 @@ import { BrandLogo } from '../../components/BrandLogo';
 
 export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const navigate = useNavigate();
-  const { login, loginAsDemo } = useAuth();
+  const { user, isAuthenticated, login, loginAsDemo } = useAuth();
 
   const [selectedRole, setSelectedRole] = useState<UserRole>('buyer');
   const [phone, setPhone] = useState('9847987654');
@@ -15,6 +15,25 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState<string | null>(null);
+
+  const getDestination = (role: UserRole) => {
+    switch (role) {
+      case 'seller':
+        return '/dashboard/seller';
+      case 'admin':
+        return '/admin';
+      case 'buyer':
+      default:
+        return '/dashboard/buyer';
+    }
+  };
+
+  // If already logged in, automatically redirect immediately to the respective dashboard
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      navigate(getDestination(user.role), { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   // Helper to switch default demo credentials based on role tab
   const handleRoleTabChange = (role: UserRole) => {
@@ -32,18 +51,7 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     }
   };
 
-  const getDestination = (role: UserRole) => {
-    switch (role) {
-      case 'seller':
-        return '/dashboard/seller';
-      case 'admin':
-        return '/admin';
-      case 'buyer':
-      default:
-        return '/dashboard/buyer';
-    }
-  };
-
+  // 1-Click Instant Demo Login & Automatic Redirection
   const handleQuickDemo = (role: UserRole) => {
     setError(null);
     setLoading(true);
@@ -52,10 +60,11 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setTimeout(() => {
       loginAsDemo(role);
       const destination = getDestination(role);
-      navigate(destination);
-    }, 600);
+      navigate(destination, { replace: true });
+    }, 350);
   };
 
+  // Regular Phone & PIN Login & Automatic Redirection
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -79,8 +88,8 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         setRedirecting(res.role);
         const targetPath = getDestination(res.role);
         setTimeout(() => {
-          navigate(targetPath);
-        }, 700);
+          navigate(targetPath, { replace: true });
+        }, 400);
       } else {
         setError(res.error || (lang === 'en' ? 'Authentication failed. Please verify credentials.' : 'ലോഗിൻ പരാജയപ്പെട്ടു. വിവരങ്ങൾ ശരിയാണോ എന്ന് പരിശോധിക്കുക.'));
         setLoading(false);
@@ -111,7 +120,7 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         {/* Role Selection Tabs */}
         <div>
           <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 text-center">
-            {lang === 'en' ? 'Select Your Role' : 'താങ്കളുടെ റോൾ തിരഞ്ഞെടുക്കുക'}
+            {lang === 'en' ? 'Select Your Account Role' : 'താങ്കളുടെ റോൾ തിരഞ്ഞെടുക്കുക'}
           </label>
           <div className="grid grid-cols-3 gap-2 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200">
             <button
@@ -163,14 +172,14 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </div>
         )}
 
-        {/* Redirecting Notification */}
+        {/* Instant Redirecting Notification Banner */}
         {redirecting && (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-center gap-3 text-emerald-900 font-semibold text-xs sm:text-sm animate-pulse">
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
             <span>
               {lang === 'en'
-                ? `Verified! Redirecting to ${redirecting.toUpperCase()} Dashboard...`
-                : `സ്ഥിരീകരിച്ചു! ${redirecting} ഡാഷ്‌ബോർഡിലേക്ക് പ്രവേശിക്കുന്നു...`}
+                ? `Logged in! Entering ${redirecting.toUpperCase()} Dashboard...`
+                : `വിജയകരമായി ലോഗിൻ ചെയ്തു! ${redirecting} ഡാഷ്‌ബോർഡിലേക്ക് പ്രവേശിക്കുന്നു...`}
             </span>
           </div>
         )}
@@ -227,7 +236,7 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>{lang === 'en' ? 'Authenticating...' : 'പരിശോധിക്കുന്നു...'}</span>
+                <span>{lang === 'en' ? 'Authenticating & Entering Dashboard...' : 'പരിശോധിച്ച് പ്രവേശിക്കുന്നു...'}</span>
               </>
             ) : (
               <>
@@ -257,17 +266,17 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               type="button"
               onClick={() => handleQuickDemo('seller')}
               disabled={loading || !!redirecting}
-              className="py-2 px-3 rounded-xl border border-amber-300 bg-amber-50/60 hover:bg-amber-100/80 text-amber-900 text-xs font-semibold flex items-center justify-center gap-1.5 transition text-center"
+              className="py-2.5 px-3 rounded-xl border border-amber-300 bg-amber-50/60 hover:bg-amber-100/80 text-amber-900 text-xs font-bold flex items-center justify-center gap-1.5 transition text-center shadow-xs"
             >
               <Store className="w-3.5 h-3.5 text-amber-700" />
-              <span>{lang === 'en' ? 'Seller Demo' : 'സെല്ലർ ഡെമോ'}</span>
+              <span>{lang === 'en' ? 'Seller Depot' : 'സെല്ലർ ഡെമോ'}</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleQuickDemo('buyer')}
               disabled={loading || !!redirecting}
-              className="py-2 px-3 rounded-xl border border-emerald-300 bg-emerald-50/60 hover:bg-emerald-100/80 text-emerald-900 text-xs font-semibold flex items-center justify-center gap-1.5 transition text-center"
+              className="py-2.5 px-3 rounded-xl border border-emerald-300 bg-emerald-50/60 hover:bg-emerald-100/80 text-emerald-900 text-xs font-bold flex items-center justify-center gap-1.5 transition text-center shadow-xs"
             >
               <ShoppingBag className="w-3.5 h-3.5 text-emerald-700" />
               <span>{lang === 'en' ? 'Buyer Demo' : 'ബയർ ഡെമോ'}</span>
@@ -277,7 +286,7 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               type="button"
               onClick={() => handleQuickDemo('admin')}
               disabled={loading || !!redirecting}
-              className="py-2 px-3 rounded-xl border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold flex items-center justify-center gap-1.5 transition text-center"
+              className="py-2.5 px-3 rounded-xl border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition text-center shadow-xs"
             >
               <Shield className="w-3.5 h-3.5 text-slate-700" />
               <span>{lang === 'en' ? 'Admin Demo' : 'അഡ്മിൻ ഡെമോ'}</span>
