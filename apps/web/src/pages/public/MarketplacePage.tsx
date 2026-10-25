@@ -13,14 +13,19 @@ import {
   CheckCircle2,
   SlidersHorizontal,
   ChevronRight,
+  ChevronUp,
   Flame,
   Layers,
   Award,
   AlertTriangle,
   X,
-  HelpCircle
+  HelpCircle,
+  Activity,
+  Zap,
+  TrendingUp,
+  Scale
 } from 'lucide-react';
-import { formatINR } from '@timora/shared';
+import { formatINR, calcRoundLogCFT, calcRectangularCFT } from '@timora/shared';
 
 export interface TimberListingItem {
   id: string;
@@ -59,7 +64,6 @@ const EXTENDED_LISTINGS: TimberListingItem[] = [
     price_per_cft: 2850,
     seller_name: 'Nilambur Government Approved Wood Mart',
     seller_verified: true,
-    // Real cut heavy teak round logs stacked in depot with authentic growth rings and bark
     image_url: '/images/timber/teak-logs.png',
     dimensions: '14 ft Length × 42 in Girth',
     grade: 'A-Grade Nilambur Heartwood',
@@ -80,7 +84,6 @@ const EXTENDED_LISTINGS: TimberListingItem[] = [
     price_per_cft: 1850,
     seller_name: 'Meenachil Timber Mart & Sawmill',
     seller_verified: true,
-    // Rough cut hardwood lumber and heavy structural beams stacked in sawmill
     image_url: '/images/timber/mahogany-logs.jpg',
     dimensions: '12 ft × 6 in × 6 in',
     grade: 'Select Prime Sawn',
@@ -101,7 +104,6 @@ const EXTENDED_LISTINGS: TimberListingItem[] = [
     price_per_cft: 1400,
     seller_name: 'Perumbavoor Raw Saw Mills',
     seller_verified: true,
-    // Giant felled raw tree trunk log lying at depot with natural thick bark
     image_url: '/images/timber/anjili-logs.jpg',
     dimensions: '16 ft Length × 48 in Mid-Girth',
     grade: 'Forest Grade I (Heavy)',
@@ -122,7 +124,6 @@ const EXTENDED_LISTINGS: TimberListingItem[] = [
     price_per_cft: 650,
     seller_name: 'Adoor Plantation Wood Depot',
     seller_verified: false,
-    // Felled rubber and hardwood plantation logs stacked outdoors
     image_url: '/images/timber/rubberwood-logs.jpg',
     dimensions: '10 ft × 32 in Avg Girth',
     grade: 'Commercial Saw Log',
@@ -143,7 +144,6 @@ const EXTENDED_LISTINGS: TimberListingItem[] = [
     price_per_cft: 2200,
     seller_name: 'Central Kerala Timber Yards',
     seller_verified: true,
-    // Solid thick timber trunks and rough cut balks at yard
     image_url: '/images/timber/jackfruit-logs.jpg',
     dimensions: '9 ft × 6 in × 3 in',
     grade: 'Heritage Yellow Heartwood',
@@ -164,7 +164,6 @@ const EXTENDED_LISTINGS: TimberListingItem[] = [
     price_per_cft: 4800,
     seller_name: 'Malabar Heritage Hardwoods',
     seller_verified: true,
-    // Dark purple-brown Kerala rosewood round logs with prominent bark and grain
     image_url: '/images/timber/rosewood-logs.jpg',
     dimensions: '12 ft Length × 38 in Girth',
     grade: 'Super Grade Heartwood (Veetti)',
@@ -185,7 +184,6 @@ const EXTENDED_LISTINGS: TimberListingItem[] = [
     price_per_cft: 280,
     seller_name: 'Punalur Wood Fuel Depot',
     seller_verified: true,
-    // Stacked split firewood tree logs
     image_url: '/images/timber/firewood-logs.jpg',
     dimensions: 'Split Logs (2 to 3 ft)',
     grade: 'High-Calorie Split Timber',
@@ -217,12 +215,32 @@ const DISALLOWED_FURNITURE_KEYWORDS = [
   'furniture', 'കട്ടിൽ', 'കസേര', 'മേശ', 'പ്ലൈവുഡ്', 'ഫർണിച്ചർ'
 ];
 
+// LIVE YARD ACTIVITY TICKER
+const LIVE_MARKET_UPDATES = [
+  { depot: 'Nilambur Forest Depot', msg: '65 CFT First-Grade Teak Round Logs verified & transit permit issued', ml: 'നിലമ്പൂർ: 65 CFT തേക്ക് ലോഗുകൾ പരിശോധിച്ചുറപ്പിച്ചു' },
+  { depot: 'Perumbavoor Sawmills', msg: '120 CFT Old-Growth Anjili logs loaded for Kochi transit', ml: 'പെരുമ്പാവൂർ: 120 CFT ആഞ്ഞിലി തടികൾ ലോഡ് ചെയ്തു' },
+  { depot: 'Pala Timber Mart', msg: 'Mahogany 12ft squared beams booked for roofing joinery', ml: 'പാല: മഹാഗണി കഴുക്കോലുകൾ ബുക്കിംഗ് സ്വീകരിച്ചു' },
+  { depot: 'Wayanad Division', msg: 'Rosewood (Veetti) certified logs listed with Form IV pass', ml: 'വയനാട്: ഈട്ടി ലോഗുകൾ ഫോറസ്റ്റ് പാസ്സ് സഹിതം ലഭ്യമാണ്' },
+];
+
 export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [selectedSpecies, setSelectedSpecies] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
+  // SCROLL-DRIVEN DYNAMIC UI STATE
+  const [scrollY, setScrollY] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('down');
+  const [isScrolledPastHero, setIsScrolledPastHero] = useState(false);
+  const [quickCalcOpen, setQuickCalcOpen] = useState(false);
+
+  // Quick Calculator Local Inputs
+  const [calcGirth, setCalcGirth] = useState<number>(36);
+  const [calcLen, setCalcLen] = useState<number>(12);
+  const [calcRate, setCalcRate] = useState<number>(2400);
+
   // Validation Popup State
   const [validationAlert, setValidationAlert] = useState<{
     type: 'warning' | 'info';
@@ -230,10 +248,44 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     message: string;
   } | null>(null);
 
+  // Scroll listener to update dynamic UI on the fly
+  useEffect(() => {
+    let lastY = window.pageYOffset;
+
+    const handleScroll = () => {
+      const currentY = window.pageYOffset;
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = totalScroll > 0 ? (currentY / totalScroll) * 100 : 0;
+
+      setScrollY(currentY);
+      setScrollProgress(progress);
+      setScrollDirection(currentY > lastY ? 'down' : 'up');
+      setIsScrolledPastHero(currentY > 320);
+
+      lastY = currentY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Quick CFT Calculation
+  const quickCftResult = (() => {
+    try {
+      if (calcGirth <= 0 || calcLen <= 0) return null;
+      return calcRoundLogCFT({
+        diameter_in: calcGirth,
+        length_ft: calcLen,
+        price_per_cft: calcRate,
+      });
+    } catch {
+      return null;
+    }
+  })();
+
   // Handle Search Input with Validation
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-
     const lower = value.toLowerCase().trim();
 
     // 1. Check for disallowed furniture keywords
@@ -263,7 +315,6 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       return;
     }
 
-    // Clear alert if valid
     if (validationAlert) {
       setValidationAlert(null);
     }
@@ -290,23 +341,174 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     return true;
   });
 
-  // Trigger alert if valid search yields 0 matches
-  useEffect(() => {
-    if (searchQuery.trim().length >= 3 && filtered.length === 0 && !validationAlert) {
-      setValidationAlert({
-        type: 'info',
-        title: lang === 'en' ? 'No Timber Stock Found' : 'തടികൾ ഒന്നും കണ്ടെത്തിയില്ല',
-        message:
-          lang === 'en'
-            ? `No live timber listings matched "${searchQuery}". Try selecting one of the certified species below:`
-            : `"${searchQuery}" എന്ന പേരിൽ തടികൾ ലഭ്യമല്ല. താഴെ കാണുന്ന അംഗീകൃത ഇനങ്ങൾ തിരഞ്ഞെടുക്കുക:`,
-      });
-    }
-  }, [searchQuery, filtered.length, validationAlert, lang]);
-
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8 pb-16 relative">
       
+      {/* 1. TOP SCROLL PROGRESS HAIRLINE (ബാക്ക്ഗ്രൗണ്ടിൽ സ്ക്രോൾ ചെയ്യുമ്പോൾ ചലിക്കുന്ന ഗോൾഡൻ ബാർ) */}
+      <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-stone-200/50 pointer-events-none">
+        <div
+          className="h-full bg-gradient-to-r from-amber-600 via-amber-500 to-emerald-500 transition-all duration-75"
+          style={{ width: `${scrollProgress}%` }}
+        />
+      </div>
+
+      {/* 2. DYNAMIC FLOATING TIMBER DOCK (യൂസർ താഴോട്ട് സ്ക്രോൾ ചെയ്യുമ്പോൾ ഓട്ടോമാറ്റിക്കായി ദൃശ്യമാകുന്ന സ്മാർട്ട് ഫീച്ചർ) */}
+      <div
+        className={`fixed top-18 left-0 right-0 z-40 transition-all duration-400 pointer-events-none px-4 sm:px-6 lg:px-8 ${
+          isScrolledPastHero
+            ? 'opacity-100 translate-y-0'
+            : 'opacity-0 -translate-y-6 pointer-events-none'
+        }`}
+      >
+        <div className="max-w-6xl mx-auto bg-stone-900/90 backdrop-blur-md text-white rounded-2xl shadow-xl border border-amber-500/30 p-2 sm:p-2.5 flex items-center justify-between gap-3 pointer-events-auto">
+          {/* Left: Live Stock Badge */}
+          <div className="flex items-center gap-2.5 flex-shrink-0">
+            <span className="flex h-2.5 w-2.5 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <div className="hidden sm:block">
+              <span className="text-[10px] text-amber-400 uppercase font-black tracking-wider block leading-none">
+                {lang === 'en' ? 'Live Kerala Stock' : 'തത്സമയ സ്റ്റോക്ക്'}
+              </span>
+              <span className="text-xs font-bold text-white leading-none">
+                {filtered.length} {lang === 'en' ? 'Lots Available' : 'തടികൾ ലഭ്യമാണ്'}
+              </span>
+            </div>
+          </div>
+
+          {/* Center: Dynamic Quick Species Switcher */}
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5">
+            {SPECIES_PILLS.map((sp) => (
+              <button
+                key={sp.key}
+                onClick={() => setSelectedSpecies(sp.key)}
+                className={`px-2.5 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  selectedSpecies === sp.key
+                    ? 'bg-amber-500 text-stone-950 shadow-xs'
+                    : 'bg-white/10 text-stone-300 hover:bg-white/20 hover:text-white'
+                }`}
+              >
+                {lang === 'en' ? sp.label : sp.ml}
+              </button>
+            ))}
+          </div>
+
+          {/* Right: Quick CFT Calculator Pop-Over Trigger + Scroll to Top */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => setQuickCalcOpen(!quickCalcOpen)}
+              className="px-3 py-1.5 rounded-xl bg-forest-700 hover:bg-forest-600 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs"
+            >
+              <Calculator className="w-3.5 h-3.5 text-amber-300" />
+              <span className="hidden sm:inline">{lang === 'en' ? 'Quick CFT' : 'സി.എഫ്.ടി'}</span>
+            </button>
+
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"
+              title={lang === 'en' ? 'Scroll to Top' : 'മുകളിലേക്ക് പോവുക'}
+            >
+              <ChevronUp className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* QUICK CFT CALCULATOR SLIDE-OVER DRAWER */}
+      {quickCalcOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl border border-stone-300 shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <Calculator className="w-5 h-5 text-forest-700" />
+                <h3 className="font-bold text-stone-900 text-base">
+                  {lang === 'en' ? 'Instant Timber CFT Calculator' : 'തൽക്ഷണ തടി കാൽക്കുലേറ്റർ'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setQuickCalcOpen(false)}
+                className="text-stone-400 hover:text-stone-700 font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-stone-500">
+              {lang === 'en'
+                ? 'Hoppus Rule Kerala standard calculation: (Girth/4)² × Length / 144'
+                : 'കേരള അംഗീകൃത ഹോപ്പസ് രീതിയിലുള്ള തടി അളവ് കണക്കാക്കൽ.'}
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-stone-600 mb-1">
+                  {lang === 'en' ? 'Mid Girth (Inches)' : 'തടിയുടെ വണ്ണം (ഇഞ്ച്)'}
+                </label>
+                <input
+                  type="number"
+                  value={calcGirth}
+                  onChange={(e) => setCalcGirth(Number(e.target.value))}
+                  className="w-full px-3 py-2 border rounded-xl text-sm font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-stone-600 mb-1">
+                  {lang === 'en' ? 'Length (Feet)' : 'നീളം (അടി)'}
+                </label>
+                <input
+                  type="number"
+                  value={calcLen}
+                  onChange={(e) => setCalcLen(Number(e.target.value))}
+                  className="w-full px-3 py-2 border rounded-xl text-sm font-bold"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-stone-600 mb-1">
+                {lang === 'en' ? 'Rate / CFT (₹)' : 'വില / സി.എഫ്.ടി (₹)'}
+              </label>
+              <input
+                type="number"
+                value={calcRate}
+                onChange={(e) => setCalcRate(Number(e.target.value))}
+                className="w-full px-3 py-2 border rounded-xl text-sm font-bold"
+              />
+            </div>
+
+            {quickCftResult && (
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-amber-800 block">
+                    {lang === 'en' ? 'Calculated Volume' : 'കണക്കാക്കിയ വ്യാപ്തം'}
+                  </span>
+                  <span className="text-xl font-black text-amber-950">
+                    {quickCftResult.total_cft} <span className="text-xs">CFT</span>
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-bold text-amber-800 block">
+                    {lang === 'en' ? 'Total Cost' : 'ആകെ തുക'}
+                  </span>
+                  <span className="text-xl font-black text-forest-900">
+                    {formatINR(quickCftResult.estimated_cost || 0)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => setQuickCalcOpen(false)}
+              className="w-full py-2.5 rounded-xl bg-forest-800 text-white font-bold text-xs hover:bg-forest-900 transition"
+            >
+              {lang === 'en' ? 'Continue Browsing Stock' : 'തിരച്ചിൽ തുടരുക'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* FLOATING POPUP NOTIFICATION FOR SEARCH VALIDATION */}
       {validationAlert && (
         <div className="fixed top-20 right-4 sm:right-8 z-50 max-w-md w-full animate-fadeIn">
@@ -326,7 +528,6 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               <div className="font-bold text-sm text-white mb-0.5">{validationAlert.title}</div>
               <p className="leading-relaxed opacity-90">{validationAlert.message}</p>
               
-              {/* Quick suggestions on 0 results */}
               <div className="flex flex-wrap gap-1.5 mt-2.5">
                 <button
                   onClick={() => {
@@ -369,6 +570,25 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </div>
         </div>
       )}
+
+      {/* LIVE YARD TICKER (തത്സമയ ട്രേഡിംഗ് ടിക്ക്) */}
+      <div className="bg-amber-950/20 border-y border-amber-900/20 py-2 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 flex items-center gap-3 text-xs">
+          <span className="px-2 py-0.5 rounded-md bg-amber-600 text-stone-950 font-black text-[10px] uppercase tracking-wider flex items-center gap-1 flex-shrink-0">
+            <Activity className="w-3 h-3 animate-pulse" />
+            {lang === 'en' ? 'Live Ticker' : 'തത്സമയം'}
+          </span>
+          <div className="flex items-center gap-6 overflow-x-auto whitespace-nowrap text-stone-700 font-medium">
+            {LIVE_MARKET_UPDATES.map((u, i) => (
+              <span key={i} className="flex items-center gap-1.5 flex-shrink-0">
+                <span className="font-bold text-forest-800">{u.depot}:</span>
+                <span>{lang === 'en' ? u.msg : u.ml}</span>
+                <span className="text-stone-300 ml-3">•</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* REFINED TIMBER HERO BANNER WITH HARMONIZED COLORS & CRISP CONTRAST */}
       <section className="relative bg-gradient-to-br from-[#122017] via-[#1a2c20] to-[#20150e] text-white overflow-hidden py-14 sm:py-20 border-b border-[#a16207]/30 shadow-inner">
@@ -433,13 +653,13 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 </button>
               )}
             </div>
-            <Link
-              to="/calculator"
+            <button
+              onClick={() => setQuickCalcOpen(true)}
               className="px-4 py-2.5 rounded-xl bg-[#d97706] hover:bg-[#b45309] text-stone-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition shadow-sm flex-shrink-0"
             >
               <Calculator className="w-4 h-4 text-stone-950" />
-              <span>{lang === 'en' ? 'CFT Calculator' : 'തടി അളവ് കണക്കാക്കുക'}</span>
-            </Link>
+              <span>{lang === 'en' ? 'Quick Calculate' : 'തടി അളവ് കണക്കാക്കുക'}</span>
+            </button>
           </div>
 
           {/* Metrics Counters Bar */}
@@ -592,7 +812,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             {filtered.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-xs hover:shadow-xl hover:border-amber-500/50 transition-all duration-300 flex flex-col group"
+                className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-xs hover:shadow-2xl hover:border-amber-500/50 hover:-translate-y-1 transition-all duration-300 flex flex-col group"
               >
                 {/* Real Timber Photography Section */}
                 <div className="relative aspect-[16/10] bg-stone-100 overflow-hidden">
