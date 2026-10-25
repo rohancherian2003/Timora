@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ShieldCheck, UserCheck, PackageCheck, FileText, Check, X, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, UserCheck, PackageCheck, FileText, Check, X, AlertTriangle, Shield, Activity } from 'lucide-react';
 import { formatINR } from '@timora/shared';
+import { useAuth } from '../../context/AuthContext';
 
 const DEMO_PENDING_SELLERS = [
   {
@@ -30,6 +31,7 @@ const DEMO_PENDING_LISTINGS = [
 ];
 
 export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'sellers' | 'listings' | 'audit'>('sellers');
   const [sellers, setSellers] = useState(DEMO_PENDING_SELLERS);
   const [listings, setListings] = useState(DEMO_PENDING_LISTINGS);

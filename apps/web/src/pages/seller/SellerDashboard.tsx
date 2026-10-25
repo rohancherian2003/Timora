@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Package, Plus, Clock, CheckCircle2, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { Package, Plus, Clock, CheckCircle2, AlertCircle, ArrowUpRight, Store, MapPin, Phone } from 'lucide-react';
 import { formatINR } from '@timora/shared';
+import { useAuth } from '../../context/AuthContext';
 
 export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
+  const { user } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [title, setTitle] = useState('');
   const [speciesId, setSpeciesId] = useState(1); // Teak
@@ -25,21 +27,27 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Top Welcome */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-gradient-to-r from-amber-900/10 via-stone-50 to-white rounded-3xl border border-amber-200/60 shadow-xs">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
-            {lang === 'en' ? 'Seller Management Dashboard' : 'തടിക്കച്ചവട ഡാഷ്‌ബോർഡ്'}
+          <div className="flex items-center gap-2 mb-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-600 text-white uppercase tracking-wider">
+              {lang === 'en' ? 'Verified Timber Depot' : 'അംഗീകൃത തടി ഡിപ്പോ'}
+            </span>
+            <span className="text-xs text-stone-500 font-medium">ID: {user?.id || 'usr-seller-01'}</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900">
+            {user?.businessName || user?.name || (lang === 'en' ? 'Seller Management Dashboard' : 'തടിക്കച്ചവട ഡാഷ്‌ബോർഡ്')}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 mt-1">
-            {lang === 'en'
-              ? 'Manage your live timber stock, pending reviews, and buyer negotiations.'
-              : 'നിങ്ങളുടെ തടി സ്റ്റോക്കുകൾ, അഡ്മിൻ റിവ്യൂകൾ, ഉപഭോക്തൃ അന്വേഷണങ്ങൾ എന്നിവ കൈകാര്യം ചെയ്യുക.'}
+          <p className="text-xs sm:text-sm text-stone-600 mt-1 flex items-center gap-2">
+            <span>{lang === 'en' ? 'Contact: +91' : 'ഫോൺ: +91'}{user?.phone || '9847120001'}</span>
+            <span>•</span>
+            <span>{user?.district || (lang === 'en' ? 'Kerala' : 'കേരളം')}</span>
           </p>
         </div>
 
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-forest-700 hover:bg-forest-800 text-white text-sm font-semibold shadow-sm transition"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-forest-800 hover:bg-forest-900 text-white text-sm font-bold shadow-md shadow-forest-950/10 transition"
         >
           <Plus className="w-4 h-4" />
           {lang === 'en' ? 'Post New Timber Stock' : 'പുതിയ തടി ചേർക്കുക'}

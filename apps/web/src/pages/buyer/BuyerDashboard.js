@@ -2,6 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
 import { ShoppingBag, MessageSquare, Heart, CheckCircle2 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
+import { useAuth } from '../../context/AuthContext';
 const DEMO_BUYER_ORDERS = [
     {
         id: 'ord-101',
@@ -36,8 +37,9 @@ const DEMO_SAVED_LISTINGS = [
     },
 ];
 export function BuyerDashboard({ lang = 'en' }) {
+    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('orders');
-    return (_jsxs("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8", children: [_jsxs("div", { children: [_jsx("h1", { className: "text-2xl sm:text-3xl font-bold text-slate-900", children: lang === 'en' ? 'Buyer Dashboard' : 'ഉപഭോക്തൃ ഡാഷ്‌ബോർഡ്' }), _jsx("p", { className: "text-xs sm:text-sm text-slate-600 mt-1", children: lang === 'en'
+    return (_jsxs("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8", children: [_jsxs("div", { className: "p-6 bg-gradient-to-r from-forest-900/10 via-stone-50 to-white rounded-3xl border border-forest-200/60 shadow-xs", children: [_jsxs("div", { className: "flex items-center gap-2 mb-1", children: [_jsx("span", { className: "px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-forest-700 text-white uppercase tracking-wider", children: lang === 'en' ? 'Verified Buyer Account' : 'ഉപഭോക്തൃ പ്രൊഫൈൽ' }), _jsxs("span", { className: "text-xs text-stone-500 font-medium", children: ["+91 ", user?.phone || '9847987654'] })] }), _jsx("h1", { className: "text-2xl sm:text-3xl font-extrabold text-stone-900", children: lang === 'en' ? `Welcome, ${user?.name || 'Timber Buyer'}` : `സ്വാഗതം, ${user?.name || 'ഉപഭോക്താവ്'}` }), _jsx("p", { className: "text-xs sm:text-sm text-stone-600 mt-1", children: lang === 'en'
                             ? 'Track your ongoing timber orders, negotiate enquiries, and view saved stock.'
                             : 'നിങ്ങളുടെ തടി ഓർഡറുകൾ, അന്വേഷണങ്ങൾ, സേവ് ചെയ്ത തടികൾ എന്നിവ ഇവിടെ കാണാം.' })] }), _jsxs("div", { className: "flex border-b border-slate-200 gap-6 text-sm font-semibold", children: [_jsxs("button", { onClick: () => setActiveTab('orders'), className: `pb-3 flex items-center gap-2 border-b-2 transition ${activeTab === 'orders'
                             ? 'border-forest-700 text-forest-900'

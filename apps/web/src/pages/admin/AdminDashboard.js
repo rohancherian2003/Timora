@@ -2,6 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
 import { ShieldCheck, UserCheck, PackageCheck, FileText, Check, X } from 'lucide-react';
 import { formatINR } from '@timora/shared';
+import { useAuth } from '../../context/AuthContext';
 const DEMO_PENDING_SELLERS = [
     {
         id: 'sel-1',
@@ -28,6 +29,7 @@ const DEMO_PENDING_LISTINGS = [
     },
 ];
 export function AdminDashboard({ lang = 'en' }) {
+    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('sellers');
     const [sellers, setSellers] = useState(DEMO_PENDING_SELLERS);
     const [listings, setListings] = useState(DEMO_PENDING_LISTINGS);
