@@ -10,6 +10,9 @@ import { listingsRouter } from './modules/listings/listings.routes.js';
 import { adminRouter } from './modules/admin/admin.routes.js';
 import { enquiriesRouter } from './modules/enquiries/enquiries.routes.js';
 import { ordersRouter } from './modules/orders/orders.routes.js';
+import { disputesRouter } from './modules/disputes/disputes.routes.js';
+import { transportRouter } from './modules/transport/transport.routes.js';
+import { supportRouter } from './modules/support/support.routes.js';
 import { query } from './config/database.js';
 
 export function createApp(): express.Application {
@@ -66,6 +69,15 @@ export function createApp(): express.Application {
 
   // Orders routes
   app.use('/api/v1/orders', ordersRouter);
+
+  // Disputes & Reviews routes
+  app.use('/api/v1', disputesRouter);
+
+  // Transport Directory routes
+  app.use('/api/v1/transport', transportRouter);
+
+  // Support & Notification routes
+  app.use('/api/v1', supportRouter);
 
   // Super Admin routes
   app.use('/api/v1/admin', adminRouter);

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { Trees, Calculator, ShieldCheck, Globe } from 'lucide-react';
+import { Trees, Calculator, Hammer, Globe, LayoutDashboard } from 'lucide-react';
 import { MarketplacePage } from './pages/public/MarketplacePage';
 import { CalculatorPage } from './pages/public/CalculatorPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
+import { CarpenterDirectoryPage } from './pages/carpenter/CarpenterDirectoryPage';
+import { SellerDashboard } from './pages/seller/SellerDashboard';
 
 export function App() {
   const [lang, setLang] = useState<'en' | 'ml'>('en');
@@ -38,6 +40,14 @@ export function App() {
               <Link to="/calculator" className="hover:text-forest-700 transition">
                 {lang === 'en' ? 'CFT Calculator' : 'തടി കാൽക്കുലേറ്റർ'}
               </Link>
+              <Link to="/carpenters" className="hover:text-forest-700 transition flex items-center gap-1.5">
+                <Hammer className="w-3.5 h-3.5" />
+                {lang === 'en' ? 'Carpenters' : 'ആശാരിമാർ'}
+              </Link>
+              <Link to="/dashboard/seller" className="hover:text-forest-700 transition flex items-center gap-1.5 text-forest-800 font-semibold">
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                {lang === 'en' ? 'Seller Hub' : 'കച്ചവട ഹബ്'}
+              </Link>
             </nav>
 
             <div className="flex items-center gap-3">
@@ -64,6 +74,8 @@ export function App() {
             <Route path="/" element={<MarketplacePage lang={lang} />} />
             <Route path="/marketplace" element={<MarketplacePage lang={lang} />} />
             <Route path="/calculator" element={<CalculatorPage lang={lang} />} />
+            <Route path="/carpenters" element={<CarpenterDirectoryPage lang={lang} />} />
+            <Route path="/dashboard/seller" element={<SellerDashboard lang={lang} />} />
             <Route path="/login" element={<LoginPage lang={lang} />} />
             <Route path="/register" element={<RegisterPage lang={lang} />} />
           </Routes>
