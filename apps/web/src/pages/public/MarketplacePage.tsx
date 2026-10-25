@@ -398,7 +398,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => setQuickCalcOpen(!quickCalcOpen)}
-              className="px-3 py-1.5 rounded-xl bg-forest-700 hover:bg-forest-600 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs"
+              className="px-3 py-1.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs"
             >
               <Calculator className="w-3.5 h-3.5 text-amber-300" />
               <span className="hidden sm:inline">{lang === 'en' ? 'Quick CFT' : 'സി.എഫ്.ടി'}</span>
@@ -421,7 +421,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           <div className="bg-white rounded-3xl border border-stone-300 shadow-2xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-2">
-                <Calculator className="w-5 h-5 text-forest-700" />
+                <Calculator className="w-5 h-5 text-[#b45309]" />
                 <h3 className="font-bold text-stone-900 text-base">
                   {lang === 'en' ? 'Instant Timber CFT Calculator' : 'തൽക്ഷണ തടി കാൽക്കുലേറ്റർ'}
                 </h3>
@@ -492,7 +492,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   <span className="text-[10px] uppercase font-bold text-amber-800 block">
                     {lang === 'en' ? 'Total Cost' : 'ആകെ തുക'}
                   </span>
-                  <span className="text-xl font-black text-forest-900">
+                  <span className="text-xl font-black text-[#78350f]">
                     {formatINR(quickCftResult.estimated_cost || 0)}
                   </span>
                 </div>
@@ -581,7 +581,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           <div className="flex items-center gap-6 overflow-x-auto whitespace-nowrap text-stone-700 font-medium">
             {LIVE_MARKET_UPDATES.map((u, i) => (
               <span key={i} className="flex items-center gap-1.5 flex-shrink-0">
-                <span className="font-bold text-forest-800">{u.depot}:</span>
+                <span className="font-bold text-[#92400e]">{u.depot}:</span>
                 <span>{lang === 'en' ? u.msg : u.ml}</span>
                 <span className="text-stone-300 ml-3">•</span>
               </span>
@@ -770,7 +770,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 onClick={() => setSelectedType(tab.key)}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                   selectedType === tab.key
-                    ? 'bg-forest-900 text-white shadow-sm'
+                    ? 'bg-[#b45309] text-white shadow-sm'
                     : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
                 }`}
               >
@@ -808,11 +808,11 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
           {/* District Dropdown */}
           <div className="flex items-center gap-2 w-full md:w-auto">
-            <MapPin className="w-4 h-4 text-forest-700 flex-shrink-0" />
+            <MapPin className="w-4 h-4 text-[#b45309] flex-shrink-0" />
             <select
               value={selectedDistrict}
               onChange={(e) => setSelectedDistrict(e.target.value)}
-              className="px-3 py-2 border border-stone-300 rounded-xl text-stone-800 font-semibold text-xs bg-stone-50 focus:ring-2 focus:ring-forest-600 focus:outline-none w-full md:w-56"
+              className="px-3 py-2 border border-stone-300 rounded-xl text-stone-800 font-semibold text-xs bg-stone-50 focus:ring-2 focus:ring-[#b45309] focus:outline-none w-full md:w-56"
             >
               <option value="all">{lang === 'en' ? 'All 14 Districts (എല്ലാ ജില്ലകളും)' : 'എല്ലാ ജില്ലകളും'}</option>
               <option value="kottayam">Kottayam (കോട്ടയം)</option>
@@ -875,7 +875,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   
                   {/* Top Floating Badges */}
                   <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-forest-900 shadow-md backdrop-blur-sm flex items-center gap-1">
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-[#78350f] shadow-md backdrop-blur-sm flex items-center gap-1">
                       <Tag className="w-3 h-3 text-amber-600" />
                       {lang === 'en' ? item.species : item.species_ml}
                     </span>
@@ -899,7 +899,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 {/* Content Section */}
                 <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                   <div>
-                    <h3 className="font-bold text-stone-900 text-base line-clamp-1 group-hover:text-forest-800 transition">
+                    <h3 className="font-bold text-stone-900 text-base line-clamp-1 group-hover:text-[#92400e] transition">
                       {item.title}
                     </h3>
                     
@@ -911,7 +911,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
                     <div className="mt-3 pt-3 border-t border-stone-100 flex items-center justify-between text-xs text-stone-600">
                       <div className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-forest-700 flex-shrink-0" />
+                        <MapPin className="w-3.5 h-3.5 text-[#b45309] flex-shrink-0" />
                         <span className="line-clamp-1 font-medium">{item.locality}, {item.district.split(' ')[0]}</span>
                       </div>
                       <span className="text-[11px] text-stone-400 font-medium">{item.moisture}</span>
@@ -922,7 +922,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       <span className="font-semibold text-stone-800 line-clamp-1">{item.seller_name}</span>
                       {item.seller_verified && (
                         <span title="Verified Yard">
-                          <ShieldCheck className="w-3.5 h-3.5 text-forest-700 flex-shrink-0" />
+                          <ShieldCheck className="w-3.5 h-3.5 text-[#b45309] flex-shrink-0" />
                         </span>
                       )}
                     </div>
@@ -934,7 +934,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       <span className="text-[10px] uppercase font-bold text-stone-400">
                         {lang === 'en' ? 'Verified Rate' : 'വില / സി.എഫ്.ടി'}
                       </span>
-                      <div className="text-lg font-black text-forest-900 flex items-baseline gap-1">
+                      <div className="text-lg font-black text-[#78350f] flex items-baseline gap-1">
                         {formatINR(item.price_per_cft)}
                         <span className="text-[10px] text-stone-500 font-semibold">/ {item.unit}</span>
                       </div>
@@ -942,7 +942,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
                     <Link
                       to={`/listing/${item.id}`}
-                      className="px-4 py-2 rounded-xl bg-forest-800 group-hover:bg-forest-900 text-white text-xs font-bold shadow-sm transition flex items-center gap-1"
+                      className="px-4 py-2 rounded-xl bg-[#b45309] group-hover:bg-[#92400e] text-white text-xs font-bold shadow-sm transition flex items-center gap-1"
                     >
                       <span>{lang === 'en' ? 'View Timber' : 'വിശദാംശങ്ങൾ'}</span>
                       <ArrowRight className="w-3.5 h-3.5" />

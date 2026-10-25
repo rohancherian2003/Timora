@@ -59,39 +59,42 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Title */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* Header Banner */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 sm:p-8 bg-gradient-to-br from-[#faf6ee] via-[#f4ebe0] to-[#ecdcc8] rounded-3xl border border-[#ebd5bc] shadow-sm">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 flex items-center gap-2.5">
-            <ShieldCheck className="w-8 h-8 text-forest-700" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 text-[#854d0e] text-xs font-semibold backdrop-blur-sm border border-amber-600/30 mb-2">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>{lang === 'en' ? 'Super Admin Moderation Suite' : 'സൂപ്പർ അഡ്മിൻ കൺട്രോൾ പാനൽ'}</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold font-serif text-[#2c160b] flex items-center gap-2.5">
             {lang === 'en' ? 'Super Admin Moderation Suite' : 'സൂപ്പർ അഡ്മിൻ കൺട്രോൾ പാനൽ'}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 mt-1">
+          <p className="text-xs sm:text-sm text-[#6b472e] mt-1 font-medium">
             {lang === 'en'
               ? 'Approve timber merchant accounts, review actual stock photos, and inspect append-only audit trails.'
               : 'കച്ചവടക്കാരുടെ അക്കൗണ്ടുകൾ, തടികളുടെ ഫോട്ടോകൾ എന്നിവ പരിശോധിച്ച് അംഗീകരിക്കുക.'}
           </p>
         </div>
-        <span className="px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs font-mono font-bold">
+        <span className="px-3.5 py-1.5 rounded-xl bg-[#2c160b] text-amber-200 text-xs font-mono font-bold shadow-xs">
           ADMIN CONSOLE
         </span>
       </div>
 
       {message && (
-        <div className="p-3 bg-forest-50 border border-forest-200 text-forest-900 rounded-xl text-xs font-semibold flex items-center justify-between">
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl text-xs font-semibold flex items-center justify-between">
           <span>{message}</span>
-          <button onClick={() => setMessage(null)} className="text-slate-400 hover:text-slate-600">✕</button>
+          <button onClick={() => setMessage(null)} className="text-stone-400 hover:text-stone-600">✕</button>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 gap-6 text-sm font-semibold">
+      <div className="flex border-b border-amber-200/80 gap-6 text-sm font-semibold">
         <button
           onClick={() => setActiveTab('sellers')}
           className={`pb-3 flex items-center gap-2 border-b-2 transition ${
             activeTab === 'sellers'
-              ? 'border-forest-700 text-forest-900'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'border-[#b45309] text-[#b45309] font-bold'
+              : 'border-transparent text-stone-500 hover:text-stone-900'
           }`}
         >
           <UserCheck className="w-4 h-4" />
@@ -102,8 +105,8 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           onClick={() => setActiveTab('listings')}
           className={`pb-3 flex items-center gap-2 border-b-2 transition ${
             activeTab === 'listings'
-              ? 'border-forest-700 text-forest-900'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'border-[#b45309] text-[#b45309] font-bold'
+              : 'border-transparent text-stone-500 hover:text-stone-900'
           }`}
         >
           <PackageCheck className="w-4 h-4" />
@@ -114,8 +117,8 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           onClick={() => setActiveTab('audit')}
           className={`pb-3 flex items-center gap-2 border-b-2 transition ${
             activeTab === 'audit'
-              ? 'border-forest-700 text-forest-900'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'border-[#b45309] text-[#b45309] font-bold'
+              : 'border-transparent text-stone-500 hover:text-stone-900'
           }`}
         >
           <FileText className="w-4 h-4" />
@@ -127,27 +130,27 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       {activeTab === 'sellers' && (
         <div className="space-y-4">
           {sellers.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-500">
+            <div className="bg-white rounded-3xl border border-amber-200/80 p-8 text-center text-xs text-stone-500">
               {lang === 'en' ? 'No pending seller onboarding requests.' : 'പുതിയ അപേക്ഷകൾ ഒന്നും ബാക്കിയില്ല.'}
             </div>
           ) : (
             sellers.map((s) => (
               <div
                 key={s.id}
-                className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                className="bg-white rounded-3xl border border-amber-200/80 p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">{s.business_name}</h3>
-                  <div className="text-xs text-slate-600 mt-1">
+                  <h3 className="font-extrabold font-serif text-[#2c160b] text-base">{s.business_name}</h3>
+                  <div className="text-xs text-stone-600 mt-1">
                     Contact: {s.name} ({s.phone}) · {s.locality}, {s.district}
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">Applied: {s.registered_at}</div>
+                  <div className="text-[11px] text-stone-400 mt-0.5">Applied: {s.registered_at}</div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleApproveSeller(s.id)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-forest-700 hover:bg-forest-800 text-white text-xs font-semibold shadow-sm transition"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white text-xs font-bold shadow-sm transition"
                   >
                     <Check className="w-3.5 h-3.5" />
                     {lang === 'en' ? 'Approve Seller' : 'അംഗീകരിക്കുക'}
@@ -170,30 +173,30 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       {activeTab === 'listings' && (
         <div className="space-y-4">
           {listings.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-500">
+            <div className="bg-white rounded-3xl border border-amber-200/80 p-8 text-center text-xs text-stone-500">
               {lang === 'en' ? 'All submitted timber stock has been moderated.' : 'എല്ലാ തടികളും പരിശോധിച്ചു കഴിഞ്ഞു.'}
             </div>
           ) : (
             listings.map((l) => (
               <div
                 key={l.id}
-                className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                className="bg-white rounded-3xl border border-amber-200/80 p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-forest-700">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#b45309]">
                     {l.species} · {l.image_count} Photos Attached
                   </span>
-                  <h3 className="font-bold text-slate-900 text-base mt-0.5">{l.title}</h3>
-                  <div className="text-xs text-slate-600 mt-1">
+                  <h3 className="font-extrabold font-serif text-[#2c160b] text-base mt-0.5">{l.title}</h3>
+                  <div className="text-xs text-stone-600 mt-1">
                     Seller: {l.seller_name} · {l.quantity} {l.unit} · {formatINR(l.price_per_cft)} / CFT
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">Submitted: {l.submitted_at}</div>
+                  <div className="text-[11px] text-stone-400 mt-0.5">Submitted: {l.submitted_at}</div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleApproveListing(l.id)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-forest-700 hover:bg-forest-800 text-white text-xs font-semibold shadow-sm transition"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white text-xs font-bold shadow-sm transition"
                   >
                     <Check className="w-3.5 h-3.5" />
                     {lang === 'en' ? 'Approve & Publish' : 'അംഗീകരിച്ച് പ്രസിദ്ധീകരിക്കുക'}
@@ -214,14 +217,14 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
       {/* Audit Log */}
       {activeTab === 'audit' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-3 font-mono text-xs">
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-            <span className="text-slate-800 font-bold">[APPROVE_SELLER] Nilambur Wood Works (seller_profile)</span>
-            <span className="text-slate-400">Actor: Admin (Super) · 2026-10-25 15:10</span>
+        <div className="bg-white rounded-3xl border border-amber-200/80 p-6 shadow-sm space-y-3 font-mono text-xs">
+          <div className="p-3 bg-[#faf6ee] border border-amber-200/80 rounded-xl flex items-center justify-between">
+            <span className="text-[#2c160b] font-bold">[APPROVE_SELLER] Nilambur Wood Works (seller_profile)</span>
+            <span className="text-stone-400">Actor: Admin (Super) · 2026-10-25 15:10</span>
           </div>
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-            <span className="text-slate-800 font-bold">[APPROVE_LISTING] First-Grade Nilambur Teak Planks (timber_listing)</span>
-            <span className="text-slate-400">Actor: Admin (Super) · 2026-10-25 15:12</span>
+          <div className="p-3 bg-[#faf6ee] border border-amber-200/80 rounded-xl flex items-center justify-between">
+            <span className="text-[#2c160b] font-bold">[APPROVE_LISTING] First-Grade Nilambur Teak Planks (timber_listing)</span>
+            <span className="text-stone-400">Actor: Admin (Super) · 2026-10-25 15:12</span>
           </div>
         </div>
       )}

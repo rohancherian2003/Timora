@@ -55,16 +55,16 @@ export function TransportPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Header Banner */}
-      <div className="p-6 sm:p-8 bg-gradient-to-r from-stone-900 via-stone-800 to-forest-950 text-white rounded-3xl shadow-md border border-stone-800">
+      <div className="p-6 sm:p-8 bg-gradient-to-br from-[#faf6ee] via-[#f4ebe0] to-[#ecdcc8] text-[#2c160b] rounded-3xl shadow-md border border-[#ebd5bc]">
         <div className="max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-amber-400 text-xs font-semibold backdrop-blur-sm border border-amber-400/30">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 text-[#854d0e] text-xs font-semibold backdrop-blur-sm border border-amber-600/30">
             <Truck className="w-3.5 h-3.5" />
             <span>{lang === 'en' ? 'Kerala Timber Haulage Network' : 'കേരള തടി ട്രാൻസ്പോർട്ട് നെറ്റ്‌വർക്ക്'}</span>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
+          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight font-serif text-[#2c160b]">
             {lang === 'en' ? 'Timber Transit & Crane Carrier Lorries' : 'തടി കൊണ്ടുപോകുന്ന ലോറികൾ'}
           </h1>
-          <p className="text-xs sm:text-sm text-stone-300 leading-relaxed max-w-2xl">
+          <p className="text-xs sm:text-sm text-[#6b472e] leading-relaxed max-w-2xl font-medium">
             {lang === 'en'
               ? 'Find verified crane-equipped lorries, heavy flatbeds, and covered carriers for safe raw timber transit across all 14 Kerala districts.'
               : 'ഉരുണ്ട തടികൾ കയറ്റാൻ ഹൈഡ്രോളിക് ക്രെയിൻ ഉള്ള ഹെവി വാഹനങ്ങളും, പലകകൾ മഴ നനയാതെ എത്തിക്കാനുള്ള വാഹനങ്ങളും.'}
@@ -73,16 +73,16 @@ export function TransportPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-xs flex items-center justify-between gap-4 flex-wrap">
+      <div className="bg-white p-4 rounded-2xl border border-amber-200/80 shadow-xs flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-forest-700" />
+          <MapPin className="w-4 h-4 text-[#b45309]" />
           <span className="text-xs font-bold text-stone-700">
             {lang === 'en' ? 'Filter by District:' : 'ജില്ല തിരിച്ച്:'}
           </span>
           <select
             value={selectedDistrict}
             onChange={(e) => setSelectedDistrict(e.target.value)}
-            className="px-3 py-1.5 border border-stone-300 rounded-xl text-stone-800 font-semibold text-xs bg-stone-50 focus:ring-2 focus:ring-forest-600 focus:outline-none"
+            className="px-3 py-1.5 border border-amber-300/80 rounded-xl text-stone-800 font-semibold text-xs bg-[#faf6ee]/50 focus:ring-2 focus:ring-[#b45309] focus:outline-none"
           >
             <option value="all">{lang === 'en' ? 'All Districts' : 'എല്ലാ ജില്ലകളും'}</option>
             <option value="kottayam">Kottayam (കോട്ടയം)</option>
@@ -105,16 +105,16 @@ export function TransportPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         {filtered.map((t) => (
           <div
             key={t.id}
-            className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between space-y-4 group"
+            className="bg-white rounded-3xl border border-amber-200/80 p-6 shadow-xs hover:border-amber-400 hover:shadow-lg transition-all duration-300 flex flex-col justify-between space-y-4 group"
           >
             <div>
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-extrabold text-stone-900 text-lg group-hover:text-forest-800 transition">
+                  <h3 className="font-extrabold text-[#2c160b] text-lg group-hover:text-[#b45309] transition font-serif">
                     {t.name}
                   </h3>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="px-2.5 py-0.5 rounded-full bg-forest-50 text-forest-800 border border-forest-200 text-[10px] font-bold">
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-bold">
                       {t.capacity}
                     </span>
                     {t.verified && (
@@ -127,7 +127,7 @@ export function TransportPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 </div>
               </div>
 
-              <div className="mt-3 p-3 rounded-2xl bg-amber-50/70 border border-amber-200/60 text-xs font-bold text-amber-950">
+              <div className="mt-3 p-3 rounded-2xl bg-[#faf6ee] border border-amber-200/80 text-xs font-bold text-[#78350f]">
                 {t.vehicle_types}
               </div>
 
@@ -135,7 +135,7 @@ export function TransportPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 {t.notes}
               </p>
 
-              <div className="mt-4 pt-3 border-t border-stone-100">
+              <div className="mt-4 pt-3 border-t border-amber-100">
                 <span className="text-[10px] uppercase font-bold text-stone-400">
                   {lang === 'en' ? 'Active Transit Routes' : 'സർവീസ് റൂട്ടുകൾ'}
                 </span>
@@ -143,7 +143,7 @@ export function TransportPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   {t.service_areas.map((dist, i) => (
                     <span
                       key={i}
-                      className="px-2.5 py-1 rounded-lg bg-stone-100 text-stone-700 text-xs font-semibold"
+                      className="px-2.5 py-1 rounded-lg bg-[#fbf7f0] text-[#78350f] border border-amber-200/60 text-xs font-semibold"
                     >
                       {dist}
                     </span>
@@ -152,7 +152,7 @@ export function TransportPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-stone-100 flex items-center justify-between">
+            <div className="pt-4 border-t border-amber-100 flex items-center justify-between">
               <div>
                 <span className="block text-[10px] font-bold text-stone-400 uppercase">
                   {lang === 'en' ? 'Direct Contact' : 'നേരിട്ടുള്ള ഫോൺ'}
@@ -161,7 +161,7 @@ export function TransportPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               </div>
               <a
                 href={`tel:${t.phone}`}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-forest-800 hover:bg-forest-900 text-white text-xs font-bold shadow-sm transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white text-xs font-bold shadow-sm transition"
               >
                 <Phone className="w-3.5 h-3.5" />
                 <span>{lang === 'en' ? 'Call Carrier' : 'വിളിക്കുക'}</span>

@@ -65,11 +65,11 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
   };
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-stone-200 px-2 py-1.5 flex items-center justify-around shadow-lg pb-safe">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#faf6ee]/95 backdrop-blur-md border-t border-amber-200/80 px-2 py-1.5 flex items-center justify-around shadow-lg pb-safe">
       <Link
         to="/marketplace"
         className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition ${
-          isActive('/') ? 'text-forest-800 font-bold' : 'text-stone-500'
+          isActive('/') ? 'text-[#b45309] font-bold' : 'text-stone-500 hover:text-stone-800'
         }`}
       >
         <Store className="w-5 h-5" />
@@ -79,7 +79,7 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
       <Link
         to="/calculator"
         className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition ${
-          isActive('/calculator') ? 'text-forest-800 font-bold' : 'text-stone-500'
+          isActive('/calculator') ? 'text-[#b45309] font-bold' : 'text-stone-500 hover:text-stone-800'
         }`}
       >
         <Calculator className="w-5 h-5" />
@@ -89,7 +89,7 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
       <Link
         to="/carpenters"
         className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition ${
-          isActive('/carpenters') ? 'text-forest-800 font-bold' : 'text-stone-500'
+          isActive('/carpenters') ? 'text-[#b45309] font-bold' : 'text-stone-500 hover:text-stone-800'
         }`}
       >
         <Hammer className="w-5 h-5" />
@@ -101,7 +101,7 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
         <Link
           to="/dashboard/buyer"
           className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition ${
-            isActive('/dashboard/buyer') ? 'text-forest-800 font-bold' : 'text-stone-500'
+            isActive('/dashboard/buyer') ? 'text-[#b45309] font-bold' : 'text-stone-500 hover:text-stone-800'
           }`}
         >
           <ShoppingBag className="w-5 h-5" />
@@ -113,7 +113,7 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
         <Link
           to="/dashboard/seller"
           className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition ${
-            isActive('/dashboard/seller') ? 'text-amber-800 font-bold' : 'text-stone-500'
+            isActive('/dashboard/seller') ? 'text-[#b45309] font-bold' : 'text-stone-500 hover:text-stone-800'
           }`}
         >
           <LayoutDashboard className="w-5 h-5" />
@@ -125,7 +125,7 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
         <Link
           to="/admin"
           className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition ${
-            isActive('/admin') ? 'text-slate-900 font-bold' : 'text-stone-500'
+            isActive('/admin') ? 'text-[#b45309] font-bold' : 'text-stone-500 hover:text-stone-800'
           }`}
         >
           <Shield className="w-5 h-5" />
@@ -137,7 +137,7 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
         <Link
           to="/transport"
           className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition ${
-            isActive('/transport') ? 'text-forest-800 font-bold' : 'text-stone-500'
+            isActive('/transport') ? 'text-[#b45309] font-bold' : 'text-stone-500 hover:text-stone-800'
           }`}
         >
           <Truck className="w-5 h-5" />
@@ -149,9 +149,9 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
       {isAuthenticated ? (
         <Link
           to={user?.role === 'seller' ? '/dashboard/seller' : user?.role === 'admin' ? '/admin' : '/dashboard/buyer'}
-          className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-forest-800"
+          className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[#b45309]"
         >
-          <div className="w-5 h-5 rounded-full bg-forest-100 flex items-center justify-center text-[10px] font-bold text-forest-900 ring-1 ring-forest-600">
+          <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center text-[10px] font-bold text-[#78350f] ring-1 ring-amber-500">
             {user?.name?.[0] || 'U'}
           </div>
           <span className="text-[10px] mt-0.5 font-medium">{lang === 'en' ? 'Account' : 'പ്രൊഫൈൽ'}</span>
@@ -159,7 +159,7 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
       ) : (
         <Link
           to="/login"
-          className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-forest-800 font-semibold"
+          className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[#b45309] font-semibold"
         >
           <User className="w-5 h-5" />
           <span className="text-[10px] mt-0.5">{lang === 'en' ? 'Sign In' : 'ലോഗിൻ'}</span>
@@ -225,7 +225,7 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 py-1.5 px-3 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 shadow-sm transition"
       >
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-forest-700 to-forest-900 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#b45309] to-[#78350f] text-white flex items-center justify-center text-xs font-bold shadow-xs">
           {user.name[0] || 'U'}
         </div>
         <div className="hidden lg:flex flex-col items-start text-left">
@@ -336,8 +336,8 @@ function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage
             to="/marketplace"
             className={`transition pb-1 border-b-2 ${
               isCurrent('/marketplace')
-                ? 'text-forest-800 border-forest-700 font-bold'
-                : 'border-transparent hover:text-forest-700'
+                ? 'text-[#b45309] border-[#b45309] font-bold'
+                : 'border-transparent hover:text-[#b45309]'
             }`}
           >
             {lang === 'en' ? 'Marketplace' : 'മാർക്കറ്റ്'}
@@ -347,11 +347,11 @@ function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage
             to="/calculator"
             className={`transition pb-1 border-b-2 flex items-center gap-1.5 ${
               isCurrent('/calculator')
-                ? 'text-forest-800 border-forest-700 font-bold'
-                : 'border-transparent hover:text-forest-700'
+                ? 'text-[#b45309] border-[#b45309] font-bold'
+                : 'border-transparent hover:text-[#b45309]'
             }`}
           >
-            <Calculator className="w-3.5 h-3.5 text-forest-700" />
+            <Calculator className="w-3.5 h-3.5 text-amber-700" />
             <span>{lang === 'en' ? 'CFT Calculator' : 'തടി കാൽക്കുലേറ്റർ'}</span>
           </Link>
 
@@ -359,8 +359,8 @@ function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage
             to="/carpenters"
             className={`transition pb-1 border-b-2 flex items-center gap-1.5 ${
               isCurrent('/carpenters')
-                ? 'text-forest-800 border-forest-700 font-bold'
-                : 'border-transparent hover:text-forest-700'
+                ? 'text-[#b45309] border-[#b45309] font-bold'
+                : 'border-transparent hover:text-[#b45309]'
             }`}
           >
             <Hammer className="w-3.5 h-3.5 text-stone-500" />
@@ -371,8 +371,8 @@ function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage
             to="/transport"
             className={`transition pb-1 border-b-2 flex items-center gap-1.5 ${
               isCurrent('/transport')
-                ? 'text-forest-800 border-forest-700 font-bold'
-                : 'border-transparent hover:text-forest-700'
+                ? 'text-[#b45309] border-[#b45309] font-bold'
+                : 'border-transparent hover:text-[#b45309]'
             }`}
           >
             <Truck className="w-3.5 h-3.5 text-stone-500" />
@@ -385,11 +385,11 @@ function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage
               to="/dashboard/buyer"
               className={`transition pb-1 border-b-2 flex items-center gap-1.5 ${
                 isCurrent('/dashboard/buyer')
-                  ? 'text-forest-800 border-forest-700 font-bold'
-                  : 'border-transparent hover:text-forest-700 text-stone-700'
+                  ? 'text-[#b45309] border-[#b45309] font-bold'
+                  : 'border-transparent hover:text-[#b45309] text-stone-700'
               }`}
             >
-              <ShoppingBag className="w-3.5 h-3.5 text-forest-700" />
+              <ShoppingBag className="w-3.5 h-3.5 text-emerald-700" />
               <span>{lang === 'en' ? 'My Orders' : 'എന്റെ ഓർഡറുകൾ'}</span>
             </Link>
           )}
@@ -398,7 +398,7 @@ function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage
             <Link
               to="/dashboard/seller"
               className={`transition pb-1 border-b-2 flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-50 text-amber-900 border ${
-                isCurrent('/dashboard/seller') ? 'border-amber-500 font-bold' : 'border-amber-200'
+                isCurrent('/dashboard/seller') ? 'border-[#b45309] font-bold' : 'border-amber-200'
               }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-amber-700" />
@@ -413,7 +413,7 @@ function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage
                 isCurrent('/admin') ? 'border-stone-500 font-bold' : 'border-stone-300'
               }`}
             >
-              <Shield className="w-3.5 h-3.5 text-forest-700" />
+              <Shield className="w-3.5 h-3.5 text-amber-800" />
               <span>{lang === 'en' ? 'Admin Console' : 'അഡ്മിൻ കൺസോൾ'}</span>
             </Link>
           )}
@@ -427,7 +427,7 @@ function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage
             className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-xl border border-stone-200 hover:bg-stone-100 text-stone-700 transition"
             title="Toggle Language / ഭാഷ മാറ്റുക"
           >
-            <Globe className="w-3.5 h-3.5 text-forest-700" />
+            <Globe className="w-3.5 h-3.5 text-amber-700" />
             <span>{lang === 'en' ? 'മലയാളം' : 'English'}</span>
           </button>
 
@@ -438,13 +438,13 @@ function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage
             <div className="flex items-center gap-2">
               <Link
                 to="/login"
-                className="px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-xl text-stone-700 hover:text-stone-900 hover:bg-stone-100 transition"
+                className="px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-xl text-stone-700 hover:text-stone-900 hover:bg-amber-50/60 transition"
               >
                 {lang === 'en' ? 'Sign In' : 'ലോഗിൻ'}
               </Link>
               <Link
                 to="/register"
-                className="px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-xl bg-gradient-to-r from-forest-800 to-forest-700 hover:from-forest-900 hover:to-forest-800 text-white shadow-sm hover:shadow transition"
+                className="px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white shadow-sm hover:shadow transition"
               >
                 {lang === 'en' ? 'Register' : 'രജിസ്റ്റർ'}
               </Link>

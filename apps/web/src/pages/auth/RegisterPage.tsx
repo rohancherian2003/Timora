@@ -90,16 +90,16 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 bg-gradient-to-b from-stone-100 via-slate-50 to-emerald-50/30">
-      <div className="w-full max-w-lg bg-white rounded-3xl border border-stone-200/80 p-6 sm:p-8 shadow-xl shadow-stone-900/5 space-y-6">
+    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 bg-gradient-to-br from-[#faf6ee] via-[#f4ebe0] to-[#ecdcc8]">
+      <div className="w-full max-w-lg bg-white rounded-3xl border border-amber-200/90 p-6 sm:p-8 shadow-xl shadow-amber-950/5 space-y-6">
         
         {/* Header */}
         <div className="text-center space-y-2">
           <BrandLogo size="md" lang={lang} className="justify-center" />
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 pt-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold font-serif text-[#2c160b] pt-2">
             {lang === 'en' ? 'Create Your Timora Account' : 'ടിമോറയിൽ പുതിയ അക്കൗണ്ട് തുറക്കൂ'}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto">
+          <p className="text-xs sm:text-sm text-[#6b472e] max-w-sm mx-auto font-medium">
             {lang === 'en'
               ? 'Connect directly with certified timber yards, buyers, and sawmills across Kerala.'
               : 'കേരളത്തിലെ വിശ്വസനീയമായ തടി വ്യാപാരികളുമായും ഉപഭോക്താക്കളുമായും നേരിട്ട് ബന്ധപ്പെടൂ.'}
@@ -108,15 +108,15 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
         {/* Stepper Progress */}
         <div className="flex items-center justify-between max-w-xs mx-auto text-xs font-bold pt-1">
-          <span className={`px-2.5 py-1 rounded-full ${step >= 1 ? 'bg-forest-800 text-white' : 'bg-stone-200 text-stone-500'}`}>
+          <span className={`px-2.5 py-1 rounded-full ${step >= 1 ? 'bg-[#b45309] text-white' : 'bg-stone-200 text-stone-500'}`}>
             1. {lang === 'en' ? 'Phone' : 'നമ്പർ'}
           </span>
-          <span className="text-stone-300">──</span>
-          <span className={`px-2.5 py-1 rounded-full ${step >= 2 ? 'bg-forest-800 text-white' : 'bg-stone-200 text-stone-500'}`}>
+          <span className="text-amber-300">──</span>
+          <span className={`px-2.5 py-1 rounded-full ${step >= 2 ? 'bg-[#b45309] text-white' : 'bg-stone-200 text-stone-500'}`}>
             2. OTP
           </span>
-          <span className="text-stone-300">──</span>
-          <span className={`px-2.5 py-1 rounded-full ${step >= 3 ? 'bg-forest-800 text-white' : 'bg-stone-200 text-stone-500'}`}>
+          <span className="text-amber-300">──</span>
+          <span className={`px-2.5 py-1 rounded-full ${step >= 3 ? 'bg-[#b45309] text-white' : 'bg-stone-200 text-stone-500'}`}>
             3. {lang === 'en' ? 'Role & PIN' : 'പിൻ'}
           </span>
         </div>
@@ -144,7 +144,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             {step === 1 && (
               <form onSubmit={handleStep1} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-stone-700 mb-1.5">
                     {lang === 'en' ? 'Full Legal Name' : 'പൂർണ്ണ നാമം'}
                   </label>
                   <input
@@ -152,24 +152,24 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     placeholder={lang === 'en' ? 'e.g. Suresh Kumar' : 'ഉദാ: സുരേഷ് കുമാർ'}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-forest-600 focus:outline-none"
+                    className="w-full px-4 py-2.5 rounded-xl border border-amber-200 text-sm focus:ring-2 focus:ring-[#b45309] focus:outline-none"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-stone-700 mb-1.5">
                     {lang === 'en' ? '10-Digit Mobile Number' : '10-അക്ക മൊബൈൽ നമ്പർ'}
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-2.5 text-sm font-bold text-slate-500">+91</span>
+                    <span className="absolute left-3.5 top-2.5 text-sm font-bold text-stone-500">+91</span>
                     <input
                       type="tel"
                       placeholder="9847123456"
                       maxLength={10}
                       value={phone}
                       onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                      className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-forest-600 focus:outline-none"
+                      className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-amber-200 text-sm focus:ring-2 focus:ring-[#b45309] focus:outline-none"
                       required
                     />
                   </div>
@@ -178,7 +178,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 rounded-xl bg-forest-800 hover:bg-forest-900 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-bold text-sm shadow-md shadow-amber-950/10 transition flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -203,7 +203,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-stone-700 mb-1.5">
                     {lang === 'en' ? 'Enter 6-Digit Verification Code' : '6-അക്ക OTP നൽകുക'}
                   </label>
                   <input
@@ -212,7 +212,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     placeholder="123456"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm tracking-widest text-center text-lg font-mono font-bold focus:ring-2 focus:ring-forest-600 focus:outline-none"
+                    className="w-full px-4 py-2.5 rounded-xl border border-amber-200 text-sm tracking-widest text-center text-lg font-mono font-bold focus:ring-2 focus:ring-[#b45309] focus:outline-none bg-stone-50/50"
                     required
                   />
                 </div>
@@ -220,7 +220,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 rounded-xl bg-forest-800 hover:bg-forest-900 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-bold text-sm shadow-md shadow-amber-950/10 transition flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -238,7 +238,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             {step === 3 && (
               <form onSubmit={handleStep3} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-2">
+                  <label className="block text-xs font-semibold text-stone-700 mb-2">
                     {lang === 'en' ? 'Choose Your Marketplace Role' : 'അക്കൗണ്ട് തരം തിരഞ്ഞെടുക്കുക'}
                   </label>
                   <div className="grid grid-cols-3 gap-2 text-xs font-bold">
@@ -247,11 +247,11 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       onClick={() => setRole('buyer')}
                       className={`p-3 rounded-2xl border text-center transition flex flex-col items-center justify-center gap-1.5 ${
                         role === 'buyer'
-                          ? 'border-forest-700 bg-forest-50 text-forest-900 ring-2 ring-forest-700 shadow-sm'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'border-[#b45309] bg-amber-50 text-amber-950 ring-2 ring-[#b45309] shadow-xs'
+                          : 'border-amber-200/70 text-stone-600 hover:bg-[#faf6ee]'
                       }`}
                     >
-                      <ShoppingBag className="w-4 h-4 text-forest-700" />
+                      <ShoppingBag className="w-4 h-4 text-emerald-700" />
                       <span>{lang === 'en' ? 'Timber Buyer' : 'ഉപഭോക്താവ്'}</span>
                     </button>
 
@@ -260,11 +260,11 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       onClick={() => setRole('seller')}
                       className={`p-3 rounded-2xl border text-center transition flex flex-col items-center justify-center gap-1.5 ${
                         role === 'seller'
-                          ? 'border-amber-600 bg-amber-50 text-amber-900 ring-2 ring-amber-600 shadow-sm'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'border-[#b45309] bg-amber-100/70 text-amber-950 ring-2 ring-[#b45309] shadow-xs'
+                          : 'border-amber-200/70 text-stone-600 hover:bg-[#faf6ee]'
                       }`}
                     >
-                      <Store className="w-4 h-4 text-amber-600" />
+                      <Store className="w-4 h-4 text-amber-700" />
                       <span>{lang === 'en' ? 'Timber Depot' : 'തടിക്കച്ചവടം'}</span>
                     </button>
 
@@ -273,8 +273,8 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       onClick={() => setRole('carpenter')}
                       className={`p-3 rounded-2xl border text-center transition flex flex-col items-center justify-center gap-1.5 ${
                         role === 'carpenter'
-                          ? 'border-stone-700 bg-stone-100 text-stone-900 ring-2 ring-stone-700 shadow-sm'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'border-stone-700 bg-stone-100 text-stone-900 ring-2 ring-stone-700 shadow-xs'
+                          : 'border-amber-200/70 text-stone-600 hover:bg-[#faf6ee]'
                       }`}
                     >
                       <Hammer className="w-4 h-4 text-stone-700" />
@@ -285,7 +285,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
                 {role === 'seller' && (
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
                       {lang === 'en' ? 'Depot or Sawmill Name' : 'തടി ഡിപ്പോ / വ്യാപാര സ്ഥാപനത്തിന്റെ പേര്'}
                     </label>
                     <input
@@ -293,7 +293,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       placeholder={lang === 'en' ? 'e.g. Kottayam Timber Works' : 'ഉദാ: കോട്ടയം ടിംബർ വർക്സ്'}
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-forest-600 focus:outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl border border-amber-200 text-sm focus:ring-2 focus:ring-[#b45309] focus:outline-none bg-stone-50/50"
                       required
                     />
                   </div>
@@ -301,7 +301,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
                       {lang === 'en' ? '6-Digit PIN' : '6-അക്ക പിൻ'}
                     </label>
                     <input
@@ -310,13 +310,13 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       placeholder="••••••"
                       value={pin}
                       onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm tracking-widest text-center text-lg font-mono font-bold focus:ring-2 focus:ring-forest-600 focus:outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl border border-amber-200 text-sm tracking-widest text-center text-lg font-mono font-bold focus:ring-2 focus:ring-[#b45309] focus:outline-none bg-stone-50/50"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
                       {lang === 'en' ? 'Confirm PIN' : 'പിൻ സ്ഥിരീകരിക്കുക'}
                     </label>
                     <input
@@ -325,7 +325,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       placeholder="••••••"
                       value={pinConfirm}
                       onChange={(e) => setPinConfirm(e.target.value.replace(/\D/g, ''))}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm tracking-widest text-center text-lg font-mono font-bold focus:ring-2 focus:ring-forest-600 focus:outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl border border-amber-200 text-sm tracking-widest text-center text-lg font-mono font-bold focus:ring-2 focus:ring-[#b45309] focus:outline-none bg-stone-50/50"
                       required
                     />
                   </div>
@@ -334,7 +334,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 rounded-xl bg-forest-800 hover:bg-forest-900 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-bold text-sm shadow-md shadow-amber-950/10 transition flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -351,9 +351,9 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         )}
 
         {/* Footer */}
-        <div className="text-center pt-3 border-t border-slate-100 text-xs text-slate-500">
+        <div className="text-center pt-3 border-t border-amber-100 text-xs text-stone-500">
           {lang === 'en' ? 'Already have an account? ' : 'ഇതിനകം അക്കൗണ്ട് ഉണ്ടോ? '}{' '}
-          <Link to="/login" className="font-bold text-forest-700 hover:text-forest-900 hover:underline">
+          <Link to="/login" className="font-bold text-[#b45309] hover:underline">
             {lang === 'en' ? 'Sign in here' : 'ഇവിടെ ലോഗിൻ ചെയ്യുക'}
           </Link>
         </div>
