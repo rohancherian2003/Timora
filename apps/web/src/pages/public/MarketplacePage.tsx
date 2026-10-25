@@ -501,7 +501,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
             <button
               onClick={() => setQuickCalcOpen(false)}
-              className="w-full py-2.5 rounded-xl bg-forest-800 text-white font-bold text-xs hover:bg-forest-900 transition"
+              className="w-full py-2.5 rounded-xl bg-[#b45309] text-white font-bold text-xs hover:bg-[#92400e] transition"
             >
               {lang === 'en' ? 'Continue Browsing Stock' : 'തിരച്ചിൽ തുടരുക'}
             </button>
@@ -853,7 +853,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 setSearchQuery('');
                 setValidationAlert(null);
               }}
-              className="px-4 py-2 bg-forest-800 text-white rounded-xl text-xs font-bold hover:bg-forest-900 transition"
+              className="px-4 py-2 bg-[#b45309] text-white rounded-xl text-xs font-bold hover:bg-[#92400e] transition"
             >
               {lang === 'en' ? 'Reset All Filters' : 'ഫിൽട്ടറുകൾ മാറ്റുക'}
             </button>
