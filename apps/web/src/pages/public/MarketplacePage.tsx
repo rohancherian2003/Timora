@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, Filter, Trees, MapPin, Tag, ShieldCheck } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 
@@ -168,9 +169,10 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       {/* Listings Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filtered.map((item) => (
-          <div
+          <Link
+            to={`/listings/${item.id}`}
             key={item.id}
-            className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col"
+            className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col group cursor-pointer"
           >
             {/* Image */}
             <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
@@ -188,7 +190,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             {/* Content */}
             <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
               <div>
-                <h3 className="font-bold text-slate-900 text-sm line-clamp-1">{item.title}</h3>
+                <h3 className="font-bold text-slate-900 text-sm line-clamp-1 group-hover:text-forest-700 transition">{item.title}</h3>
                 <p className="text-xs text-slate-500 mt-0.5">{item.type} · {item.dimensions}</p>
 
                 <div className="flex items-center gap-1 text-xs text-slate-600 mt-2">
@@ -205,12 +207,12 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   </div>
                 </div>
 
-                <button className="px-3 py-1.5 rounded-lg bg-forest-700 hover:bg-forest-800 text-white text-xs font-semibold shadow-sm transition">
-                  {lang === 'en' ? 'Enquire' : 'അന്വേഷിക്കുക'}
-                </button>
+                <span className="px-3 py-1.5 rounded-lg bg-forest-700 group-hover:bg-forest-800 text-white text-xs font-semibold shadow-sm transition">
+                  {lang === 'en' ? 'View Details' : 'വിശദാംശങ്ങൾ'}
+                </span>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Trees, Calculator, Hammer, Globe, LayoutDashboard, Shield, ShoppingBag, Store } from 'lucide-react';
+import { Trees, Calculator, Hammer, Globe, LayoutDashboard, Shield, ShoppingBag, Store, Truck } from 'lucide-react';
 import { MarketplacePage } from './pages/public/MarketplacePage';
+import { ListingDetailPage } from './pages/public/ListingDetailPage';
 import { CalculatorPage } from './pages/public/CalculatorPage';
+import { TransportPage } from './pages/public/TransportPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { CarpenterDirectoryPage } from './pages/carpenter/CarpenterDirectoryPage';
@@ -111,6 +113,10 @@ export function App() {
                 <Hammer className="w-3.5 h-3.5" />
                 {lang === 'en' ? 'Carpenters' : 'ആശാരിമാർ'}
               </Link>
+              <Link to="/transport" className="hover:text-forest-700 transition flex items-center gap-1.5">
+                <Truck className="w-3.5 h-3.5" />
+                {lang === 'en' ? 'Transport' : 'ലോറികൾ'}
+              </Link>
               <Link to="/dashboard/buyer" className="hover:text-forest-700 transition flex items-center gap-1.5 text-slate-700">
                 <ShoppingBag className="w-3.5 h-3.5" />
                 {lang === 'en' ? 'Orders' : 'ഓർഡറുകൾ'}
@@ -149,7 +155,9 @@ export function App() {
           <Routes>
             <Route path="/" element={<MarketplacePage lang={lang} />} />
             <Route path="/marketplace" element={<MarketplacePage lang={lang} />} />
+            <Route path="/listings/:id" element={<ListingDetailPage lang={lang} />} />
             <Route path="/calculator" element={<CalculatorPage lang={lang} />} />
+            <Route path="/transport" element={<TransportPage lang={lang} />} />
             <Route path="/carpenters" element={<CarpenterDirectoryPage lang={lang} />} />
             <Route path="/dashboard/seller" element={<SellerDashboard lang={lang} />} />
             <Route path="/dashboard/buyer" element={<BuyerDashboard lang={lang} />} />

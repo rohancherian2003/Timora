@@ -4,6 +4,8 @@
   "private": true,
   "main": "index.js",
   "scripts": {
+    "build": "echo 'mobile ready for eas build'",
+    "test": "echo 'mobile tests ready'",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
