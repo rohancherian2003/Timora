@@ -7,6 +7,9 @@ import { apiRateLimiter } from './middleware/rateLimiter.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { listingsRouter } from './modules/listings/listings.routes.js';
+import { adminRouter } from './modules/admin/admin.routes.js';
+import { enquiriesRouter } from './modules/enquiries/enquiries.routes.js';
+import { ordersRouter } from './modules/orders/orders.routes.js';
 import { query } from './config/database.js';
 
 export function createApp(): express.Application {
@@ -57,6 +60,15 @@ export function createApp(): express.Application {
 
   // Timber Listings routes
   app.use('/api/v1/listings', listingsRouter);
+
+  // Enquiries & Negotiation routes
+  app.use('/api/v1/enquiries', enquiriesRouter);
+
+  // Orders routes
+  app.use('/api/v1/orders', ordersRouter);
+
+  // Super Admin routes
+  app.use('/api/v1/admin', adminRouter);
 
   // Reference Catalog Endpoints
   app.get('/api/v1/species', async (_req, res, next) => {

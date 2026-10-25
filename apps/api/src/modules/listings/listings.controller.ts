@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { listingsService } from './listings.service.js';
+import { uploadListingImage, deleteListingImage } from '../../utils/storage.js';
 import type { ApiSuccessResponse } from '@timora/shared';
 
 export class ListingsController {
@@ -54,6 +55,87 @@ export class ListingsController {
         success: true,
         data: result,
         message: 'Stock updated successfully.',
+      };
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async submitForReview(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const sellerId = req.user!.id;
+      const listingId = req.params.id as string;
+      const result = await listingsService.submitForReview(sellerId, listingId);
+      const response: ApiSuccessResponse = {
+        success: true,
+        data: result,
+        message: 'Listing submitted for Admin review.',
+      };
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async uploadImage(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const sellerId = req.user!.id;
+      const listingId = req.params.id as string;
+      const file = req.file;
+
+      if (!file) {
+        throw new Error('Image file is required.');
+      }
+
+      const uploaded = await uploadListingImage(
+        file.buffer,
+        file.originalname,
+        file.mimetype,
+        listingId
+      );
+
+      const result = await listingsService.addListingImage(sellerId, listingId, uploaded);
+      const response: ApiSuccessResponse = {
+        success: true,
+        data: result,
+        message: 'Photograph uploaded successfully.',
+      };
+      res.status(201).json(response);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async deleteImage(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const sellerId = req.user!.id;
+      const listingId = req.params.id as string;
+      const imageId = req.params.imageId as string;
+
+      const deleted = await listingsService.removeListingImage(sellerId, listingId, imageId);
+      if (deleted?.storage_key) {
+        await deleteListingImage(deleted.storage_key);
+      }
+
+      const response: ApiSuccessResponse = {
+        success: true,
+        data: { id: imageId },
+        message: 'Photograph removed successfully.',
+      };
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getMyListings(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const sellerId = req.user!.id;
+      const result = await listingsService.getSellerListings(sellerId);
+      const response: ApiSuccessResponse = {
+        success: true,
+        data: result,
       };
       res.status(200).json(response);
     } catch (err) {

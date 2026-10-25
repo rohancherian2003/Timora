@@ -225,6 +225,136 @@ export class ListingsService {
 
     return res.rows[0];
   }
+
+  /**
+   * Submit draft or rejected listing for Admin approval
+   */
+  async submitForReview(sellerId: string, listingId: string) {
+    const listingRes = await query(
+      `SELECT l.id, l.seller_id, l.status,
+              (SELECT COUNT(*) FROM listing_images WHERE listing_id = l.id) as image_count
+       FROM timber_listings l
+       WHERE l.id = $1`,
+      [listingId]
+    );
+
+    const listing = listingRes.rows[0];
+    if (!listing) {
+      throw new AppError(404, 'NOT_FOUND', 'Listing not found.');
+    }
+
+    if (listing.seller_id !== sellerId) {
+      throw new AppError(403, 'FORBIDDEN', 'You do not own this listing.');
+    }
+
+    if (!['draft', 'rejected'].includes(listing.status)) {
+      throw new AppError(400, 'INVALID_STATE', `Listing in '${listing.status}' state cannot be submitted for review.`);
+    }
+
+    const imageCount = parseInt(listing.image_count, 10);
+    if (imageCount < 1) {
+      throw new AppError(400, 'IMAGE_REQUIRED', 'At least one actual photograph of the timber stock is required for submission.');
+    }
+
+    const updated = await query(
+      `UPDATE timber_listings
+       SET status = 'pending_review', rejection_reason = NULL, updated_at = NOW()
+       WHERE id = $1
+       RETURNING id, title, status, updated_at`,
+      [listingId]
+    );
+
+    return updated.rows[0];
+  }
+
+  /**
+   * Add image to listing
+   */
+  async addListingImage(
+    sellerId: string,
+    listingId: string,
+    image: { storageKey: string; publicUrl: string }
+  ) {
+    const listing = await query(
+      `SELECT seller_id FROM timber_listings WHERE id = $1`,
+      [listingId]
+    );
+
+    if (listing.rows.length === 0) {
+      throw new AppError(404, 'NOT_FOUND', 'Listing not found.');
+    }
+
+    if (listing.rows[0]?.seller_id !== sellerId) {
+      throw new AppError(403, 'FORBIDDEN', 'You do not own this listing.');
+    }
+
+    // Check maximum images (8)
+    const countRes = await query<{ count: string }>(
+      `SELECT COUNT(*) FROM listing_images WHERE listing_id = $1`,
+      [listingId]
+    );
+    if (parseInt(countRes.rows[0]?.count || '0', 10) >= 8) {
+      throw new AppError(400, 'MAX_IMAGES', 'Maximum 8 photographs allowed per timber listing.');
+    }
+
+    const isPrimary = parseInt(countRes.rows[0]?.count || '0', 10) === 0;
+
+    const res = await query(
+      `INSERT INTO listing_images (listing_id, storage_key, url, is_primary)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [listingId, image.storageKey, image.publicUrl, isPrimary]
+    );
+
+    return res.rows[0];
+  }
+
+  /**
+   * Remove image from listing
+   */
+  async removeListingImage(sellerId: string, listingId: string, imageId: string) {
+    const res = await query(
+      `DELETE FROM listing_images
+       WHERE id = $1 AND listing_id = $2
+         AND listing_id IN (SELECT id FROM timber_listings WHERE seller_id = $3)
+       RETURNING storage_key`,
+      [imageId, listingId, sellerId]
+    );
+
+    if (res.rows.length === 0) {
+      throw new AppError(404, 'NOT_FOUND', 'Image not found or you are not authorized to delete it.');
+    }
+
+    return res.rows[0];
+  }
+
+  /**
+   * Retrieve all listings belonging to a seller
+   */
+  async getSellerListings(sellerId: string) {
+    const res = await query(
+      `SELECT l.*,
+              s.name_en as species_name_en, s.name_ml as species_name_ml,
+              t.name_en as type_name_en, t.name_ml as type_name_ml,
+              d.name_en as district_name_en, d.name_ml as district_name_ml,
+              COALESCE(
+                json_agg(
+                  json_build_object('id', img.id, 'url', img.url, 'is_primary', img.is_primary)
+                ) FILTER (WHERE img.id IS NOT NULL), '[]'
+              ) as images
+       FROM timber_listings l
+       JOIN timber_species s ON s.id = l.species_id
+       JOIN timber_types t ON t.id = l.timber_type_id
+       JOIN kerala_districts d ON d.id = l.district_id
+       LEFT JOIN listing_images img ON img.listing_id = l.id
+       WHERE l.seller_id = $1
+       GROUP BY l.id, s.id, t.id, d.id
+       ORDER BY l.created_at DESC`,
+      [sellerId]
+    );
+
+    return res.rows;
+  }
 }
 
 export const listingsService = new ListingsService();
