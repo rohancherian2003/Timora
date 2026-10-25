@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { Trees, Calculator, Hammer, Globe, LayoutDashboard } from 'lucide-react';
+import { Trees, Calculator, Hammer, Globe, LayoutDashboard, Shield, ShoppingBag } from 'lucide-react';
 import { MarketplacePage } from './pages/public/MarketplacePage';
 import { CalculatorPage } from './pages/public/CalculatorPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { CarpenterDirectoryPage } from './pages/carpenter/CarpenterDirectoryPage';
 import { SellerDashboard } from './pages/seller/SellerDashboard';
+import { BuyerDashboard } from './pages/buyer/BuyerDashboard';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
 
 export function App() {
   const [lang, setLang] = useState<'en' | 'ml'>('en');
@@ -33,7 +35,7 @@ export function App() {
               </div>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+            <nav className="hidden md:flex items-center gap-5 text-sm font-medium text-slate-600">
               <Link to="/marketplace" className="hover:text-forest-700 transition">
                 {lang === 'en' ? 'Marketplace' : 'മാർക്കറ്റ്'}
               </Link>
@@ -44,9 +46,17 @@ export function App() {
                 <Hammer className="w-3.5 h-3.5" />
                 {lang === 'en' ? 'Carpenters' : 'ആശാരിമാർ'}
               </Link>
+              <Link to="/dashboard/buyer" className="hover:text-forest-700 transition flex items-center gap-1.5 text-slate-700">
+                <ShoppingBag className="w-3.5 h-3.5" />
+                {lang === 'en' ? 'Orders' : 'ഓർഡറുകൾ'}
+              </Link>
               <Link to="/dashboard/seller" className="hover:text-forest-700 transition flex items-center gap-1.5 text-forest-800 font-semibold">
                 <LayoutDashboard className="w-3.5 h-3.5" />
                 {lang === 'en' ? 'Seller Hub' : 'കച്ചവട ഹബ്'}
+              </Link>
+              <Link to="/admin" className="hover:text-slate-900 transition flex items-center gap-1 text-slate-400 font-mono text-xs">
+                <Shield className="w-3 h-3 text-forest-700" />
+                Admin
               </Link>
             </nav>
 
@@ -76,6 +86,8 @@ export function App() {
             <Route path="/calculator" element={<CalculatorPage lang={lang} />} />
             <Route path="/carpenters" element={<CarpenterDirectoryPage lang={lang} />} />
             <Route path="/dashboard/seller" element={<SellerDashboard lang={lang} />} />
+            <Route path="/dashboard/buyer" element={<BuyerDashboard lang={lang} />} />
+            <Route path="/admin" element={<AdminDashboard lang={lang} />} />
             <Route path="/login" element={<LoginPage lang={lang} />} />
             <Route path="/register" element={<RegisterPage lang={lang} />} />
           </Routes>
