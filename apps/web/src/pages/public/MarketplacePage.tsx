@@ -745,6 +745,35 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             </button>
           </div>
 
+          {/* BRAND MOTTO PLAQUE — TIMBER · PEOPLE · POSSIBILITIES */}
+          <div className="max-w-2xl pt-1">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#faf6ee] via-white to-[#faf6ee] border border-amber-300/80 shadow-xs px-5 py-2.5 flex items-center justify-between gap-3">
+              <div className="hidden sm:flex items-center gap-1">
+                <span className="w-6 h-px bg-amber-400/80" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#b45309]" />
+              </div>
+
+              <div
+                className="mx-auto text-center font-serif font-black tracking-[0.24em] sm:tracking-[0.32em] text-[#2c160b] text-xs sm:text-sm uppercase select-none"
+                style={{
+                  fontFamily: 'Georgia, Cambria, "Times New Roman", serif',
+                  textShadow: '0 1px 1px rgba(255, 255, 255, 0.9)',
+                }}
+              >
+                <span>TIMBER</span>
+                <span className="text-[#b45309] font-sans mx-2.5 sm:mx-3.5 font-extrabold text-sm sm:text-base">·</span>
+                <span>PEOPLE</span>
+                <span className="text-[#b45309] font-sans mx-2.5 sm:mx-3.5 font-extrabold text-sm sm:text-base">·</span>
+                <span>POSSIBILITIES</span>
+              </div>
+
+              <div className="hidden sm:flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#b45309]" />
+                <span className="w-6 h-px bg-amber-400/80" />
+              </div>
+            </div>
+          </div>
+
           {/* Metrics Counters Bar */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-amber-900/10 max-w-4xl text-xs">
             <div className="flex items-center gap-2.5">
