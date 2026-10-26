@@ -15,12 +15,10 @@ import {
   Sparkles,
   Layers,
   ArrowRight,
-  Factory,
-  LifeBuoy
+  Factory
 } from 'lucide-react';
 import { AuthProvider, useAuth, UserRole } from './context/AuthContext';
 import { BrandLogo } from './components/BrandLogo';
-import { RaiseTicketModal } from './components/RaiseTicketModal';
 import { MarketplacePage } from './pages/public/MarketplacePage';
 import { ListingDetailPage } from './pages/public/ListingDetailPage';
 import { CalculatorPage } from './pages/public/CalculatorPage';
@@ -325,15 +323,7 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
 }
 
 // Main Navigation Header
-function AppHeader({
-  lang,
-  toggleLanguage,
-  onRaiseTicket,
-}: {
-  lang: 'en' | 'ml';
-  toggleLanguage: () => void;
-  onRaiseTicket: () => void;
-}) {
+function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage: () => void }) {
   const { user, isAuthenticated } = useAuth();
   const location = useLocation();
 
@@ -454,17 +444,7 @@ function AppHeader({
         </nav>
 
         {/* Right Action Cluster */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
-          {/* Raise a Ticket Button */}
-          <button
-            onClick={onRaiseTicket}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-amber-50 hover:bg-amber-100 text-[#78350f] border border-amber-300 shadow-xs transition"
-            title="Raise a Support Ticket / പരാതി നൽകുക"
-          >
-            <LifeBuoy className="w-3.5 h-3.5 text-[#b45309]" />
-            <span className="hidden sm:inline">{lang === 'en' ? 'Raise Ticket' : 'പരാതി'}</span>
-          </button>
-
+        <div className="flex items-center gap-2.5 sm:gap-3">
           {/* Language Switcher */}
           <button
             onClick={toggleLanguage}
@@ -502,7 +482,6 @@ function AppHeader({
 
 export function App() {
   const [lang, setLang] = useState<'en' | 'ml'>('en');
-  const [globalTicketModalOpen, setGlobalTicketModalOpen] = useState(false);
 
   const toggleLanguage = () => {
     setLang((prev) => (prev === 'en' ? 'ml' : 'en'));
@@ -513,11 +492,7 @@ export function App() {
       <Router>
         <div className="min-h-screen flex flex-col bg-stone-50/50 text-stone-900 font-sans pb-16 md:pb-0" lang={lang}>
           {/* Header */}
-          <AppHeader
-            lang={lang}
-            toggleLanguage={toggleLanguage}
-            onRaiseTicket={() => setGlobalTicketModalOpen(true)}
-          />
+          <AppHeader lang={lang} toggleLanguage={toggleLanguage} />
 
           {/* Main Content Area */}
           <main className="flex-grow">
@@ -658,13 +633,6 @@ export function App() {
 
           {/* Role-Aware Mobile Bottom Nav */}
           <MobileBottomNav lang={lang} />
-
-          {/* Global Raise a Ticket Modal */}
-          <RaiseTicketModal
-            isOpen={globalTicketModalOpen}
-            onClose={() => setGlobalTicketModalOpen(false)}
-            lang={lang}
-          />
         </div>
       </Router>
     </AuthProvider>
