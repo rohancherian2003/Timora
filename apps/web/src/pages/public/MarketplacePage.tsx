@@ -24,9 +24,11 @@ import {
   Zap,
   TrendingUp,
   Scale,
-  Factory
+  Factory,
+  LifeBuoy
 } from 'lucide-react';
 import { formatINR, calcRoundLogCFT, calcRectangularCFT } from '@timora/shared';
+import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 
 export interface TimberListingItem {
   id: string;
@@ -236,6 +238,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('down');
   const [isScrolledPastHero, setIsScrolledPastHero] = useState(false);
   const [quickCalcOpen, setQuickCalcOpen] = useState(false);
+  const [isRaiseTicketOpen, setIsRaiseTicketOpen] = useState(false);
 
   // Quick Calculator Local Inputs
   const [calcGirth, setCalcGirth] = useState<number>(36);
@@ -1122,6 +1125,36 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </div>
         </div>
       </section>
+
+      {/* 5. FLOATING "RAISE A TICKET" BUTTON (ഹോം പേജിന്റെ റൈറ്റ് സൈഡിൽ റൈസ് എ ടിക്കറ്റ് ബട്ടൺ) */}
+      <div className="fixed right-3 sm:right-6 bottom-20 md:bottom-8 z-40">
+        <button
+          onClick={() => setIsRaiseTicketOpen(true)}
+          className="group relative flex items-center gap-2.5 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl bg-gradient-to-r from-[#b45309] to-[#92400e] text-white font-bold text-xs sm:text-sm shadow-xl shadow-amber-950/30 border-2 border-amber-300 hover:scale-105 active:scale-95 transition-all duration-200"
+          title={lang === 'en' ? 'Raise a Support Ticket / Grievance' : 'പരാതി സമർപ്പിക്കുക (Raise a Ticket)'}
+        >
+          <span className="flex h-2.5 w-2.5 relative flex-shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400"></span>
+          </span>
+          <LifeBuoy className="w-5 h-5 text-amber-200 group-hover:rotate-45 transition-transform duration-300 flex-shrink-0" />
+          <div className="flex flex-col items-start text-left leading-tight">
+            <span className="text-[10px] text-amber-200 uppercase font-black tracking-wider block">
+              {lang === 'en' ? 'Support Cell' : 'സഹായം & പരാതികൾ'}
+            </span>
+            <span className="font-extrabold text-white text-xs sm:text-sm">
+              {lang === 'en' ? 'Raise a Ticket' : 'റൈസ് എ ടിക്കറ്റ്'}
+            </span>
+          </div>
+        </button>
+      </div>
+
+      {/* RAISE A TICKET MODAL */}
+      <RaiseTicketModal
+        isOpen={isRaiseTicketOpen}
+        onClose={() => setIsRaiseTicketOpen(false)}
+        lang={lang}
+      />
     </div>
   );
 }

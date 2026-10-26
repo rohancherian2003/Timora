@@ -1,7 +1,23 @@
-import React, { useState } from 'react';
-import { ShoppingBag, MessageSquare, Heart, Clock, CheckCircle2, ChevronRight, Trees, User, MapPin } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  ShoppingBag,
+  MessageSquare,
+  Heart,
+  Clock,
+  CheckCircle2,
+  ChevronRight,
+  Trees,
+  User,
+  MapPin,
+  LifeBuoy,
+  ShieldCheck,
+  AlertCircle,
+  Plus
+} from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
+import { getTicketsForUser, SupportTicket } from '../../utils/ticketService';
+import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 
 const DEMO_BUYER_ORDERS = [
   {
@@ -40,33 +56,105 @@ const DEMO_SAVED_LISTINGS = [
 
 export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'orders' | 'enquiries' | 'wishlist'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'enquiries' | 'wishlist' | 'tickets'>('orders');
+  const [tickets, setTickets] = useState<SupportTicket[]>(() =>
+    getTicketsForUser(user?.phone, 'buyer')
+  );
+  const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
+  const [dismissedResolvedId, setDismissedResolvedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setTickets(getTicketsForUser(user?.phone, 'buyer'));
+    };
+    window.addEventListener('timora_tickets_updated', handleUpdate);
+    return () => window.removeEventListener('timora_tickets_updated', handleUpdate);
+  }, [user]);
+
+  // Find latest resolved ticket to show as notification popup/banner
+  const latestResolvedTicket = tickets.find(
+    (t) => t.status === 'resolved' && t.resolutionReply && t.id !== dismissedResolvedId
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Welcome Bar */}
-      <div className="p-6 sm:p-8 bg-gradient-to-br from-[#faf6ee] via-[#f4ebe0] to-[#ecdcc8] rounded-3xl border border-[#ebd5bc] shadow-sm">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#b45309] text-white uppercase tracking-wider">
-            {lang === 'en' ? 'Verified Buyer Account' : 'ഉപഭോക്തൃ പ്രൊഫൈൽ'}
-          </span>
-          <span className="text-xs text-[#78350f] font-mono font-medium">+91 {user?.phone || '9847987654'}</span>
+      <div className="p-6 sm:p-8 bg-gradient-to-br from-[#faf6ee] via-[#f4ebe0] to-[#ecdcc8] rounded-3xl border border-[#ebd5bc] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#b45309] text-white uppercase tracking-wider">
+              {lang === 'en' ? 'Verified Buyer Account' : 'ഉപഭോക്തൃ പ്രൊഫൈൽ'}
+            </span>
+            <span className="text-xs text-[#78350f] font-mono font-medium">+91 {user?.phone || '9847987654'}</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold font-serif text-[#2c160b]">
+            {lang === 'en' ? `Welcome, ${user?.name || 'Timber Buyer'}` : `സ്വാഗതം, ${user?.name || 'ഉപഭോക്താവ്'}`}
+          </h1>
+          <p className="text-xs sm:text-sm text-[#6b472e] mt-1 font-medium">
+            {lang === 'en'
+              ? 'Track your ongoing timber orders, negotiate enquiries, and view saved stock.'
+              : 'നിങ്ങളുടെ തടി ഓർഡറുകൾ, അന്വേഷണങ്ങൾ, സേവ് ചെയ്ത തടികൾ എന്നിവ ഇവിടെ കാണാം.'}
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold font-serif text-[#2c160b]">
-          {lang === 'en' ? `Welcome, ${user?.name || 'Timber Buyer'}` : `സ്വാഗതം, ${user?.name || 'ഉപഭോക്താവ്'}`}
-        </h1>
-        <p className="text-xs sm:text-sm text-[#6b472e] mt-1 font-medium">
-          {lang === 'en'
-            ? 'Track your ongoing timber orders, negotiate enquiries, and view saved stock.'
-            : 'നിങ്ങളുടെ തടി ഓർഡറുകൾ, അന്വേഷണങ്ങൾ, സേവ് ചെയ്ത തടികൾ എന്നിവ ഇവിടെ കാണാം.'}
-        </p>
+
+        <button
+          onClick={() => setIsRaiseModalOpen(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-amber-300 text-[#78350f] hover:bg-amber-50 text-xs font-bold shadow-xs transition flex-shrink-0"
+        >
+          <LifeBuoy className="w-4 h-4 text-[#b45309]" />
+          <span>{lang === 'en' ? 'Raise a Ticket' : 'പരാതി നൽകുക (Support)'}</span>
+        </button>
       </div>
 
+      {/* RESOLVED TICKET NOTIFICATION POP-UP BANNER */}
+      {latestResolvedTicket && (
+        <div className="p-5 rounded-3xl bg-gradient-to-r from-emerald-50 via-[#faf6ee] to-amber-50 border-2 border-emerald-400 shadow-md animate-fadeIn space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold flex-shrink-0">
+                <ShieldCheck className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-200 text-emerald-900 font-bold text-[10px] uppercase tracking-wider">
+                    {lang === 'en' ? 'Admin Solution Reply' : 'അഡ്മിൻ നൽകിയ പരിഹാരം'}
+                  </span>
+                  <span className="font-mono text-xs font-bold text-stone-600">
+                    {latestResolvedTicket.id}
+                  </span>
+                </div>
+                <h3 className="font-extrabold font-serif text-[#2c160b] text-base mt-0.5">
+                  {lang === 'en' ? latestResolvedTicket.category : latestResolvedTicket.categoryMl}
+                </h3>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setDismissedResolvedId(latestResolvedTicket.id)}
+              className="text-stone-400 hover:text-stone-700 font-bold p-1 text-xs"
+              title="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-white border border-emerald-200 shadow-xs text-xs space-y-1">
+            <div className="flex items-center justify-between text-stone-500 text-[11px] font-semibold">
+              <span>{lang === 'en' ? 'Resolved by Timora Admin Cell' : 'ടിമോറ അഡ്മിൻ മറുപടി:'}</span>
+              <span className="font-mono">{latestResolvedTicket.resolvedAt}</span>
+            </div>
+            <p className="text-stone-900 text-xs sm:text-sm font-medium leading-relaxed">
+              "{latestResolvedTicket.resolutionReply}"
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
-      <div className="flex border-b border-amber-200/80 gap-6 text-sm font-semibold">
+      <div className="flex border-b border-amber-200/80 gap-6 text-sm font-semibold overflow-x-auto">
         <button
           onClick={() => setActiveTab('orders')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition ${
+          className={`pb-3 flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
             activeTab === 'orders'
               ? 'border-[#b45309] text-[#b45309] font-bold'
               : 'border-transparent text-stone-500 hover:text-stone-900'
@@ -78,7 +166,7 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
         <button
           onClick={() => setActiveTab('enquiries')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition ${
+          className={`pb-3 flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
             activeTab === 'enquiries'
               ? 'border-[#b45309] text-[#b45309] font-bold'
               : 'border-transparent text-stone-500 hover:text-stone-900'
@@ -90,7 +178,7 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
         <button
           onClick={() => setActiveTab('wishlist')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition ${
+          className={`pb-3 flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
             activeTab === 'wishlist'
               ? 'border-[#b45309] text-[#b45309] font-bold'
               : 'border-transparent text-stone-500 hover:text-stone-900'
@@ -98,6 +186,23 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         >
           <Heart className="w-4 h-4" />
           {lang === 'en' ? 'Saved Wishlist' : 'സേവ് ചെയ്തവ'}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('tickets')}
+          className={`pb-3 flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
+            activeTab === 'tickets'
+              ? 'border-[#b45309] text-[#b45309] font-bold'
+              : 'border-transparent text-stone-500 hover:text-stone-900'
+          }`}
+        >
+          <LifeBuoy className="w-4 h-4" />
+          <span>{lang === 'en' ? 'Support Tickets' : 'എന്റെ പരാതികൾ'}</span>
+          {tickets.length > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-[#78350f] text-[10px] font-bold border border-amber-300">
+              {tickets.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -171,6 +276,104 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           ))}
         </div>
       )}
+
+      {/* Support Tickets Tab */}
+      {activeTab === 'tickets' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-extrabold font-serif text-[#2c160b] text-base">
+              {lang === 'en' ? 'My Grievance & Support Tickets' : 'എന്റെ പരാതികൾ'}
+            </h3>
+            <button
+              onClick={() => setIsRaiseModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white text-xs font-bold transition shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{lang === 'en' ? 'New Ticket' : 'പുതിയ പരാതി'}</span>
+            </button>
+          </div>
+
+          {tickets.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-amber-200/80 p-8 text-center text-xs text-stone-500 space-y-2">
+              <LifeBuoy className="w-8 h-8 text-amber-300 mx-auto" />
+              <p className="font-bold text-stone-700">
+                {lang === 'en' ? 'No tickets filed yet.' : 'പരാതികൾ ഒന്നും സമർപ്പിച്ചിട്ടില്ല.'}
+              </p>
+              <p className="text-stone-400">
+                {lang === 'en'
+                  ? 'Have an issue with timber quality, measurement, or delivery? Raise a ticket anytime.'
+                  : 'തടിയുടെ അളവ്, ഗുണനിലവാരം, ഡെലിവറി എന്നിവയിൽ പരാതിയുണ്ടെങ്കിൽ ഇവിടെ അറിയിക്കാം.'}
+              </p>
+            </div>
+          ) : (
+            tickets.map((t) => (
+              <div
+                key={t.id}
+                className="bg-white rounded-3xl border border-amber-200/80 p-6 shadow-xs space-y-3"
+              >
+                <div className="flex items-center justify-between border-b border-stone-100 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-amber-100 text-[#78350f]">
+                      {t.id}
+                    </span>
+                    <span className="text-xs font-bold text-stone-800">
+                      {lang === 'en' ? t.category : t.categoryMl}
+                    </span>
+                  </div>
+                  <span
+                    className={`text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
+                      t.status === 'resolved'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-amber-100 text-[#78350f]'
+                    }`}
+                  >
+                    {t.status === 'resolved' ? (
+                      <>
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span>{lang === 'en' ? 'Resolved' : 'പരിഹരിച്ചു'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="w-3 h-3 text-[#b45309]" />
+                        <span>{lang === 'en' ? 'Pending Review (2 days)' : 'പരിശോധനയിൽ'}</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+
+                <p className="text-xs text-stone-600 leading-relaxed font-medium">"{t.description}"</p>
+
+                {/* Resolution message reply from admin */}
+                {t.status === 'resolved' && t.resolutionReply && (
+                  <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs space-y-1">
+                    <div className="flex items-center justify-between font-bold text-emerald-900 text-[11px]">
+                      <span className="flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>
+                          {lang === 'en'
+                            ? 'Admin Solution Reply:'
+                            : 'അഡ്മിൻ നൽകിയ പരിഹാരം (സൊല്യൂഷൻ):'}
+                        </span>
+                      </span>
+                      <span className="font-mono text-stone-400">{t.resolvedAt}</span>
+                    </div>
+                    <p className="text-stone-800 text-xs italic pl-4 font-medium">
+                      "{t.resolutionReply}"
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Modal */}
+      <RaiseTicketModal
+        isOpen={isRaiseModalOpen}
+        onClose={() => setIsRaiseModalOpen(false)}
+        lang={lang}
+      />
     </div>
   );
 }

@@ -1,11 +1,30 @@
-import React, { useState } from 'react';
-import { Package, Plus, Clock, CheckCircle2, AlertCircle, ArrowUpRight, Store, MapPin, Phone } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  Package,
+  Plus,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  ArrowUpRight,
+  Store,
+  MapPin,
+  Phone,
+  LifeBuoy,
+  ShieldCheck,
+  MessageSquare
+} from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
+import { getTicketsForUser, SupportTicket } from '../../utils/ticketService';
+import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 
 export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { user } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
+  const [tickets, setTickets] = useState<SupportTicket[]>(() =>
+    getTicketsForUser(user?.phone, 'seller')
+  );
   const [title, setTitle] = useState('');
   const [speciesId, setSpeciesId] = useState(1); // Teak
   const [typeId, setTypeId] = useState(2); // Planks
@@ -13,6 +32,16 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [quantity, setQuantity] = useState(25);
   const [pricePerCft, setPricePerCft] = useState(2400);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setTickets(getTicketsForUser(user?.phone, 'seller'));
+    };
+    window.addEventListener('timora_tickets_updated', handleUpdate);
+    return () => window.removeEventListener('timora_tickets_updated', handleUpdate);
+  }, [user]);
+
+  const latestResolvedTicket = tickets.find((t) => t.status === 'resolved' && t.resolutionReply);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,14 +74,60 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </p>
         </div>
 
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#b45309] hover:bg-[#92400e] text-white text-sm font-bold shadow-md shadow-amber-950/10 transition"
-        >
-          <Plus className="w-4 h-4" />
-          {lang === 'en' ? 'Post New Timber Stock' : 'പുതിയ തടി ചേർക്കുക'}
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => setIsRaiseModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white border border-amber-300 text-[#78350f] hover:bg-amber-50 text-xs sm:text-sm font-bold shadow-xs transition"
+          >
+            <LifeBuoy className="w-4 h-4 text-[#b45309]" />
+            <span>{lang === 'en' ? 'Raise Ticket' : 'പരാതി നൽകുക'}</span>
+          </button>
+
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#b45309] hover:bg-[#92400e] text-white text-xs sm:text-sm font-bold shadow-md shadow-amber-950/10 transition"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{lang === 'en' ? 'Post New Timber Stock' : 'പുതിയ തടി ചേർക്കുക'}</span>
+          </button>
+        </div>
       </div>
+
+      {/* RESOLVED TICKET NOTIFICATION POP-UP BANNER */}
+      {latestResolvedTicket && (
+        <div className="p-5 rounded-3xl bg-gradient-to-r from-emerald-50 via-[#faf6ee] to-amber-50 border-2 border-emerald-400 shadow-md animate-fadeIn space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold flex-shrink-0">
+                <ShieldCheck className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-200 text-emerald-900 font-bold text-[10px] uppercase tracking-wider">
+                    {lang === 'en' ? 'Admin Solution Reply' : 'അഡ്മിൻ നൽകിയ പരിഹാരം'}
+                  </span>
+                  <span className="font-mono text-xs font-bold text-stone-600">
+                    {latestResolvedTicket.id}
+                  </span>
+                </div>
+                <h3 className="font-extrabold font-serif text-[#2c160b] text-base mt-0.5">
+                  {lang === 'en' ? latestResolvedTicket.category : latestResolvedTicket.categoryMl}
+                </h3>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-white border border-emerald-200 shadow-xs text-xs space-y-1">
+            <div className="flex items-center justify-between text-stone-500 text-[11px] font-semibold">
+              <span>{lang === 'en' ? 'Resolved by Timora Admin Cell' : 'ടിമോറ അഡ്മിൻ മറുപടി:'}</span>
+              <span className="font-mono">{latestResolvedTicket.resolvedAt}</span>
+            </div>
+            <p className="text-stone-900 text-xs sm:text-sm font-medium leading-relaxed">
+              "{latestResolvedTicket.resolutionReply}"
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -273,6 +348,12 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </div>
         </div>
       </div>
+
+      <RaiseTicketModal
+        isOpen={isRaiseModalOpen}
+        onClose={() => setIsRaiseModalOpen(false)}
+        lang={lang}
+      />
     </div>
   );
 }
