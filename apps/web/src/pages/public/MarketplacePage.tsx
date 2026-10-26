@@ -23,7 +23,8 @@ import {
   Activity,
   Zap,
   TrendingUp,
-  Scale
+  Scale,
+  Factory
 } from 'lucide-react';
 import { formatINR, calcRoundLogCFT, calcRectangularCFT } from '@timora/shared';
 
@@ -394,8 +395,16 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             ))}
           </div>
 
-          {/* Right: Quick CFT Calculator Pop-Over Trigger + Scroll to Top */}
+          {/* Right: Quick CFT Calculator Pop-Over Trigger + Mills + Scroll to Top */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            <Link
+              to="/mills"
+              className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition"
+            >
+              <Factory className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">{lang === 'en' ? 'Mills' : 'മില്ലുകൾ'}</span>
+            </Link>
+
             <button
               onClick={() => setQuickCalcOpen(!quickCalcOpen)}
               className="px-3 py-1.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs"
@@ -634,49 +643,69 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             </p>
           </div>
 
-          {/* 3 Practical Value Cards from the Official Poster */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl pt-1">
-            <div className="p-3 rounded-2xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100/90 text-amber-900 flex items-center justify-center font-bold flex-shrink-0">
+          {/* 4 Practical Value Cards: Timber, Quotes, Carpenters, Timber Mills */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-4xl pt-1">
+            <div className="p-3 rounded-2xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-amber-100/90 text-amber-900 flex items-center justify-center font-bold flex-shrink-0 text-base">
                 🪵
               </div>
               <div className="text-xs">
                 <span className="font-extrabold text-stone-900 block leading-tight">
                   {lang === 'en' ? 'Buy Raw Timber' : 'തടി വാങ്ങാം'}
                 </span>
-                <span className="text-[11px] text-stone-600">
-                  {lang === 'en' ? 'Round logs & sawn beams' : 'ഉരുണ്ട തടികളും പലകകളും'}
+                <span className="text-[10px] text-stone-600">
+                  {lang === 'en' ? 'Logs & Beams' : 'ലോഗ്സ് & പലക'}
                 </span>
               </div>
             </div>
 
-            <div className="p-3 rounded-2xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100/90 text-emerald-900 flex items-center justify-center font-bold flex-shrink-0">
+            <div className="p-3 rounded-2xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100/90 text-emerald-900 flex items-center justify-center font-bold flex-shrink-0 text-base">
                 📄
               </div>
               <div className="text-xs">
                 <span className="font-extrabold text-stone-900 block leading-tight">
                   {lang === 'en' ? 'Compare Quotes' : 'വിലകൾ അറിയാം'}
                 </span>
-                <span className="text-[11px] text-stone-600">
-                  {lang === 'en' ? 'Direct yard rates / CFT' : 'നേരിട്ടുള്ള സി.എഫ്.ടി നിരക്ക്'}
+                <span className="text-[10px] text-stone-600">
+                  {lang === 'en' ? 'Direct CFT Rates' : 'സി.എഫ്.ടി നിരക്ക്'}
                 </span>
               </div>
             </div>
 
-            <div className="p-3 rounded-2xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100/90 text-amber-900 flex items-center justify-center font-bold flex-shrink-0">
+            <Link
+              to="/carpenters"
+              className="p-3 rounded-2xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-2.5 hover:border-amber-400 hover:bg-amber-50/40 transition group"
+            >
+              <div className="w-9 h-9 rounded-xl bg-amber-100/90 text-amber-900 flex items-center justify-center font-bold flex-shrink-0 text-base">
                 🔨
               </div>
               <div className="text-xs">
-                <span className="font-extrabold text-stone-900 block leading-tight">
-                  {lang === 'en' ? 'Find Wood Experts' : 'വിദഗ്ദ്ധ ആശാരിമാർ'}
+                <span className="font-extrabold text-stone-900 block leading-tight group-hover:text-[#b45309] transition">
+                  {lang === 'en' ? 'Master Carpenters' : 'വിദഗ്ദ്ധ ആശാരിമാർ'}
                 </span>
-                <span className="text-[11px] text-stone-600">
-                  {lang === 'en' ? 'Roofing & joinery masters' : 'മേൽക്കൂര & വാതിലുകൾ'}
+                <span className="text-[10px] text-stone-600">
+                  {lang === 'en' ? 'Roofing & Joinery' : 'മേൽക്കൂര & വാതിലുകൾ'}
                 </span>
               </div>
-            </div>
+            </Link>
+
+            <Link
+              to="/mills"
+              className="p-3 rounded-2xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-2.5 hover:border-amber-400 hover:bg-amber-50/40 transition group"
+            >
+              <div className="w-9 h-9 rounded-xl bg-amber-100/90 text-amber-900 flex items-center justify-center font-bold flex-shrink-0 text-base">
+                🏭
+              </div>
+              <div className="text-xs">
+                <span className="font-extrabold text-stone-900 block leading-tight group-hover:text-[#b45309] transition">
+                  {lang === 'en' ? 'Timber Mills' : 'തടി മില്ലുകൾ'}
+                </span>
+                <span className="text-[10px] text-stone-600">
+                  {lang === 'en' ? 'Sawing & Sizing' : 'അറുക്കൽ & സീസണിംഗ്'}
+                </span>
+              </div>
+            </Link>
           </div>
 
           {/* Search Box with Interactive Validation Feedback */}
@@ -953,6 +982,145 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             ))}
           </div>
         )}
+      </section>
+
+      {/* 4. FEATURED TIMBER MILLS SECTION FOR HOUSE OWNERS & BUILDERS */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="p-6 sm:p-8 bg-gradient-to-br from-[#faf6ee] via-[#f4ebe0] to-[#ecdcc8] rounded-3xl border border-[#ebd5bc] shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 text-[#854d0e] text-xs font-semibold backdrop-blur-sm border border-amber-600/30">
+                <Factory className="w-3.5 h-3.5 text-[#b45309]" />
+                <span>{lang === 'en' ? 'Direct Mill Network' : 'തടി മിൽ നെറ്റ്‌വർക്ക്'}</span>
+              </div>
+              <h2
+                className="text-2xl sm:text-3xl font-extrabold text-[#2c160b]"
+                style={{ fontFamily: 'Georgia, serif' }}
+              >
+                {lang === 'en' ? (
+                  <>
+                    Connect With Licensed Sawmills <br />
+                    <span className="text-[#b45309]">For House Roofing & Precision Sizing</span>
+                  </>
+                ) : (
+                  <>
+                    വീടുപണിക്ക് തടി അറുക്കാനും <br />
+                    <span className="text-[#b45309]">അളവുകൾ നൽകാനും തടി മില്ലുകൾ</span>
+                  </>
+                )}
+              </h2>
+              <p className="text-xs sm:text-sm text-[#6b472e] max-w-xl font-medium">
+                {lang === 'en'
+                  ? 'Get your raw logs sawed into exact rafters, purlins, and door planks. Verified sawmills with horizontal bandsaws, kiln seasoning, and zero wood wastage.'
+                  : 'എറണാകുളം, പത്തനംതിട്ട, കോട്ടയം ഉൾപ്പെടെയുള്ള ജില്ലകളിലെ തടി മില്ലുകളുടെ റേറ്റിംഗും അവൈലബിൾ തടികളും കണ്ട് ഉടമസ്ഥരെ നേരിട്ട് ബന്ധപ്പെടാം.'}
+              </p>
+            </div>
+
+            <Link
+              to="/mills"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#b45309] hover:bg-[#92400e] text-white text-xs sm:text-sm font-bold shadow-md shadow-amber-950/10 transition flex-shrink-0"
+            >
+              <span>{lang === 'en' ? 'Browse All Timber Mills' : 'എല്ലാ തടി മില്ലുകളും കാണുക'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* 3 Quick Preview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+            <div className="p-5 rounded-2xl bg-white border border-amber-200/80 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 text-[10px] font-bold">
+                  KL-SAW-EKM-4402
+                </span>
+                <span className="text-xs font-bold text-amber-600 flex items-center gap-1">
+                  ★ 4.9 (64)
+                </span>
+              </div>
+              <div>
+                <h4 className="font-extrabold font-serif text-[#2c160b] text-base">
+                  {lang === 'en' ? 'Periyar Sawmills' : 'പെരിയാർ സോമിൽ'}
+                </h4>
+                <div className="text-xs text-stone-500 flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-3 h-3 text-[#b45309]" />
+                  <span>Perumbavoor, Ernakulam</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-stone-600 line-clamp-2">
+                {lang === 'en'
+                  ? 'Heavy bandsaw resawing, roof truss sizing, Teak & Anjili specialist.'
+                  : 'ഹൊറിസോണ്ടൽ ബാൻഡ്‌സോ, മേൽക്കൂര തട്ടിടൽ പലകകൾ, തേക്ക് & ആഞ്ഞിലി.'}
+              </p>
+              <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs">
+                <span className="font-bold text-[#78350f]">₹65 - ₹80 / CFT</span>
+                <Link to="/mills" className="text-[#b45309] font-bold hover:underline">
+                  {lang === 'en' ? 'Details →' : 'വിവരങ്ങൾ →'}
+                </Link>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-amber-200/80 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 text-[10px] font-bold">
+                  KL-SAW-PTA-1820
+                </span>
+                <span className="text-xs font-bold text-amber-600 flex items-center gap-1">
+                  ★ 4.8 (47)
+                </span>
+              </div>
+              <div>
+                <h4 className="font-extrabold font-serif text-[#2c160b] text-base">
+                  {lang === 'en' ? 'Pathanamthitta Central Sawmill' : 'പത്തനംതിട്ട സെൻട്രൽ മിൽസ്'}
+                </h4>
+                <div className="text-xs text-stone-500 flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-3 h-3 text-[#b45309]" />
+                  <span>Adoor Bypass, Pathanamthitta</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-stone-600 line-clamp-2">
+                {lang === 'en'
+                  ? 'Traditional house joinery timber, teak log girth sorting & door beams.'
+                  : 'പരമ്പരാഗത വീടുകൾക്കുള്ള തടി അറുക്കൽ, കട്ടിള & ജനൽ ബീമുകൾ.'}
+              </p>
+              <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs">
+                <span className="font-bold text-[#78350f]">₹70 - ₹85 / CFT</span>
+                <Link to="/mills" className="text-[#b45309] font-bold hover:underline">
+                  {lang === 'en' ? 'Details →' : 'വിവരങ്ങൾ →'}
+                </Link>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-amber-200/80 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 text-[10px] font-bold">
+                  KL-SAW-PTA-2104
+                </span>
+                <span className="text-xs font-bold text-amber-600 flex items-center gap-1">
+                  ★ 4.9 (38)
+                </span>
+              </div>
+              <div>
+                <h4 className="font-extrabold font-serif text-[#2c160b] text-base">
+                  {lang === 'en' ? 'Konni Forest Valley Plant' : 'കോന്നി ഫോറസ്റ്റ് വാലി പ്ലാന്റ്'}
+                </h4>
+                <div className="text-xs text-stone-500 flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-3 h-3 text-[#b45309]" />
+                  <span>Konni Depot, Pathanamthitta</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-stone-600 line-clamp-2">
+                {lang === 'en'
+                  ? 'Kiln seasoning plant, moisture reduction, Nilambur & Konni Teak logs.'
+                  : 'കിൽൻ സീസണിംഗ് സൗകര്യം, കോന്നി തേക്ക്, ഫോറസ്റ്റ് ലേലം തടികൾ.'}
+              </p>
+              <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs">
+                <span className="font-bold text-[#78350f]">₹75 - ₹90 / CFT</span>
+                <Link to="/mills" className="text-[#b45309] font-bold hover:underline">
+                  {lang === 'en' ? 'Details →' : 'വിവരങ്ങൾ →'}
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   );

@@ -14,7 +14,8 @@ import {
   ChevronDown,
   Sparkles,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Factory
 } from 'lucide-react';
 import { AuthProvider, useAuth, UserRole } from './context/AuthContext';
 import { BrandLogo } from './components/BrandLogo';
@@ -25,6 +26,7 @@ import { TransportPage } from './pages/public/TransportPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { CarpenterDirectoryPage } from './pages/carpenter/CarpenterDirectoryPage';
+import { TimberMillsPage } from './pages/public/TimberMillsPage';
 import { SellerDashboard } from './pages/seller/SellerDashboard';
 import { BuyerDashboard } from './pages/buyer/BuyerDashboard';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -94,6 +96,16 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
       >
         <Hammer className="w-5 h-5" />
         <span className="text-[10px] mt-0.5">{lang === 'en' ? 'Carpenters' : 'തച്ചൻ'}</span>
+      </Link>
+
+      <Link
+        to="/mills"
+        className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition ${
+          isActive('/mills') || isActive('/timber-mills') ? 'text-[#b45309] font-bold' : 'text-stone-500 hover:text-stone-800'
+        }`}
+      >
+        <Factory className="w-5 h-5" />
+        <span className="text-[10px] mt-0.5">{lang === 'en' ? 'Mills' : 'മില്ലുകൾ'}</span>
       </Link>
 
       {/* Conditional 4th link based on Auth Role */}
@@ -379,6 +391,18 @@ function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage
             <span>{lang === 'en' ? 'Transport' : 'ലോറികൾ'}</span>
           </Link>
 
+          <Link
+            to="/mills"
+            className={`transition pb-1 border-b-2 flex items-center gap-1.5 ${
+              isCurrent('/mills') || isCurrent('/timber-mills')
+                ? 'text-[#b45309] border-[#b45309] font-bold'
+                : 'border-transparent hover:text-[#b45309]'
+            }`}
+          >
+            <Factory className="w-3.5 h-3.5 text-stone-500" />
+            <span>{lang === 'en' ? 'Timber Mills' : 'തടി മില്ലുകൾ'}</span>
+          </Link>
+
           {/* SECURITY ISOLATION: Dashboard Links ONLY appear for Authenticated Users with matching roles! */}
           {isAuthenticated && user?.role === 'buyer' && (
             <Link
@@ -481,6 +505,8 @@ export function App() {
               <Route path="/calculator" element={<CalculatorPage lang={lang} />} />
               <Route path="/transport" element={<TransportPage lang={lang} />} />
               <Route path="/carpenters" element={<CarpenterDirectoryPage lang={lang} />} />
+              <Route path="/mills" element={<TimberMillsPage lang={lang} />} />
+              <Route path="/timber-mills" element={<TimberMillsPage lang={lang} />} />
 
               {/* Authentication Routes */}
               <Route path="/login" element={<LoginPage lang={lang} />} />
@@ -579,6 +605,11 @@ export function App() {
                   <li>
                     <Link to="/carpenters" className="hover:text-amber-300 transition">
                       {lang === 'en' ? 'Kerala Master Carpenters' : 'വിദഗ്ദ്ധ ആശാരിമാർ'}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/mills" className="hover:text-amber-300 transition">
+                      {lang === 'en' ? 'Kerala Licensed Timber Sawmills' : 'കേരള തടി മില്ലുകൾ'}
                     </Link>
                   </li>
                 </ul>
