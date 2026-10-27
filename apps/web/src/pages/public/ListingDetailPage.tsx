@@ -178,15 +178,15 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
       {/* Enquiry Modal */}
       {showEnquiryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl space-y-5 border border-stone-300/90">
-            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#2C2218]/70 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-[#FDFBF7] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 border-2 border-[#8E7F6B]/30 my-auto">
+            <div className="flex items-center justify-between border-b border-[#8E7F6B]/20 pb-3">
               <h3 className="font-extrabold font-serif text-[#4A3626] text-base">
                 {lang === 'en' ? 'Send Timber Enquiry' : 'തടി അന്വേഷണം അയക്കുക'}
               </h3>
               <button
                 onClick={() => setShowEnquiryModal(false)}
-                className="text-stone-400 hover:text-stone-600 font-bold"
+                className="text-[#8E7F6B] hover:text-[#4A3626] font-bold p-1 rounded-lg hover:bg-[#E7E1D6]/50 transition"
               >
                 ✕
               </button>

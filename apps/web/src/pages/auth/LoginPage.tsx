@@ -397,18 +397,18 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
       {/* FORGOT PIN MODAL */}
       {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-[#8E7F6B]/40 space-y-4">
-            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#2C2218]/70 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-[#FDFBF7] rounded-3xl max-w-md w-full p-6 shadow-2xl border-2 border-[#8E7F6B]/30 space-y-4 my-auto">
+            <div className="flex items-center justify-between border-b border-[#8E7F6B]/20 pb-3">
               <div className="flex items-center gap-2">
                 <KeyRound className="w-5 h-5 text-[#5B6147]" />
-                <h3 className="font-bold text-stone-900 text-base">
+                <h3 className="font-bold font-serif text-[#4A3626] text-base">
                   {lang === 'en' ? 'Reset Security PIN' : 'പിൻ റീസെറ്റ് ചെയ്യുക'}
                 </h3>
               </div>
               <button
                 onClick={() => setShowForgotModal(false)}
-                className="text-stone-400 hover:text-stone-700 font-bold p-1"
+                className="text-[#8E7F6B] hover:text-[#4A3626] font-bold p-1 rounded-xl hover:bg-[#E7E1D6]/50 transition"
               >
                 <X className="w-4 h-4" />
               </button>

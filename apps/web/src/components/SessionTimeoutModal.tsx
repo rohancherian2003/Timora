@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Clock, LogIn, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -14,15 +15,15 @@ export function SessionTimeoutModal({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     navigate('/login', { replace: true });
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-      <div className="bg-[#E7E1D6] rounded-3xl border border-[#8E7F6B]/40 shadow-2xl max-w-md w-full p-6 sm:p-7 space-y-5 text-center">
-        <div className="w-16 h-16 rounded-full bg-[#d5cfc4] text-[#3F452F] flex items-center justify-center mx-auto shadow-inner">
-          <Clock className="w-9 h-9 text-[#7A5A3A]" />
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#2C2218]/70 backdrop-blur-xs p-4 animate-fadeIn">
+      <div className="bg-[#FDFBF7] rounded-3xl border-2 border-[#8E7F6B]/30 shadow-2xl max-w-md w-full p-6 sm:p-7 space-y-5 text-center my-auto">
+        <div className="w-16 h-16 rounded-2xl bg-[#E7E1D6] text-[#5B6147] border border-[#8E7F6B]/30 flex items-center justify-center mx-auto shadow-inner">
+          <Clock className="w-8 h-8 text-[#5B6147]" />
         </div>
 
         <div className="space-y-1.5">
-          <span className="px-3 py-1 rounded-full bg-white/70 text-[#4A3626] font-bold text-[11px] uppercase tracking-wider inline-block">
+          <span className="px-3 py-1 rounded-full bg-[#E7E1D6] text-[#4A3626] font-bold text-[11px] uppercase tracking-wider inline-block">
             {lang === 'en' ? 'Session Timeout' : 'സെഷൻ കാലാവധി കഴിഞ്ഞു'}
           </span>
           <h3 className="font-serif font-extrabold text-[#4A3626] text-xl">
@@ -49,4 +50,8 @@ export function SessionTimeoutModal({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined'
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 }

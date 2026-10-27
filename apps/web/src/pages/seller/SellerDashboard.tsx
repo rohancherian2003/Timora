@@ -178,14 +178,14 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
       {/* New Listing Modal / Form */}
       {showAddForm && (
-        <div className="bg-white rounded-3xl border border-stone-300/80 p-6 sm:p-8 shadow-sm space-y-6">
-          <div className="flex items-center justify-between border-b pb-4">
+        <div className="bg-[#FDFBF7] rounded-3xl border-2 border-[#8E7F6B]/30 p-6 sm:p-8 shadow-md space-y-6 animate-fadeIn">
+          <div className="flex items-center justify-between border-b border-[#8E7F6B]/20 pb-4">
             <h2 className="text-lg font-extrabold font-serif text-[#4A3626]">
               {lang === 'en' ? 'Submit Timber Stock for Approval' : 'പുതിയ തടി അനുമതിക്കായി സമർപ്പിക്കുക'}
             </h2>
             <button
               onClick={() => setShowAddForm(false)}
-              className="text-xs text-stone-400 hover:text-stone-600 font-semibold"
+              className="text-xs text-[#8E7F6B] hover:text-[#4A3626] font-bold px-2 py-1 rounded-lg hover:bg-[#E7E1D6]/50 transition"
             >
               ✕ Close
             </button>
