@@ -123,7 +123,9 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               <span className="font-mono">{latestResolvedTicket.resolvedAt}</span>
             </div>
             <p className="text-stone-900 text-xs sm:text-sm font-medium leading-relaxed">
-              "{latestResolvedTicket.resolutionReply}"
+              "{lang === 'en'
+                ? (latestResolvedTicket.resolutionReply || latestResolvedTicket.resolutionReplyMl)
+                : (latestResolvedTicket.resolutionReplyMl || latestResolvedTicket.resolutionReply)}"
             </p>
           </div>
         </div>

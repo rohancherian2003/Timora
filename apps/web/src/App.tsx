@@ -15,7 +15,9 @@ import {
   Sparkles,
   Layers,
   ArrowRight,
-  Factory
+  Factory,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { AuthProvider, useAuth, UserRole } from './context/AuthContext';
 import { BrandLogo } from './components/BrandLogo';
@@ -339,7 +341,17 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
 }
 
 // Main Navigation Header
-function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage: () => void }) {
+function AppHeader({
+  lang,
+  toggleLanguage,
+  theme,
+  toggleTheme,
+}: {
+  lang: 'en' | 'ml';
+  toggleLanguage: () => void;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+}) {
   const { user, isAuthenticated } = useAuth();
   const location = useLocation();
 
@@ -351,120 +363,133 @@ function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs">
+    <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#1a1714]/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 shadow-xs transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-        {/* Brand Logo with Gold/Emerald Seal */}
-        <Link to="/" className="group flex items-center">
-          <BrandLogo size="md" lang={lang} />
+        {/* Brand Logo without subtitle clutter */}
+        <Link to="/" className="group flex items-center flex-shrink-0">
+          <BrandLogo size="md" lang={lang} variant={theme === 'dark' ? 'dark' : 'light'} />
         </Link>
 
-        {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-stone-600">
+        {/* Desktop Navigation Links - Single line, no wrapping */}
+        <nav className="hidden md:flex items-center gap-3 lg:gap-5 xl:gap-6 text-xs lg:text-sm font-semibold text-stone-600 dark:text-stone-300 whitespace-nowrap flex-shrink-0">
           <Link
             to="/marketplace"
-            className={`transition pb-1 border-b-2 ${
+            className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 ${
               isCurrent('/marketplace')
                 ? 'text-[#5B6147] border-[#5B6147] font-bold'
                 : 'border-transparent hover:text-[#5B6147]'
             }`}
           >
-            {lang === 'en' ? 'Marketplace' : 'മാർക്കറ്റ്'}
+            <span className="whitespace-nowrap">{lang === 'en' ? 'Marketplace' : 'മാർക്കറ്റ്'}</span>
           </Link>
 
           <Link
             to="/calculator"
-            className={`transition pb-1 border-b-2 flex items-center gap-1.5 ${
+            className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 ${
               isCurrent('/calculator')
                 ? 'text-[#5B6147] border-[#5B6147] font-bold'
                 : 'border-transparent hover:text-[#5B6147]'
             }`}
           >
-            <Calculator className="w-3.5 h-3.5 text-[#3F452F]" />
-            <span>{lang === 'en' ? 'CFT Calculator' : 'തടി കാൽക്കുലേറ്റർ'}</span>
+            <Calculator className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
+            <span className="whitespace-nowrap">{lang === 'en' ? 'CFT Calculator' : 'തടി കാൽക്കുലേറ്റർ'}</span>
           </Link>
 
           <Link
             to="/carpenters"
-            className={`transition pb-1 border-b-2 flex items-center gap-1.5 ${
+            className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 ${
               isCurrent('/carpenters')
                 ? 'text-[#5B6147] border-[#5B6147] font-bold'
                 : 'border-transparent hover:text-[#5B6147]'
             }`}
           >
-            <Hammer className="w-3.5 h-3.5 text-stone-500" />
-            <span>{lang === 'en' ? 'Carpenters' : 'ആശാരിമാർ'}</span>
+            <Hammer className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
+            <span className="whitespace-nowrap">{lang === 'en' ? 'Carpenters' : 'ആശാരിമാർ'}</span>
           </Link>
 
           <Link
             to="/transport"
-            className={`transition pb-1 border-b-2 flex items-center gap-1.5 ${
+            className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 ${
               isCurrent('/transport')
                 ? 'text-[#5B6147] border-[#5B6147] font-bold'
                 : 'border-transparent hover:text-[#5B6147]'
             }`}
           >
-            <Truck className="w-3.5 h-3.5 text-stone-500" />
-            <span>{lang === 'en' ? 'Transport' : 'ലോറികൾ'}</span>
+            <Truck className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
+            <span className="whitespace-nowrap">{lang === 'en' ? 'Transport' : 'ലോറികൾ'}</span>
           </Link>
 
           <Link
             to="/mills"
-            className={`transition pb-1 border-b-2 flex items-center gap-1.5 ${
+            className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 ${
               isCurrent('/mills') || isCurrent('/timber-mills')
                 ? 'text-[#5B6147] border-[#5B6147] font-bold'
                 : 'border-transparent hover:text-[#5B6147]'
             }`}
           >
-            <Factory className="w-3.5 h-3.5 text-stone-500" />
-            <span>{lang === 'en' ? 'Timber Mills' : 'തടി മില്ലുകൾ'}</span>
+            <Factory className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
+            <span className="whitespace-nowrap">{lang === 'en' ? 'Timber Mills' : 'തടി മില്ലുകൾ'}</span>
           </Link>
 
           {/* SECURITY ISOLATION: Dashboard Links ONLY appear for Authenticated Users with matching roles! */}
           {isAuthenticated && user?.role === 'buyer' && (
             <Link
               to="/dashboard/buyer"
-              className={`transition pb-1 border-b-2 flex items-center gap-1.5 ${
+              className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 ${
                 isCurrent('/dashboard/buyer')
                   ? 'text-[#5B6147] border-[#5B6147] font-bold'
-                  : 'border-transparent hover:text-[#5B6147] text-stone-700'
+                  : 'border-transparent hover:text-[#5B6147] text-stone-700 dark:text-stone-300'
               }`}
             >
-              <ShoppingBag className="w-3.5 h-3.5 text-emerald-700" />
-              <span>{lang === 'en' ? 'My Orders' : 'എന്റെ ഓർഡറുകൾ'}</span>
+              <ShoppingBag className="w-3.5 h-3.5 text-emerald-700 flex-shrink-0" />
+              <span className="whitespace-nowrap">{lang === 'en' ? 'My Orders' : 'എന്റെ ഓർഡറുകൾ'}</span>
             </Link>
           )}
 
           {isAuthenticated && user?.role === 'seller' && (
             <Link
               to="/dashboard/seller"
-              className={`transition pb-1 border-b-2 flex items-center gap-1.5 px-3 py-1 rounded-lg bg-stone-100 text-[#4A3626] border ${
-                isCurrent('/dashboard/seller') ? 'border-[#5B6147] font-bold' : 'border-stone-300'
+              className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 px-3 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 text-[#4A3626] dark:text-stone-200 border ${
+                isCurrent('/dashboard/seller') ? 'border-[#5B6147] font-bold' : 'border-stone-300 dark:border-stone-700'
               }`}
             >
-              <LayoutDashboard className="w-3.5 h-3.5 text-[#3F452F]" />
-              <span>{lang === 'en' ? 'Seller Hub' : 'കച്ചവട ഹബ്'}</span>
+              <LayoutDashboard className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
+              <span className="whitespace-nowrap">{lang === 'en' ? 'Seller Hub' : 'കച്ചവട ഹബ്'}</span>
             </Link>
           )}
 
           {isAuthenticated && user?.role === 'admin' && (
             <Link
               to="/admin"
-              className={`transition pb-1 border-b-2 flex items-center gap-1.5 px-3 py-1 rounded-lg bg-stone-100 text-stone-900 border ${
-                isCurrent('/admin') ? 'border-stone-500 font-bold' : 'border-stone-300'
+              className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 px-3 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-stone-100 border ${
+                isCurrent('/admin') ? 'border-stone-500 font-bold' : 'border-stone-300 dark:border-stone-700'
               }`}
             >
-              <Shield className="w-3.5 h-3.5 text-[#4A3626]" />
-              <span>{lang === 'en' ? 'Admin Console' : 'അഡ്മിൻ കൺസോൾ'}</span>
+              <Shield className="w-3.5 h-3.5 text-[#4A3626] flex-shrink-0" />
+              <span className="whitespace-nowrap">{lang === 'en' ? 'Admin Console' : 'അഡ്മിൻ കൺസോൾ'}</span>
             </Link>
           )}
         </nav>
 
-        {/* Right Action Cluster */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        {/* Right Action Cluster: Theme Toggle + Language Switcher + Auth */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Dark / Light Mode Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="flex items-center justify-center w-8 h-8 rounded-xl border border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 transition"
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-[#3F452F]" />
+            )}
+          </button>
+
           {/* Language Switcher */}
           <button
             onClick={toggleLanguage}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-xl border border-stone-200 hover:bg-stone-100 text-stone-700 transition"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-xl border border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 transition"
             title="Toggle Language / ഭാഷ മാറ്റുക"
           >
             <Globe className="w-3.5 h-3.5 text-[#3F452F]" />
@@ -475,16 +500,16 @@ function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage
           {isAuthenticated ? (
             <UserNavMenu lang={lang} />
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <Link
                 to="/login"
-                className="px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-xl text-stone-700 hover:text-stone-900 hover:bg-stone-100/60 transition"
+                className="px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-bold rounded-xl text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition"
               >
                 {lang === 'en' ? 'Sign In' : 'ലോഗിൻ'}
               </Link>
               <Link
                 to="/register"
-                className="px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white shadow-sm hover:shadow transition"
+                className="px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-bold rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white shadow-xs transition"
               >
                 {lang === 'en' ? 'Register' : 'രജിസ്റ്റർ'}
               </Link>
@@ -498,17 +523,60 @@ function AppHeader({ lang, toggleLanguage }: { lang: 'en' | 'ml'; toggleLanguage
 
 export function App() {
   const [lang, setLang] = useState<'en' | 'ml'>('en');
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      return (localStorage.getItem('timora_theme') as 'light' | 'dark') || 'light';
+    } catch {
+      return 'light';
+    }
+  });
 
   const toggleLanguage = () => {
     setLang((prev) => (prev === 'en' ? 'ml' : 'en'));
   };
 
+  const toggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      try {
+        localStorage.setItem('timora_theme', next);
+      } catch {}
+      if (next === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      return next;
+    });
+  };
+
+  // Sync theme with document element
+  React.useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen flex flex-col bg-stone-50/50 text-stone-900 font-sans pb-16 md:pb-0" lang={lang}>
+        <div
+          className={`min-h-screen flex flex-col font-sans pb-16 md:pb-0 transition-colors ${
+            theme === 'dark'
+              ? 'bg-[#151311] text-[#E7E1D6]'
+              : 'bg-stone-50/50 text-stone-900'
+          }`}
+          lang={lang}
+        >
           {/* Header */}
-          <AppHeader lang={lang} toggleLanguage={toggleLanguage} />
+          <AppHeader
+            lang={lang}
+            toggleLanguage={toggleLanguage}
+            theme={theme}
+            toggleTheme={toggleTheme}
+          />
 
           {/* Main Content Area */}
           <main className="flex-grow">

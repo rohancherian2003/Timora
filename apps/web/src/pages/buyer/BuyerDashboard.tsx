@@ -144,7 +144,9 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               <span className="font-mono">{latestResolvedTicket.resolvedAt}</span>
             </div>
             <p className="text-stone-900 text-xs sm:text-sm font-medium leading-relaxed">
-              "{latestResolvedTicket.resolutionReply}"
+              "{lang === 'en'
+                ? (latestResolvedTicket.resolutionReply || latestResolvedTicket.resolutionReplyMl)
+                : (latestResolvedTicket.resolutionReplyMl || latestResolvedTicket.resolutionReply)}"
             </p>
           </div>
         </div>
@@ -341,10 +343,12 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   </span>
                 </div>
 
-                <p className="text-xs text-stone-600 leading-relaxed font-medium">"{t.description}"</p>
+                <p className="text-xs text-stone-600 leading-relaxed font-medium">
+                  "{lang === 'en' ? t.description : (t.descriptionMl || t.description)}"
+                </p>
 
                 {/* Resolution message reply from admin */}
-                {t.status === 'resolved' && t.resolutionReply && (
+                {t.status === 'resolved' && (t.resolutionReply || t.resolutionReplyMl) && (
                   <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs space-y-1">
                     <div className="flex items-center justify-between font-bold text-emerald-900 text-[11px]">
                       <span className="flex items-center gap-1">
@@ -358,7 +362,9 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       <span className="font-mono text-stone-400">{t.resolvedAt}</span>
                     </div>
                     <p className="text-stone-800 text-xs italic pl-4 font-medium">
-                      "{t.resolutionReply}"
+                      "{lang === 'en'
+                        ? (t.resolutionReply || t.resolutionReplyMl)
+                        : (t.resolutionReplyMl || t.resolutionReply)}"
                     </p>
                   </div>
                 )}
