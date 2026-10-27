@@ -15,9 +15,7 @@ import {
   Sparkles,
   Layers,
   ArrowRight,
-  Factory,
-  Sun,
-  Moon
+  Factory
 } from 'lucide-react';
 import { AuthProvider, useAuth, UserRole } from './context/AuthContext';
 import { BrandLogo } from './components/BrandLogo';
@@ -34,8 +32,10 @@ import { BuyerDashboard } from './pages/buyer/BuyerDashboard';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 
 import { SessionTimeoutModal } from './components/SessionTimeoutModal';
+import { SignOutConfirmModal } from './components/SignOutConfirmModal';
+import { PageTransitionLoader } from './components/PageTransitionLoader';
 
-// Protected Route Guard
+// Protected Route Guard with Browser Back-Button Trap (Keeps user on their current page)
 function ProtectedRoute({
   children,
   allowedRoles,
@@ -44,6 +44,21 @@ function ProtectedRoute({
   allowedRoles?: UserRole[];
 }) {
   const { user, isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      window.history.pushState(null, '', window.location.href);
+
+      const handlePopState = () => {
+        // Push state again so back button cannot navigate back out of protected portal
+        window.history.pushState(null, '', window.location.href);
+      };
+
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, [isAuthenticated, location.pathname]);
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
@@ -203,12 +218,14 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
 function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const navigate = useNavigate();
 
   if (!user) return null;
 
-  const handleLogout = () => {
+  const handleConfirmLogout = () => {
     logout();
+    setShowSignOutConfirm(false);
     setOpen(false);
     navigate('/');
   };
@@ -326,7 +343,10 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
 
             <div className="pt-1 border-t border-stone-100">
               <button
-                onClick={handleLogout}
+                onClick={() => {
+                  setOpen(false);
+                  setShowSignOutConfirm(true);
+                }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition"
               >
                 <LogOut className="w-4 h-4" />
@@ -336,6 +356,14 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
           </div>
         </>
       )}
+
+      {/* Sign Out Confirmation Modal with Loading State */}
+      <SignOutConfirmModal
+        isOpen={showSignOutConfirm}
+        onClose={() => setShowSignOutConfirm(false)}
+        onConfirm={handleConfirmLogout}
+        lang={lang}
+      />
     </div>
   );
 }
@@ -344,13 +372,9 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
 function AppHeader({
   lang,
   toggleLanguage,
-  theme,
-  toggleTheme,
 }: {
   lang: 'en' | 'ml';
   toggleLanguage: () => void;
-  theme: 'light' | 'dark';
-  toggleTheme: () => void;
 }) {
   const { user, isAuthenticated } = useAuth();
   const location = useLocation();
@@ -363,15 +387,15 @@ function AppHeader({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#1a1714]/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 shadow-xs transition-colors">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
         {/* Brand Logo without subtitle clutter */}
         <Link to="/" className="group flex items-center flex-shrink-0">
-          <BrandLogo size="md" lang={lang} variant={theme === 'dark' ? 'dark' : 'light'} />
+          <BrandLogo size="md" lang={lang} />
         </Link>
 
         {/* Desktop Navigation Links - Single line, no wrapping */}
-        <nav className="hidden md:flex items-center gap-3 lg:gap-5 xl:gap-6 text-xs lg:text-sm font-semibold text-stone-600 dark:text-stone-300 whitespace-nowrap flex-shrink-0">
+        <nav className="hidden md:flex items-center gap-3 lg:gap-5 xl:gap-6 text-xs lg:text-sm font-semibold text-stone-600 whitespace-nowrap flex-shrink-0">
           <Link
             to="/marketplace"
             className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 ${
@@ -438,7 +462,7 @@ function AppHeader({
               className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 ${
                 isCurrent('/dashboard/buyer')
                   ? 'text-[#5B6147] border-[#5B6147] font-bold'
-                  : 'border-transparent hover:text-[#5B6147] text-stone-700 dark:text-stone-300'
+                  : 'border-transparent hover:text-[#5B6147] text-stone-700'
               }`}
             >
               <ShoppingBag className="w-3.5 h-3.5 text-emerald-700 flex-shrink-0" />
@@ -449,8 +473,8 @@ function AppHeader({
           {isAuthenticated && user?.role === 'seller' && (
             <Link
               to="/dashboard/seller"
-              className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 px-3 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 text-[#4A3626] dark:text-stone-200 border ${
-                isCurrent('/dashboard/seller') ? 'border-[#5B6147] font-bold' : 'border-stone-300 dark:border-stone-700'
+              className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 px-3 py-1 rounded-lg bg-stone-100 text-[#4A3626] border ${
+                isCurrent('/dashboard/seller') ? 'border-[#5B6147] font-bold' : 'border-stone-300'
               }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
@@ -461,8 +485,8 @@ function AppHeader({
           {isAuthenticated && user?.role === 'admin' && (
             <Link
               to="/admin"
-              className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 px-3 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-stone-100 border ${
-                isCurrent('/admin') ? 'border-stone-500 font-bold' : 'border-stone-300 dark:border-stone-700'
+              className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 px-3 py-1 rounded-lg bg-stone-100 text-stone-900 border ${
+                isCurrent('/admin') ? 'border-stone-500 font-bold' : 'border-stone-300'
               }`}
             >
               <Shield className="w-3.5 h-3.5 text-[#4A3626] flex-shrink-0" />
@@ -471,25 +495,12 @@ function AppHeader({
           )}
         </nav>
 
-        {/* Right Action Cluster: Theme Toggle + Language Switcher + Auth */}
+        {/* Right Action Cluster: Language Switcher + Auth */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {/* Dark / Light Mode Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="flex items-center justify-center w-8 h-8 rounded-xl border border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 transition"
-            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          >
-            {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-amber-400" />
-            ) : (
-              <Moon className="w-4 h-4 text-[#3F452F]" />
-            )}
-          </button>
-
           {/* Language Switcher */}
           <button
             onClick={toggleLanguage}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-xl border border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 transition"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-xl border border-stone-200 hover:bg-stone-100 text-stone-700 transition"
             title="Toggle Language / ഭാഷ മാറ്റുക"
           >
             <Globe className="w-3.5 h-3.5 text-[#3F452F]" />
@@ -503,7 +514,7 @@ function AppHeader({
             <div className="flex items-center gap-1.5 sm:gap-2">
               <Link
                 to="/login"
-                className="px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-bold rounded-xl text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition"
+                className="px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-bold rounded-xl text-stone-700 hover:text-stone-900 hover:bg-stone-100 transition"
               >
                 {lang === 'en' ? 'Sign In' : 'ലോഗിൻ'}
               </Link>
@@ -523,59 +534,24 @@ function AppHeader({
 
 export function App() {
   const [lang, setLang] = useState<'en' | 'ml'>('en');
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    try {
-      return (localStorage.getItem('timora_theme') as 'light' | 'dark') || 'light';
-    } catch {
-      return 'light';
-    }
-  });
 
   const toggleLanguage = () => {
     setLang((prev) => (prev === 'en' ? 'ml' : 'en'));
   };
 
-  const toggleTheme = () => {
-    setTheme((prev) => {
-      const next = prev === 'light' ? 'dark' : 'light';
-      try {
-        localStorage.setItem('timora_theme', next);
-      } catch {}
-      if (next === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      return next;
-    });
-  };
-
-  // Sync theme with document element
-  React.useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
-
   return (
     <AuthProvider>
       <Router>
+        {/* Sleek Route Transition Progress Bar */}
+        <PageTransitionLoader />
         <div
-          className={`min-h-screen flex flex-col font-sans pb-16 md:pb-0 transition-colors ${
-            theme === 'dark'
-              ? 'bg-[#151311] text-[#E7E1D6]'
-              : 'bg-stone-50/50 text-stone-900'
-          }`}
+          className="min-h-screen flex flex-col font-sans pb-16 md:pb-0 bg-stone-50/50 text-stone-900"
           lang={lang}
         >
           {/* Header */}
           <AppHeader
             lang={lang}
             toggleLanguage={toggleLanguage}
-            theme={theme}
-            toggleTheme={toggleTheme}
           />
 
           {/* Main Content Area */}

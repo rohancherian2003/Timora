@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle2, AlertCircle, ArrowRight, Loader2, Store, ShoppingBag, Hammer, User, Phone, KeyRound } from 'lucide-react';
+import { CheckCircle2, AlertCircle, ArrowRight, Loader2, Store, ShoppingBag, Hammer, User, Phone, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { validateIndianPhone, validatePin } from '@timora/shared';
 import { useAuth, UserRole } from '../../context/AuthContext';
 import { BrandLogo } from '../../components/BrandLogo';
@@ -15,6 +15,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [otp, setOtp] = useState('');
   const [pin, setPin] = useState('');
   const [pinConfirm, setPinConfirm] = useState('');
+  const [showPin, setShowPin] = useState(false);
   const [role, setRole] = useState<'buyer' | 'seller' | 'carpenter'>('buyer');
   const [businessName, setBusinessName] = useState('');
   const [districtId, setDistrictId] = useState<number>(5);
@@ -378,13 +379,24 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-xs font-bold text-[#4A3626] mb-1">
-                      {lang === 'en' ? '6-Digit Security PIN' : '6-അക്ക പിൻ'}
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-bold text-[#4A3626]">
+                        {lang === 'en' ? '6-Digit PIN' : '6-അക്ക പിൻ'}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowPin(!showPin)}
+                        className="text-[11px] text-[#8E7F6B] hover:text-[#4A3626] flex items-center gap-1 font-semibold"
+                        title={showPin ? 'Hide PIN' : 'Show PIN'}
+                      >
+                        {showPin ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                        <span>{showPin ? (lang === 'en' ? 'Hide' : 'മറയ്ക്കുക') : (lang === 'en' ? 'Show' : 'കാണിക്കുക')}</span>
+                      </button>
+                    </div>
                     <div className="relative">
                       <KeyRound className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[#8E7F6B]" />
                       <input
-                        type="password"
+                        type={showPin ? 'text' : 'password'}
                         maxLength={6}
                         value={pin}
                         onChange={(e) => {
@@ -405,7 +417,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     <div className="relative">
                       <KeyRound className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[#8E7F6B]" />
                       <input
-                        type="password"
+                        type={showPin ? 'text' : 'password'}
                         maxLength={6}
                         value={pinConfirm}
                         onChange={(e) => {

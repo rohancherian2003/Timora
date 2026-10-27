@@ -11,7 +11,9 @@ import {
   Loader2,
   CheckCircle2,
   X,
-  HelpCircle
+  HelpCircle,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { validateIndianPhone } from '@timora/shared';
 import { useAuth, UserRole } from '../../context/AuthContext';
@@ -27,6 +29,8 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [selectedRole, setSelectedRole] = useState<UserRole>(regState?.role || 'buyer');
   const [phone, setPhone] = useState(regState?.phone || '9847987654');
   const [pin, setPin] = useState(regState?.registered ? '' : '123456');
+  const [showPin, setShowPin] = useState(false);
+  const [showForgotPin, setShowForgotPin] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successBanner, setSuccessBanner] = useState<string | null>(
     regState?.registered
@@ -311,7 +315,7 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             <div className="relative">
               <KeyRound className="w-4 h-4 absolute left-3.5 top-3 text-[#8E7F6B]" />
               <input
-                type="password"
+                type={showPin ? 'text' : 'password'}
                 maxLength={6}
                 value={pin}
                 onChange={(e) => {
@@ -319,9 +323,17 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   if (error) setError(null);
                 }}
                 placeholder="••••••"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#8E7F6B]/30 text-base font-mono font-bold text-center tracking-widest text-[#4A3626] focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
+                className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-[#8E7F6B]/30 text-base font-mono font-bold text-center tracking-widest text-[#4A3626] focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPin(!showPin)}
+                className="absolute right-3 top-2.5 text-[#8E7F6B] hover:text-[#4A3626] transition p-1"
+                title={showPin ? 'Hide PIN' : 'Show PIN'}
+              >
+                {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
             <span className="text-[10px] text-[#8E7F6B] mt-0.5 block">
               {lang === 'en' ? '6-digit PIN (Demo: 123456)' : '6-അക്ക പിൻ (ഡെമോ: 123456)'}
@@ -476,30 +488,48 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     <label className="block text-xs font-bold text-stone-700 mb-1">
                       {lang === 'en' ? 'New 6-Digit PIN' : 'പുതിയ പിൻ'}
                     </label>
-                    <input
-                      type="password"
-                      maxLength={6}
-                      value={forgotNewPin}
-                      onChange={(e) => setForgotNewPin(e.target.value.replace(/\D/g, ''))}
-                      placeholder="••••••"
-                      className="w-full py-2 px-3 rounded-xl border border-stone-300 text-sm font-mono font-bold text-center tracking-widest focus:ring-2 focus:ring-[#5B6147] focus:outline-none"
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type={showForgotPin ? 'text' : 'password'}
+                        maxLength={6}
+                        value={forgotNewPin}
+                        onChange={(e) => setForgotNewPin(e.target.value.replace(/\D/g, ''))}
+                        placeholder="••••••"
+                        className="w-full py-2 pl-3 pr-8 rounded-xl border border-stone-300 text-sm font-mono font-bold text-center tracking-widest focus:ring-2 focus:ring-[#5B6147] focus:outline-none"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPin(!showForgotPin)}
+                        className="absolute right-2 top-2 text-stone-400 hover:text-stone-700"
+                      >
+                        {showForgotPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-stone-700 mb-1">
                       {lang === 'en' ? 'Confirm New PIN' : 'സ്ഥിരീകരിക്കുക'}
                     </label>
-                    <input
-                      type="password"
-                      maxLength={6}
-                      value={forgotConfirmPin}
-                      onChange={(e) => setForgotConfirmPin(e.target.value.replace(/\D/g, ''))}
-                      placeholder="••••••"
-                      className="w-full py-2 px-3 rounded-xl border border-stone-300 text-sm font-mono font-bold text-center tracking-widest focus:ring-2 focus:ring-[#5B6147] focus:outline-none"
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type={showForgotPin ? 'text' : 'password'}
+                        maxLength={6}
+                        value={forgotConfirmPin}
+                        onChange={(e) => setForgotConfirmPin(e.target.value.replace(/\D/g, ''))}
+                        placeholder="••••••"
+                        className="w-full py-2 pl-3 pr-8 rounded-xl border border-stone-300 text-sm font-mono font-bold text-center tracking-widest focus:ring-2 focus:ring-[#5B6147] focus:outline-none"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPin(!showForgotPin)}
+                        className="absolute right-2 top-2 text-stone-400 hover:text-stone-700"
+                      >
+                        {showForgotPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
