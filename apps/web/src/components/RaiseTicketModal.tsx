@@ -94,15 +94,15 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-      <div className="bg-white rounded-3xl border border-amber-300/80 shadow-2xl max-w-lg w-full p-6 sm:p-7 space-y-5 max-h-[92vh] overflow-y-auto">
+      <div className="bg-white rounded-3xl border border-stone-300/80 shadow-2xl max-w-lg w-full p-6 sm:p-7 space-y-5 max-h-[92vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-stone-100 pb-3.5">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-amber-100 text-[#78350f] flex items-center justify-center font-bold">
-              <LifeBuoy className="w-5 h-5 text-[#b45309]" />
+            <div className="w-9 h-9 rounded-2xl bg-stone-200 text-[#4A3626] flex items-center justify-center font-bold">
+              <LifeBuoy className="w-5 h-5 text-[#5B6147]" />
             </div>
             <div>
-              <h3 className="font-extrabold font-serif text-[#2c160b] text-lg">
+              <h3 className="font-extrabold font-serif text-[#4A3626] text-lg">
                 {lang === 'en' ? 'Raise a Support Ticket' : 'പരാതി നൽകുക (Raise a Ticket)'}
               </h3>
               <span className="text-[11px] text-stone-500 font-medium">
@@ -128,30 +128,30 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
             </div>
 
             <div className="space-y-1.5">
-              <span className="px-3 py-1 rounded-full bg-amber-100 text-[#78350f] border border-amber-300 font-mono text-xs font-bold inline-block">
+              <span className="px-3 py-1 rounded-full bg-stone-200 text-[#4A3626] border border-stone-300 font-mono text-xs font-bold inline-block">
                 Ticket ID: {submittedTicket.id}
               </span>
-              <h4 className="font-extrabold font-serif text-[#2c160b] text-lg">
+              <h4 className="font-extrabold font-serif text-[#4A3626] text-lg">
                 {lang === 'en' ? 'Ticket Submitted to Admin!' : 'പരാതി അഡ്മിന് ലഭിച്ചിട്ടുണ്ട്!'}
               </h4>
             </div>
 
             {/* User-requested resolution promise banner */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#faf6ee] via-[#f4ebe0] to-[#ecdcc8] border border-amber-300 text-left space-y-2.5">
-              <div className="flex items-center gap-2 text-[#78350f] text-xs font-bold">
-                <Clock className="w-4 h-4 text-[#b45309]" />
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#E7E1D6] via-[#d5cfc4] to-[#c4bdb0] border border-stone-300 text-left space-y-2.5">
+              <div className="flex items-center gap-2 text-[#4A3626] text-xs font-bold">
+                <Clock className="w-4 h-4 text-[#5B6147]" />
                 <span>
                   {lang === 'en'
                     ? 'Expected Resolution: Within 2 Business Days'
                     : '2 ദിവസത്തിനുള്ളിൽ പരിഹാരം ഉറപ്പ്'}
                 </span>
               </div>
-              <p className="text-xs text-[#2c160b] leading-relaxed font-medium">
+              <p className="text-xs text-[#4A3626] leading-relaxed font-medium">
                 {lang === 'en'
                   ? 'Our Super Admin cell will review your issue, inspect the timber depot/mill logs, and post a resolution reply directly to your Dashboard notifications.'
                   : 'അഡ്മിൻ ഈ പരാതി പരിശോധിച്ച്, ബന്ധപ്പെട്ട തടി വ്യാപാരിയുമായോ മില്ലുമായോ സംസാരിച്ച് 2 ദിവസത്തിനുള്ളിൽ ഇതിനുള്ള പരിഹാരം (Resolution Reply) താങ്കളുടെ ഡാഷ്‌ബോർഡിൽ അറിയിക്കുന്നതായിരിക്കും!'}
               </p>
-              <div className="text-[11px] text-stone-500 pt-1 border-t border-amber-200/60 flex items-center justify-between">
+              <div className="text-[11px] text-stone-500 pt-1 border-t border-stone-300/60 flex items-center justify-between">
                 <span>Contact: +91 {submittedTicket.phone}</span>
                 <span>{submittedTicket.createdAt}</span>
               </div>
@@ -160,7 +160,7 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
             <div className="pt-2">
               <button
                 onClick={handleResetAndClose}
-                className="w-full py-3 rounded-2xl bg-[#b45309] hover:bg-[#92400e] text-white font-bold text-xs sm:text-sm shadow-md transition"
+                className="w-full py-3 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm shadow-md transition"
               >
                 {lang === 'en' ? 'Close & Track Status' : 'ശരി, ട്രാക്ക് ചെയ്യുക'}
               </button>
@@ -187,7 +187,7 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
                     onClick={() => setRole(item.key as TicketRole)}
                     className={`py-2 px-2.5 rounded-xl text-center font-bold text-[11px] border transition ${
                       role === item.key
-                        ? 'bg-[#b45309] text-white border-[#b45309] shadow-xs'
+                        ? 'bg-[#5B6147] text-white border-[#5B6147] shadow-xs'
                         : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
                     }`}
                   >
@@ -210,7 +210,7 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
                     placeholder="e.g. Suresh Kumar"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-amber-300/80 bg-[#faf6ee]/50 text-stone-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#b45309]"
+                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-stone-300/80 bg-[#E7E1D6]/50 text-stone-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#5B6147]"
                     required
                   />
                 </div>
@@ -227,7 +227,7 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
                     placeholder="10-digit mobile"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-amber-300/80 bg-[#faf6ee]/50 text-stone-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#b45309]"
+                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-stone-300/80 bg-[#E7E1D6]/50 text-stone-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#5B6147]"
                     required
                   />
                 </div>
@@ -242,7 +242,7 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
               <select
                 value={categoryKey}
                 onChange={(e) => setCategoryKey(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-amber-300/80 bg-[#faf6ee]/50 text-stone-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#b45309]"
+                className="w-full px-3 py-2.5 rounded-xl border border-stone-300/80 bg-[#E7E1D6]/50 text-stone-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#5B6147]"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat.key} value={cat.key}>
@@ -266,7 +266,7 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
                 }
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-amber-300/80 bg-[#faf6ee]/50 text-stone-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#b45309]"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300/80 bg-[#E7E1D6]/50 text-stone-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#5B6147]"
                 required
               />
             </div>
@@ -282,7 +282,7 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
                   onClick={() => setPriority('normal')}
                   className={`px-3 py-1 rounded-lg text-[11px] font-bold transition ${
                     priority === 'normal'
-                      ? 'bg-amber-100 text-[#78350f] border border-amber-300'
+                      ? 'bg-stone-200 text-[#4A3626] border border-stone-300'
                       : 'bg-stone-100 text-stone-600'
                   }`}
                 >
@@ -313,7 +313,7 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-bold flex items-center gap-2 shadow-md shadow-amber-950/10 transition"
+                className="px-6 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold flex items-center gap-2 shadow-md shadow-amber-950/10 transition"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>{lang === 'en' ? 'Submit to Admin' : 'അഡ്മിന് അയക്കുക'}</span>

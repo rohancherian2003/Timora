@@ -67,16 +67,16 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 sm:p-8 bg-gradient-to-br from-[#faf6ee] via-[#f4ebe0] to-[#ecdcc8] rounded-3xl border border-[#ebd5bc] shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 sm:p-8 bg-gradient-to-br from-[#E7E1D6] via-[#d5cfc4] to-[#c4bdb0] rounded-3xl border border-[#c4bdb0] shadow-sm">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 text-[#854d0e] text-xs font-semibold backdrop-blur-sm border border-amber-600/30 mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 text-[#5B6147] text-xs font-semibold backdrop-blur-sm border border-[#5B6147]/30 mb-2">
             <Calculator className="w-3.5 h-3.5" />
             <span>{lang === 'en' ? 'Kerala Timber Standard' : 'കേരള തടി അളവ് മാനദണ്ഡം'}</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold font-serif text-[#2c160b] flex items-center gap-2.5">
+          <h1 className="text-2xl sm:text-3xl font-extrabold font-serif text-[#4A3626] flex items-center gap-2.5">
             {lang === 'en' ? 'Timber Volume & Price Calculator' : 'തടി അളവ് & വില കാൽക്കുലേറ്റർ'}
           </h1>
-          <p className="text-xs sm:text-sm text-[#6b472e] mt-1 font-medium">
+          <p className="text-xs sm:text-sm text-[#7A5A3A] mt-1 font-medium">
             {lang === 'en'
               ? 'Kerala standard CFT measurements for sawn planks, beams, and round logs.'
               : 'കേരളത്തിലെ അംഗീകൃത രീതിയിലുള്ള തടി അളവുകളും CFT കണക്കുകൂട്ടലുകളും.'}
@@ -84,7 +84,7 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         </div>
         <button
           onClick={resetValues}
-          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border border-amber-300 bg-white/80 hover:bg-white text-[#78350f] shadow-xs transition"
+          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border border-stone-300 bg-white/80 hover:bg-white text-[#4A3626] shadow-xs transition"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           {lang === 'en' ? 'Reset' : 'റീസെറ്റ്'}
@@ -92,12 +92,12 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex rounded-2xl bg-amber-100/70 p-1.5 max-w-md border border-amber-200/80">
+      <div className="flex rounded-2xl bg-stone-200/70 p-1.5 max-w-md border border-stone-300/80">
         <button
           onClick={() => setActiveTab('rectangular')}
           className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition ${
             activeTab === 'rectangular'
-              ? 'bg-white text-[#78350f] shadow-xs ring-1 ring-amber-300'
+              ? 'bg-white text-[#4A3626] shadow-xs ring-1 ring-stone-300'
               : 'text-stone-600 hover:text-stone-900'
           }`}
         >
@@ -107,7 +107,7 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           onClick={() => setActiveTab('round')}
           className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition ${
             activeTab === 'round'
-              ? 'bg-white text-[#78350f] shadow-xs ring-1 ring-amber-300'
+              ? 'bg-white text-[#4A3626] shadow-xs ring-1 ring-stone-300'
               : 'text-stone-600 hover:text-stone-900'
           }`}
         >
@@ -117,9 +117,9 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
       {/* Calculator Body */}
       {activeTab === 'rectangular' ? (
-        <div className="bg-white rounded-3xl border border-amber-200/80 p-6 sm:p-8 space-y-6 shadow-xs">
-          <div className="p-3.5 bg-[#faf6ee] border border-amber-200/80 rounded-2xl flex items-start gap-2.5 text-xs text-[#78350f]">
-            <Info className="w-4 h-4 text-[#b45309] mt-0.5 flex-shrink-0" />
+        <div className="bg-white rounded-3xl border border-stone-300/80 p-6 sm:p-8 space-y-6 shadow-xs">
+          <div className="p-3.5 bg-[#E7E1D6] border border-stone-300/80 rounded-2xl flex items-start gap-2.5 text-xs text-[#4A3626]">
+            <Info className="w-4 h-4 text-[#5B6147] mt-0.5 flex-shrink-0" />
             <div>
               <strong>{lang === 'en' ? 'Kerala CFT Formula: ' : 'കേരള CFT ഫോർമുല: '}</strong>
               <code>CFT = (Length in Feet × Width in Inches × Thickness in Inches ÷ 144) × Pieces</code>
@@ -137,7 +137,7 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 onChange={(e) => setLengthFt(Number(e.target.value))}
                 min={0.1}
                 step={0.1}
-                className="w-full px-3.5 py-2.5 border border-amber-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#b45309] focus:outline-none bg-stone-50/50"
+                className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
               />
             </div>
 
@@ -151,7 +151,7 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 onChange={(e) => setWidthIn(Number(e.target.value))}
                 min={0.1}
                 step={0.1}
-                className="w-full px-3.5 py-2.5 border border-amber-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#b45309] focus:outline-none bg-stone-50/50"
+                className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
               />
             </div>
 
@@ -165,7 +165,7 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 onChange={(e) => setThicknessIn(Number(e.target.value))}
                 min={0.1}
                 step={0.1}
-                className="w-full px-3.5 py-2.5 border border-amber-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#b45309] focus:outline-none bg-stone-50/50"
+                className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
               />
             </div>
 
@@ -179,7 +179,7 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 onChange={(e) => setPieces(Number(e.target.value))}
                 min={1}
                 step={1}
-                className="w-full px-3.5 py-2.5 border border-amber-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#b45309] focus:outline-none bg-stone-50/50"
+                className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
               />
             </div>
 
@@ -192,32 +192,32 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 value={ratePerCft || ''}
                 onChange={(e) => setRatePerCft(Number(e.target.value))}
                 min={0}
-                className="w-full px-3.5 py-2.5 border border-amber-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#b45309] focus:outline-none bg-stone-50/50"
+                className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
               />
             </div>
           </div>
 
           {rectResult && (
-            <div className="pt-6 border-t border-amber-100">
-              <div className="bg-gradient-to-br from-[#faf6ee] to-[#f4ebe0] p-6 rounded-3xl border border-amber-300/80 flex flex-wrap items-center justify-between gap-6 shadow-xs">
+            <div className="pt-6 border-t border-stone-200">
+              <div className="bg-gradient-to-br from-[#E7E1D6] to-[#d5cfc4] p-6 rounded-3xl border border-stone-300/80 flex flex-wrap items-center justify-between gap-6 shadow-xs">
                 <div>
-                  <span className="text-xs uppercase font-bold text-[#854d0e] tracking-wider">
+                  <span className="text-xs uppercase font-bold text-[#5B6147] tracking-wider">
                     {lang === 'en' ? 'Calculated Timber Volume' : 'കണക്കാക്കിയ വ്യാപ്തി'}
                   </span>
-                  <div className="text-3xl sm:text-4xl font-extrabold font-serif text-[#2c160b] mt-1">
+                  <div className="text-3xl sm:text-4xl font-extrabold font-serif text-[#4A3626] mt-1">
                     {rectResult.total_cft} <span className="text-base font-sans font-semibold">CFT</span>
                   </div>
-                  <div className="text-xs text-[#6b472e] mt-1">
+                  <div className="text-xs text-[#7A5A3A] mt-1">
                     {rectResult.cft_per_piece} CFT / piece · {rectResult.total_cft_m3} m³ (ക്യുബിക് മീറ്റർ)
                   </div>
                 </div>
 
                 {rectResult.estimated_cost && (
                   <div className="sm:text-right">
-                    <span className="text-xs uppercase font-bold text-[#854d0e] tracking-wider">
+                    <span className="text-xs uppercase font-bold text-[#5B6147] tracking-wider">
                       {lang === 'en' ? 'Estimated Total Price' : 'ആകെ കണക്കാക്കിയ വില'}
                     </span>
-                    <div className="text-3xl sm:text-4xl font-black text-[#b45309] mt-1">
+                    <div className="text-3xl sm:text-4xl font-black text-[#5B6147] mt-1">
                       {formatINR(rectResult.estimated_cost)}
                     </div>
                   </div>
@@ -227,13 +227,13 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-amber-200/80 p-6 sm:p-8 space-y-6 shadow-xs">
-          <div className="p-3.5 bg-[#faf6ee] border border-amber-200/80 rounded-2xl flex items-start gap-2.5 text-xs text-[#78350f]">
-            <Info className="w-4 h-4 text-[#b45309] mt-0.5 flex-shrink-0" />
+        <div className="bg-white rounded-3xl border border-stone-300/80 p-6 sm:p-8 space-y-6 shadow-xs">
+          <div className="p-3.5 bg-[#E7E1D6] border border-stone-300/80 rounded-2xl flex items-start gap-2.5 text-xs text-[#4A3626]">
+            <Info className="w-4 h-4 text-[#5B6147] mt-0.5 flex-shrink-0" />
             <div>
               <strong>{lang === 'en' ? 'Hoppus Volume Formula (Approximate): ' : 'ഹോപ്പസ് ലോഗ് ഫോർമുല (ഏകദേശം): '}</strong>
               <code>CFT ≈ (Diameter_in² × Length_ft) ÷ 183.35</code>
-              <p className="mt-0.5 text-[11px] text-[#854d0e]">
+              <p className="mt-0.5 text-[11px] text-[#5B6147]">
                 {lang === 'en'
                   ? 'Note: Round log measurements are approximate estimates due to natural taper and bark thickness.'
                   : 'ശ്രദ്ധിക്കുക: ഉരുളൻ തടികളുടെ അളവ് തൊലിയുടെ കനവും സ്വാഭാവികമായ ചരിവും കാരണം ഏകദേശ അളവാണ്.'}
@@ -251,7 +251,7 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 value={logDiameterIn || ''}
                 onChange={(e) => setLogDiameterIn(Number(e.target.value))}
                 min={1}
-                className="w-full px-3.5 py-2.5 border border-amber-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#b45309] focus:outline-none bg-stone-50/50"
+                className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
               />
             </div>
 
@@ -264,7 +264,7 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 value={logLengthFt || ''}
                 onChange={(e) => setLogLengthFt(Number(e.target.value))}
                 min={1}
-                className="w-full px-3.5 py-2.5 border border-amber-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#b45309] focus:outline-none bg-stone-50/50"
+                className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
               />
             </div>
 
@@ -277,32 +277,32 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 value={logRatePerCft || ''}
                 onChange={(e) => setLogRatePerCft(Number(e.target.value))}
                 min={0}
-                className="w-full px-3.5 py-2.5 border border-amber-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#b45309] focus:outline-none bg-stone-50/50"
+                className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
               />
             </div>
           </div>
 
           {roundResult && (
-            <div className="pt-6 border-t border-amber-100">
-              <div className="bg-gradient-to-br from-[#faf6ee] to-[#f4ebe0] p-6 rounded-3xl border border-amber-300/80 flex flex-wrap items-center justify-between gap-6 shadow-xs">
+            <div className="pt-6 border-t border-stone-200">
+              <div className="bg-gradient-to-br from-[#E7E1D6] to-[#d5cfc4] p-6 rounded-3xl border border-stone-300/80 flex flex-wrap items-center justify-between gap-6 shadow-xs">
                 <div>
-                  <span className="text-xs uppercase font-bold text-[#854d0e] tracking-wider">
+                  <span className="text-xs uppercase font-bold text-[#5B6147] tracking-wider">
                     {lang === 'en' ? 'Approximate Log Volume' : 'ഏകദേശ വ്യാപ്തി'}
                   </span>
-                  <div className="text-3xl sm:text-4xl font-extrabold font-serif text-[#2c160b] mt-1">
+                  <div className="text-3xl sm:text-4xl font-extrabold font-serif text-[#4A3626] mt-1">
                     {roundResult.total_cft} <span className="text-base font-sans font-semibold">CFT</span>
                   </div>
-                  <div className="text-xs text-[#6b472e] mt-1">
+                  <div className="text-xs text-[#7A5A3A] mt-1">
                     {roundResult.total_cft_m3} m³ (ക്യുബിക് മീറ്റർ)
                   </div>
                 </div>
 
                 {roundResult.estimated_cost && (
                   <div className="sm:text-right">
-                    <span className="text-xs uppercase font-bold text-[#854d0e] tracking-wider">
+                    <span className="text-xs uppercase font-bold text-[#5B6147] tracking-wider">
                       {lang === 'en' ? 'Estimated Total Price' : 'ആകെ കണക്കാക്കിയ വില'}
                     </span>
-                    <div className="text-3xl sm:text-4xl font-black text-[#b45309] mt-1">
+                    <div className="text-3xl sm:text-4xl font-black text-[#5B6147] mt-1">
                       {formatINR(roundResult.estimated_cost)}
                     </div>
                   </div>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 
 export type UserRole = 'buyer' | 'seller' | 'admin';
 
@@ -15,9 +15,12 @@ interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
   isAuthenticated: boolean;
+  isSessionTimedOut: boolean;
+  dismissTimeoutModal: () => void;
   login: (phone: string, pin: string, requestedRole?: UserRole) => Promise<{ success: boolean; error?: string; role?: UserRole }>;
   loginAsDemo: (role: UserRole) => UserRole;
   logout: () => void;
+  resetSessionTimer: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,10 +53,24 @@ const DEMO_USERS: Record<UserRole, UserProfile> = {
 
 const STORAGE_KEY = 'timora_auth_user';
 const TOKEN_KEY = 'timora_auth_token';
+const LAST_ACTIVE_KEY = 'timora_last_active';
+const SESSION_TIMEOUT_MS = 25 * 60 * 1000; // 25 minutes inactivity
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isSessionTimedOut, setIsSessionTimedOut] = useState<boolean>(false);
+
   const [user, setUser] = useState<UserProfile | null>(() => {
     try {
+      const lastActive = localStorage.getItem(LAST_ACTIVE_KEY);
+      if (lastActive) {
+        const elapsed = Date.now() - parseInt(lastActive, 10);
+        if (elapsed > SESSION_TIMEOUT_MS) {
+          localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(LAST_ACTIVE_KEY);
+          return null;
+        }
+      }
       const saved = localStorage.getItem(STORAGE_KEY);
       return saved ? JSON.parse(saved) : null;
     } catch {
@@ -69,17 +86,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   });
 
+  const sessionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const doLogout = useCallback((timedOut: boolean = false) => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(LAST_ACTIVE_KEY);
+    if (timedOut) {
+      setIsSessionTimedOut(true);
+    }
+  }, []);
+
+  const resetSessionTimer = useCallback(() => {
+    localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
+    if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
+    sessionTimerRef.current = setTimeout(() => {
+      doLogout(true);
+    }, SESSION_TIMEOUT_MS);
+  }, [doLogout]);
+
+  const dismissTimeoutModal = useCallback(() => {
+    setIsSessionTimedOut(false);
+  }, []);
+
+  // Monitor user activity and reset inactivity timer
+  useEffect(() => {
+    if (user) {
+      resetSessionTimer();
+
+      const events = ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'];
+      const handler = () => resetSessionTimer();
+      events.forEach((e) => window.addEventListener(e, handler, { passive: true }));
+
+      return () => {
+        events.forEach((e) => window.removeEventListener(e, handler));
+        if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
+      };
+    }
+  }, [user, resetSessionTimer]);
+
   const loginAsDemo = (role: UserRole): UserRole => {
+    setIsSessionTimedOut(false);
     const demoUser = DEMO_USERS[role];
     setUser(demoUser);
     setToken(`demo-token-${role}-${Date.now()}`);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(demoUser));
     localStorage.setItem(TOKEN_KEY, `demo-token-${role}`);
+    localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
     return role;
   };
 
-  const login = async (phone: string, pin: string, requestedRole?: UserRole): Promise<{ success: boolean; error?: string; role?: UserRole }> => {
-    // If the phone matches demo user phone numbers or fallback by requested role
+  const login = async (
+    phone: string,
+    pin: string,
+    requestedRole?: UserRole
+  ): Promise<{ success: boolean; error?: string; role?: UserRole }> => {
+    setIsSessionTimedOut(false);
     const cleanPhone = phone.replace(/\D/g, '');
     let matchedRole: UserRole = requestedRole || 'buyer';
 
@@ -102,15 +166,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(mockJwt);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedUser));
     localStorage.setItem(TOKEN_KEY, mockJwt);
+    localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
 
     return { success: true, role: matchedRole };
   };
 
   const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(TOKEN_KEY);
+    doLogout(false);
   };
 
   return (
@@ -119,9 +181,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         token,
         isAuthenticated: !!user,
+        isSessionTimedOut,
+        dismissTimeoutModal,
         login,
         loginAsDemo,
         logout,
+        resetSessionTimer,
       }}
     >
       {children}

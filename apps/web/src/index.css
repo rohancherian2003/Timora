@@ -4,8 +4,36 @@
 
 :root {
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --color-bg: #E7E1D6;
+  --color-primary: #5B6147;
+  --color-primary-dark: #3F452F;
+  --color-secondary: #8A8F6E;
+  --color-taupe: #8E7F6B;
+  --color-wood: #7A5A3A;
+  --color-dark-wood: #4A3626;
 }
 
 [lang='ml'] {
   font-family: 'Manjari', sans-serif;
+}
+
+/* Continuous ticker marquee animation */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  animation: marquee 35s linear infinite;
+  width: max-content;
+}
+
+.ticker-track:hover .animate-marquee {
+  animation-play-state: paused;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
 }

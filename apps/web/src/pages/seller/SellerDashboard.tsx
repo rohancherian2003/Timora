@@ -56,18 +56,18 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Top Welcome */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 sm:p-8 bg-gradient-to-br from-[#faf6ee] via-[#f4ebe0] to-[#ecdcc8] rounded-3xl border border-[#ebd5bc] shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 sm:p-8 bg-gradient-to-br from-[#E7E1D6] via-[#d5cfc4] to-[#c4bdb0] rounded-3xl border border-[#c4bdb0] shadow-sm">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#b45309] text-white uppercase tracking-wider">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#5B6147] text-white uppercase tracking-wider">
               {lang === 'en' ? 'Verified Timber Depot' : 'അംഗീകൃത തടി ഡിപ്പോ'}
             </span>
-            <span className="text-xs text-[#78350f] font-mono font-medium">ID: {user?.id || 'usr-seller-01'}</span>
+            <span className="text-xs text-[#4A3626] font-mono font-medium">ID: {user?.id || 'usr-seller-01'}</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold font-serif text-[#2c160b]">
+          <h1 className="text-2xl sm:text-3xl font-extrabold font-serif text-[#4A3626]">
             {user?.businessName || user?.name || (lang === 'en' ? 'Seller Management Dashboard' : 'തടിക്കച്ചവട ഡാഷ്‌ബോർഡ്')}
           </h1>
-          <p className="text-xs sm:text-sm text-[#6b472e] mt-1 flex items-center gap-2 font-medium">
+          <p className="text-xs sm:text-sm text-[#7A5A3A] mt-1 flex items-center gap-2 font-medium">
             <span>{lang === 'en' ? 'Contact: +91' : 'ഫോൺ: +91'}{user?.phone || '9847120001'}</span>
             <span>•</span>
             <span>{user?.district || (lang === 'en' ? 'Kerala' : 'കേരളം')}</span>
@@ -77,15 +77,15 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         <div className="flex items-center gap-2.5 flex-wrap">
           <button
             onClick={() => setIsRaiseModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white border border-amber-300 text-[#78350f] hover:bg-amber-50 text-xs sm:text-sm font-bold shadow-xs transition"
+            className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white border border-stone-300 text-[#4A3626] hover:bg-stone-100 text-xs sm:text-sm font-bold shadow-xs transition"
           >
-            <LifeBuoy className="w-4 h-4 text-[#b45309]" />
+            <LifeBuoy className="w-4 h-4 text-[#5B6147]" />
             <span>{lang === 'en' ? 'Raise Ticket' : 'പരാതി നൽകുക'}</span>
           </button>
 
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#b45309] hover:bg-[#92400e] text-white text-xs sm:text-sm font-bold shadow-md shadow-amber-950/10 transition"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs sm:text-sm font-bold shadow-md shadow-amber-950/10 transition"
           >
             <Plus className="w-4 h-4" />
             <span>{lang === 'en' ? 'Post New Timber Stock' : 'പുതിയ തടി ചേർക്കുക'}</span>
@@ -95,7 +95,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
       {/* RESOLVED TICKET NOTIFICATION POP-UP BANNER */}
       {latestResolvedTicket && (
-        <div className="p-5 rounded-3xl bg-gradient-to-r from-emerald-50 via-[#faf6ee] to-amber-50 border-2 border-emerald-400 shadow-md animate-fadeIn space-y-3">
+        <div className="p-5 rounded-3xl bg-gradient-to-r from-emerald-50 via-[#E7E1D6] to-stone-100 border-2 border-emerald-400 shadow-md animate-fadeIn space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold flex-shrink-0">
@@ -110,7 +110,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     {latestResolvedTicket.id}
                   </span>
                 </div>
-                <h3 className="font-extrabold font-serif text-[#2c160b] text-base mt-0.5">
+                <h3 className="font-extrabold font-serif text-[#4A3626] text-base mt-0.5">
                   {lang === 'en' ? latestResolvedTicket.category : latestResolvedTicket.categoryMl}
                 </h3>
               </div>
@@ -131,40 +131,40 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="bg-white p-5 rounded-3xl border border-amber-200/80 shadow-xs flex items-center justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-stone-300/80 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
               {lang === 'en' ? 'Live Active Stock' : 'ലഭ്യമായ സ്റ്റോക്ക്'}
             </span>
-            <div className="text-2xl font-black text-[#2c160b] font-serif mt-1">
-              125 <span className="text-sm font-sans font-semibold text-[#854d0e]">CFT</span>
+            <div className="text-2xl font-black text-[#4A3626] font-serif mt-1">
+              125 <span className="text-sm font-sans font-semibold text-[#5B6147]">CFT</span>
             </div>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-amber-50 text-[#b45309] flex items-center justify-center border border-amber-200/60">
+          <div className="w-10 h-10 rounded-2xl bg-stone-100 text-[#5B6147] flex items-center justify-center border border-stone-300/60">
             <CheckCircle2 className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-amber-200/80 shadow-xs flex items-center justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-stone-300/80 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
               {lang === 'en' ? 'Awaiting Admin Review' : 'റിവ്യൂവിലുള്ളവ'}
             </span>
-            <div className="text-2xl font-black text-[#b45309] font-serif mt-1">
+            <div className="text-2xl font-black text-[#5B6147] font-serif mt-1">
               2 <span className="text-sm font-sans font-semibold text-stone-500">Listings</span>
             </div>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-[#faf6ee] text-[#b45309] flex items-center justify-center border border-amber-200/60">
+          <div className="w-10 h-10 rounded-2xl bg-[#E7E1D6] text-[#5B6147] flex items-center justify-center border border-stone-300/60">
             <Clock className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-amber-200/80 shadow-xs flex items-center justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-stone-300/80 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
               {lang === 'en' ? 'Active Enquiries' : 'ലഭിച്ച അന്വേഷണങ്ങൾ'}
             </span>
-            <div className="text-2xl font-black text-[#2c160b] font-serif mt-1">
+            <div className="text-2xl font-black text-[#4A3626] font-serif mt-1">
               5 <span className="text-sm font-sans font-semibold text-stone-500">Open</span>
             </div>
           </div>
@@ -176,9 +176,9 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
       {/* New Listing Modal / Form */}
       {showAddForm && (
-        <div className="bg-white rounded-3xl border border-amber-300/80 p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="bg-white rounded-3xl border border-stone-300/80 p-6 sm:p-8 shadow-sm space-y-6">
           <div className="flex items-center justify-between border-b pb-4">
-            <h2 className="text-lg font-extrabold font-serif text-[#2c160b]">
+            <h2 className="text-lg font-extrabold font-serif text-[#4A3626]">
               {lang === 'en' ? 'Submit Timber Stock for Approval' : 'പുതിയ തടി അനുമതിക്കായി സമർപ്പിക്കുക'}
             </h2>
             <button
@@ -302,7 +302,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-bold text-sm shadow-md shadow-amber-950/10 transition"
+                className="w-full py-3 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-sm shadow-md shadow-amber-950/10 transition"
               >
                 {lang === 'en' ? 'Submit Listing for Approval' : 'അംഗീകാരത്തിനായി ലിസ്റ്റിംഗ് സമർപ്പിക്കുക'}
               </button>
@@ -312,36 +312,36 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       )}
 
       {/* Current Stock Table */}
-      <div className="bg-white rounded-3xl border border-amber-200/80 overflow-hidden shadow-xs">
-        <div className="p-4 border-b border-amber-100 flex items-center justify-between">
-          <h3 className="font-extrabold font-serif text-[#2c160b] text-base">
+      <div className="bg-white rounded-3xl border border-stone-300/80 overflow-hidden shadow-xs">
+        <div className="p-4 border-b border-stone-200 flex items-center justify-between">
+          <h3 className="font-extrabold font-serif text-[#4A3626] text-base">
             {lang === 'en' ? 'My Timber Stock Inventory' : 'എന്റെ തടി സ്റ്റോക്കുകൾ'}
           </h3>
-          <span className="text-xs text-[#854d0e] font-semibold">1 Active · 1 Pending Review</span>
+          <span className="text-xs text-[#5B6147] font-semibold">1 Active · 1 Pending Review</span>
         </div>
 
-        <div className="divide-y divide-amber-100 text-xs sm:text-sm">
-          <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#faf6ee]/50">
+        <div className="divide-y divide-stone-200 text-xs sm:text-sm">
+          <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#E7E1D6]/50">
             <div>
-              <div className="font-bold text-[#2c160b]">First-Grade Nilambur Teak Planks</div>
+              <div className="font-bold text-[#4A3626]">First-Grade Nilambur Teak Planks</div>
               <div className="text-xs text-stone-500 mt-0.5">Teak · Rough-sawn Planks · Kottayam</div>
             </div>
             <div className="flex items-center gap-4">
-              <span className="font-mono font-bold text-[#78350f]">45 CFT @ ₹2,800/CFT</span>
+              <span className="font-mono font-bold text-[#4A3626]">45 CFT @ ₹2,800/CFT</span>
               <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
                 Approved (ലൈവ്)
               </span>
             </div>
           </div>
 
-          <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#faf6ee]/50">
+          <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#E7E1D6]/50">
             <div>
-              <div className="font-bold text-[#2c160b]">Aanjili Wild Jack Beams</div>
+              <div className="font-bold text-[#4A3626]">Aanjili Wild Jack Beams</div>
               <div className="text-xs text-stone-500 mt-0.5">Anjili · Squared Beams · Kottayam</div>
             </div>
             <div className="flex items-center gap-4">
               <span className="font-mono font-bold text-stone-700">80 CFT @ ₹1,400/CFT</span>
-              <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
+              <span className="px-2.5 py-1 rounded-full bg-stone-100 text-[#4A3626] border border-stone-300 text-xs font-semibold">
                 Pending Review (പരിശോധനയിൽ)
               </span>
             </div>
