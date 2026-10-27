@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build -w @timora/web",
+  "buildCommand": "npm run build -w @timora/shared && npm run build -w @timora/web",
   "outputDirectory": "apps/web/dist",
   "framework": "vite",
   "rewrites": [
