@@ -1,40 +1,28 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, ShieldCheck, Tag, ArrowLeft, Send, CheckCircle2, Phone, AlertCircle } from 'lucide-react';
+import { MapPin, ShieldCheck, Tag, ArrowLeft, Send, CheckCircle2, Phone, AlertCircle, Trees, Layers, Scale } from 'lucide-react';
 import { formatINR } from '@timora/shared';
+import { getTimberListingById } from '../../utils/timberListings';
 
 export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { id } = useParams<{ id: string }>();
+  const listing = getTimberListingById(id);
+
+  const [selectedImage, setSelectedImage] = useState<string>(listing.image_url);
   const [showEnquiryModal, setShowEnquiryModal] = useState(false);
-  const [quantity, setQuantity] = useState(10);
-  const [proposedPrice, setProposedPrice] = useState(2800);
+  const [quantity, setQuantity] = useState(Math.min(10, listing.quantity));
+  const [proposedPrice, setProposedPrice] = useState(listing.price_per_cft);
   const [message, setMessage] = useState('');
   const [sent, setSent] = useState(false);
 
-  // Mock listing details (in production fetched via `api.get('/listings/' + id)`)
-  const listing = {
-    id: id || '1',
-    title: 'First-Grade Nilambur Teak Planks',
-    species: 'Teak (തേക്ക്)',
-    type: 'Rough-sawn Planks (അറുത്ത പലകകൾ)',
-    district: 'Malappuram (മലപ്പുറം)',
-    locality: 'Nilambur Forest Division',
-    quantity: 45,
-    unit: 'CFT',
-    price_per_cft: 2800,
-    dimensions: '10 ft Length × 8 in Width × 2 in Thickness',
-    pieces: 36,
-    is_dried: true,
-    has_cracks: false,
-    condition_notes: 'Mature timber harvested with transit permits. Straight grain, zero sapwood, naturally air-seasoned for 8 months.',
-    seller_name: 'Nilambur Wood Works',
-    seller_phone: '+919847120001',
-    seller_verified: true,
-    images: [
-      '/images/timber/teak-logs.png',
-      '/images/timber/mahogany-logs.jpg',
-    ],
-  };
+  // Synchronize when listing ID changes
+  React.useEffect(() => {
+    setSelectedImage(listing.image_url);
+    setQuantity(Math.min(10, listing.quantity));
+    setProposedPrice(listing.price_per_cft);
+  }, [id, listing.image_url, listing.price_per_cft, listing.quantity]);
+
+  const imagesList = Array.from(new Set([listing.image_url, ...(listing.additional_images || [])]));
 
   const handleSendEnquiry = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,130 +35,168 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fadeIn">
       {/* Back button */}
       <Link
         to="/marketplace"
         className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-500 hover:text-[#5B6147] transition"
       >
         <ArrowLeft className="w-4 h-4" />
-        {lang === 'en' ? 'Back to Marketplace' : 'തിരികെ മാർക്കറ്റിലേക്ക്'}
+        <span>{lang === 'en' ? 'Back to Marketplace' : 'തിരികെ മാർക്കറ്റിലേക്ക്'}</span>
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Images Gallery */}
         <div className="space-y-4">
-          <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-[#E7E1D6] border border-stone-300/80 shadow-sm">
+          <div className="aspect-[4/3] rounded-3xl overflow-hidden bg-[#E7E1D6] border-2 border-[#8E7F6B]/30 shadow-md">
             <img
-              src={listing.images[0]}
+              src={selectedImage}
               alt={listing.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition duration-300"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {listing.images.map((img, i) => (
-              <div key={i} className="aspect-[16/9] rounded-xl overflow-hidden border border-stone-300/80">
-                <img src={img} alt="thumbnail" className="w-full h-full object-cover" />
-              </div>
-            ))}
-          </div>
+          {imagesList.length > 1 && (
+            <div className="grid grid-cols-3 gap-3">
+              {imagesList.map((img, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setSelectedImage(img)}
+                  className={`aspect-[16/10] rounded-2xl overflow-hidden border-2 transition ${
+                    selectedImage === img
+                      ? 'border-[#5B6147] ring-2 ring-[#5B6147]/30 shadow-sm'
+                      : 'border-[#8E7F6B]/30 opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  <img src={img} alt="thumbnail" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Details & Actions */}
         <div className="space-y-6">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-300 text-[#4A3626] text-xs font-bold flex items-center gap-1">
-                <Tag className="w-3 h-3 text-[#5B6147]" />
-                {listing.species}
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="px-3 py-1 rounded-full bg-[#E7E1D6] border border-[#8E7F6B]/30 text-[#4A3626] text-xs font-bold flex items-center gap-1">
+                <Tag className="w-3.5 h-3.5 text-[#5B6147]" />
+                {lang === 'en' ? listing.species : listing.species_ml}
               </span>
-              <span className="text-xs text-stone-500 font-semibold">{listing.type}</span>
+              <span className="text-xs text-[#7A5A3A] font-semibold">
+                {lang === 'en' ? listing.type : listing.type_ml}
+              </span>
+              {listing.transit_pass && (
+                <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 border border-emerald-300 text-emerald-800 text-[11px] font-bold flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>{lang === 'en' ? 'Forest Form IV Pass' : 'ഫോറസ്റ്റ് പാസ്സ് ഉണ്ട്'}</span>
+                </span>
+              )}
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold font-serif text-[#4A3626] tracking-tight">
-              {listing.title}
+            <h1 className="text-2xl sm:text-3xl font-extrabold font-serif text-[#4A3626] tracking-tight leading-tight">
+              {lang === 'en' ? listing.title : (listing.title_ml || listing.title)}
             </h1>
 
-            <div className="flex items-center gap-2 text-xs text-stone-600 mt-2">
-              <MapPin className="w-4 h-4 text-[#5B6147]" />
-              <span>{listing.locality}, {listing.district}</span>
+            <div className="flex items-center gap-2 text-xs text-[#7A5A3A] mt-2 font-medium">
+              <MapPin className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
+              <span>
+                {lang === 'en'
+                  ? `${listing.locality}, ${listing.district}`
+                  : `${listing.locality_ml || listing.locality}, ${listing.district}`}
+              </span>
             </div>
           </div>
 
           {/* Pricing Box */}
-          <div className="p-6 rounded-3xl bg-gradient-to-br from-[#E7E1D6] to-[#d5cfc4] border border-stone-300/80 shadow-xs flex items-center justify-between gap-4">
+          <div className="p-6 rounded-3xl bg-gradient-to-br from-[#E7E1D6] to-[#d5cfc4] border border-[#8E7F6B]/40 shadow-xs flex items-center justify-between gap-4">
             <div>
-              <span className="text-xs uppercase font-bold text-[#5B6147] tracking-wider">Rate per CFT</span>
-              <div className="text-3xl font-extrabold font-serif text-[#5B6147]">{formatINR(listing.price_per_cft)}</div>
-              <span className="text-xs text-[#7A5A3A] font-medium">Available: {listing.quantity} {listing.unit}</span>
+              <span className="text-xs uppercase font-bold text-[#5B6147] tracking-wider block">
+                {lang === 'en' ? 'Verified Rate / CFT' : 'അംഗീകൃത നിരക്ക് / CFT'}
+              </span>
+              <div className="text-3xl font-black font-serif text-[#4A3626]">
+                {formatINR(listing.price_per_cft)}
+              </div>
+              <span className="text-xs text-[#7A5A3A] font-semibold">
+                {lang === 'en' ? 'Available Stock:' : 'ലഭ്യമായ അളവ്:'} {listing.quantity} {listing.unit}
+              </span>
             </div>
 
             <button
               onClick={() => setShowEnquiryModal(true)}
-              className="px-6 py-3.5 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-sm shadow-md shadow-amber-950/10 transition flex items-center gap-2"
+              className="px-6 py-3.5 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-sm shadow-md transition flex items-center gap-2"
             >
               <Send className="w-4 h-4" />
-              {lang === 'en' ? 'Send Price Enquiry' : 'അന്വേഷണം അയക്കുക'}
+              <span>{lang === 'en' ? 'Send Price Enquiry' : 'ഓഫർ അയക്കുക'}</span>
             </button>
           </div>
 
           {/* Dimension Specifications */}
-          <div className="bg-white rounded-3xl border border-stone-300/80 p-6 shadow-xs space-y-4">
+          <div className="bg-[#FDFBF7] rounded-3xl border-2 border-[#8E7F6B]/30 p-6 shadow-xs space-y-4">
             <h3 className="font-extrabold font-serif text-[#4A3626] text-base">
               {lang === 'en' ? 'Timber Dimensions & Specifications' : 'തടിയുടെ അളവുകളും വിവരങ്ങളും'}
             </h3>
 
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="p-3.5 bg-[#E7E1D6] rounded-2xl border border-stone-300/50">
-                <span className="text-stone-400 font-semibold">Dimensions</span>
+            <div className="grid grid-cols-2 gap-3.5 text-xs">
+              <div className="p-3.5 bg-[#E7E1D6]/60 rounded-2xl border border-[#8E7F6B]/20">
+                <span className="text-[#8E7F6B] font-bold text-[11px] block">
+                  {lang === 'en' ? 'Dimensions / Size' : 'അളവ്'}
+                </span>
                 <div className="font-bold text-[#4A3626] mt-0.5">{listing.dimensions}</div>
               </div>
 
-              <div className="p-3.5 bg-[#E7E1D6] rounded-2xl border border-stone-300/50">
-                <span className="text-stone-400 font-semibold">Total Pieces</span>
-                <div className="font-bold text-[#4A3626] mt-0.5">{listing.pieces} Pieces (എണ്ണം)</div>
+              <div className="p-3.5 bg-[#E7E1D6]/60 rounded-2xl border border-[#8E7F6B]/20">
+                <span className="text-[#8E7F6B] font-bold text-[11px] block">
+                  {lang === 'en' ? 'Total Pieces' : 'എണ്ണം'}
+                </span>
+                <div className="font-bold text-[#4A3626] mt-0.5">
+                  {listing.pieces || 1} {lang === 'en' ? 'Pieces' : 'എണ്ണം'}
+                </div>
               </div>
 
-              <div className="p-3.5 bg-[#E7E1D6] rounded-2xl border border-stone-300/50">
-                <span className="text-stone-400 font-semibold">Seasoned / Dried</span>
-                <div className="font-bold text-[#4A3626] mt-0.5">{listing.is_dried ? 'Air-Seasoned (ഉണക്കിയത്)' : 'Raw Wet'}</div>
+              <div className="p-3.5 bg-[#E7E1D6]/60 rounded-2xl border border-[#8E7F6B]/20">
+                <span className="text-[#8E7F6B] font-bold text-[11px] block">
+                  {lang === 'en' ? 'Moisture & Seasoning' : 'ഈർപ്പം / ഉണക്ക്'}
+                </span>
+                <div className="font-bold text-[#4A3626] mt-0.5">{listing.moisture}</div>
               </div>
 
-              <div className="p-3.5 bg-[#E7E1D6] rounded-2xl border border-stone-300/50">
-                <span className="text-stone-400 font-semibold">Visible Cracks</span>
-                <div className="font-bold text-[#4A3626] mt-0.5">{listing.has_cracks ? 'Minor surface checks' : 'Zero cracks (വിള്ളലുകൾ ഇല്ല)'}</div>
+              <div className="p-3.5 bg-[#E7E1D6]/60 rounded-2xl border border-[#8E7F6B]/20">
+                <span className="text-[#8E7F6B] font-bold text-[11px] block">
+                  {lang === 'en' ? 'Quality Grade' : 'ഗ്രേഡ്'}
+                </span>
+                <div className="font-bold text-[#4A3626] mt-0.5">{listing.grade}</div>
               </div>
             </div>
 
-            <div className="pt-2 text-xs text-stone-600 leading-relaxed font-normal">
-              <span className="font-bold text-[#4A3626]">Seller Notes: </span>
-              {listing.condition_notes}
+            {/* Condition Notes */}
+            <div className="p-3.5 bg-white rounded-2xl border border-[#8E7F6B]/20 text-xs">
+              <span className="text-[#8E7F6B] font-bold text-[11px] block mb-1">
+                {lang === 'en' ? 'Depot Condition Notes' : 'ഡിപ്പോ പരിശോധനാ കുറിപ്പ്'}
+              </span>
+              <p className="text-[#4A3626] leading-relaxed font-medium">
+                {lang === 'en' ? listing.condition_notes : (listing.condition_notes_ml || listing.condition_notes)}
+              </p>
             </div>
           </div>
 
-          {/* Seller Contact Card */}
-          <div className="bg-white rounded-3xl border border-stone-300/80 p-5 shadow-xs flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center font-bold text-[#4A3626]">
-                {listing.seller_name[0]}
+          {/* Seller / Depot Info */}
+          <div className="p-5 rounded-3xl bg-[#E7E1D6]/70 border border-[#8E7F6B]/30 flex items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-1.5 text-xs text-[#5B6147] font-bold">
+                <ShieldCheck className="w-4 h-4" />
+                <span>{lang === 'en' ? 'Verified Timber Merchant' : 'അംഗീകൃത തടി വ്യാപാരി'}</span>
               </div>
-              <div>
-                <div className="flex items-center gap-1.5 font-bold text-stone-900 text-sm">
-                  {listing.seller_name}
-                  {listing.seller_verified && (
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  )}
-                </div>
-                <div className="text-xs text-stone-500">{listing.district}</div>
-              </div>
+              <h4 className="font-extrabold text-[#4A3626] text-sm mt-0.5">{listing.seller_name}</h4>
+              <p className="text-[11px] text-[#7A5A3A] font-mono mt-0.5">{listing.seller_phone}</p>
             </div>
 
             <a
               href={`tel:${listing.seller_phone}`}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-stone-300 text-[#4A3626] hover:bg-stone-100 text-xs font-bold transition"
+              className="px-4 py-2.5 rounded-xl bg-white border border-[#8E7F6B]/30 hover:bg-[#E7E1D6] text-[#4A3626] font-bold text-xs flex items-center gap-1.5 shadow-xs transition"
             >
               <Phone className="w-3.5 h-3.5 text-[#5B6147]" />
-              {lang === 'en' ? 'Call Seller' : 'വിളിക്കുക'}
+              <span>{lang === 'en' ? 'Call Seller' : 'വിളിക്കുക'}</span>
             </a>
           </div>
         </div>
@@ -204,16 +230,20 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               </div>
             ) : (
               <form onSubmit={handleSendEnquiry} className="space-y-4">
+                <div className="p-2.5 bg-[#E7E1D6]/60 rounded-xl text-xs text-[#4A3626] font-semibold">
+                  <span>{listing.title}</span>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    <label className="block text-xs font-semibold text-[#4A3626] mb-1">
                       {lang === 'en' ? 'Quantity (CFT)' : 'ആവശ്യമുള്ള അളവ് (CFT)'}
                     </label>
                     <input
                       type="number"
                       value={quantity}
                       onChange={(e) => setQuantity(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50 font-medium"
+                      className="w-full px-3.5 py-2.5 border border-[#8E7F6B]/30 rounded-xl text-sm focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-white font-medium text-[#4A3626]"
                       min={1}
                       max={listing.quantity}
                       required
@@ -221,14 +251,14 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    <label className="block text-xs font-semibold text-[#4A3626] mb-1">
                       {lang === 'en' ? 'Proposed Rate / CFT (₹)' : 'ഉദ്ദേശിക്കുന്ന വില / CFT'}
                     </label>
                     <input
                       type="number"
                       value={proposedPrice}
                       onChange={(e) => setProposedPrice(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50 font-medium"
+                      className="w-full px-3.5 py-2.5 border border-[#8E7F6B]/30 rounded-xl text-sm focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-white font-medium text-[#4A3626]"
                       min={1}
                       required
                     />
@@ -236,22 +266,26 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="block text-xs font-semibold text-[#4A3626] mb-1">
                     {lang === 'en' ? 'Message for Seller' : 'കച്ചവടക്കാരനുള്ള സന്ദേശം'}
                   </label>
                   <textarea
                     rows={3}
-                    placeholder={lang === 'en' ? 'e.g. Need delivery in Kottayam next week. Can we finalize at this price?' : 'സന്ദേശം നൽകുക...'}
+                    placeholder={
+                      lang === 'en'
+                        ? 'e.g. Need delivery next week in Kottayam. Can we finalize at this price?'
+                        : 'സന്ദേശം നൽകുക (ഉദാ: അടുത്ത ആഴ്ച ഡെലിവറി വേണം, ഈ വിലയിൽ ഉറപ്പിക്കാമോ?)...'
+                    }
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="w-full px-3.5 py-2 border border-stone-300 rounded-xl text-xs focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
+                    className="w-full px-3.5 py-2 border border-[#8E7F6B]/30 rounded-xl text-xs focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-white text-[#4A3626]"
                     required
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-sm shadow-md shadow-amber-950/10 transition"
+                  className="w-full py-3.5 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-sm shadow-md transition"
                 >
                   {lang === 'en' ? 'Submit Enquiry & Offer' : 'ഓഫർ സമർപ്പിക്കുക'}
                 </button>

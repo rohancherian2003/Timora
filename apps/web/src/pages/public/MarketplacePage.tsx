@@ -19,171 +19,10 @@ import {
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
+import { TIMBER_LISTINGS, TimberListingItem } from '../../utils/timberListings';
 
-export interface TimberListingItem {
-  id: string;
-  title: string;
-  species: string;
-  species_ml: string;
-  type: string;
-  type_ml: string;
-  district: string;
-  locality: string;
-  quantity: number;
-  unit: string;
-  price_per_cft: number;
-  seller_name: string;
-  seller_verified: boolean;
-  image_url: string;
-  dimensions: string;
-  grade: string;
-  transit_pass: boolean;
-  moisture: string;
-}
-
-// REAL CUT TIMBER PHOTOS (ഡിപ്പോ & മില്ലുകളിൽ നിന്നുള്ള തനി തടികൾ)
-const EXTENDED_LISTINGS: TimberListingItem[] = [
-  {
-    id: '1',
-    title: 'First-Grade Nilambur Teak Round Logs (A-Class Heartwood)',
-    species: 'Teak',
-    species_ml: 'തേക്ക്',
-    type: 'Round Logs',
-    type_ml: 'ഉരുണ്ട തടികൾ',
-    district: 'Malappuram (മലപ്പുറം)',
-    locality: 'Nilambur Forest Depot',
-    quantity: 65,
-    unit: 'CFT',
-    price_per_cft: 2850,
-    seller_name: 'Nilambur Wood Mart & Depot',
-    seller_verified: true,
-    image_url: '/images/timber/teak-logs.png',
-    dimensions: '14 ft Length × 42 in Girth',
-    grade: 'A-Grade Heartwood',
-    transit_pass: true,
-    moisture: 'Air-Dried Round Log',
-  },
-  {
-    id: '2',
-    title: 'Seasoned African Mahogany Squared Beams & Heavy Logs',
-    species: 'Mahogany',
-    species_ml: 'മഹാഗണി',
-    type: 'Squared Beams',
-    type_ml: 'ചതുര കഴുക്കോലുകൾ',
-    district: 'Kottayam (കോട്ടയം)',
-    locality: 'Pala Timber Yard',
-    quantity: 80,
-    unit: 'CFT',
-    price_per_cft: 1850,
-    seller_name: 'Meenachil Timber Mart & Sawmill',
-    seller_verified: true,
-    image_url: '/images/timber/mahogany-logs.jpg',
-    dimensions: '12 ft × 6 in × 6 in',
-    grade: 'Select Prime Sawn',
-    transit_pass: true,
-    moisture: 'Naturally Seasoned',
-  },
-  {
-    id: '3',
-    title: 'Old-Growth Wild Jack (Anjili) Heavy Round Tree Trunks',
-    species: 'Anjili',
-    species_ml: 'ആഞ്ഞിലി',
-    type: 'Round Logs',
-    type_ml: 'ഉരുണ്ട തടികൾ',
-    district: 'Ernakulam (എറണാകുളം)',
-    locality: 'Perumbavoor Sawmill Zone',
-    quantity: 120,
-    unit: 'CFT',
-    price_per_cft: 1400,
-    seller_name: 'Perumbavoor Raw Saw Mills',
-    seller_verified: true,
-    image_url: '/images/timber/anjili-logs.jpg',
-    dimensions: '16 ft Length × 48 in Mid-Girth',
-    grade: 'Forest Grade I (Heavy)',
-    transit_pass: true,
-    moisture: 'Green Log Harvest',
-  },
-  {
-    id: '4',
-    title: 'Estate Harvest Rubberwood Round Logs (Bulk Lot)',
-    species: 'Rubberwood',
-    species_ml: 'റബർ',
-    type: 'Round Logs',
-    type_ml: 'ഉരുണ്ട തടികൾ',
-    district: 'Pathanamthitta (പത്തനംതിട്ട)',
-    locality: 'Adoor Agro Timber Yard',
-    quantity: 240,
-    unit: 'CFT',
-    price_per_cft: 650,
-    seller_name: 'Adoor Plantation Wood Depot',
-    seller_verified: false,
-    image_url: '/images/timber/rubberwood-logs.jpg',
-    dimensions: '10 ft × 32 in Avg Girth',
-    grade: 'Commercial Saw Log',
-    transit_pass: true,
-    moisture: 'Fresh Felled',
-  },
-  {
-    id: '5',
-    title: 'Heritage Jackfruit (Varikka Plavu) Heavy Balks & Planks',
-    species: 'Jackfruit',
-    species_ml: 'പ്ലാവ്',
-    type: 'Rough-sawn Planks',
-    type_ml: 'അറുത്ത പലകകൾ',
-    district: 'Thrissur (തൃശ്ശൂർ)',
-    locality: 'Wadakkanchery Depot',
-    quantity: 65,
-    unit: 'CFT',
-    price_per_cft: 2200,
-    seller_name: 'Central Kerala Timber Yards',
-    seller_verified: true,
-    image_url: '/images/timber/jackfruit-logs.jpg',
-    dimensions: '9 ft × 6 in × 3 in',
-    grade: 'Heritage Yellow Heartwood',
-    transit_pass: true,
-    moisture: 'Naturally Seasoned',
-  },
-  {
-    id: '6',
-    title: 'Authentic Kerala Rosewood (Veetti) Premium Heavy Round Logs',
-    species: 'Rosewood',
-    species_ml: 'ഈട്ടി / റോസ്വുഡ്',
-    type: 'Round Logs',
-    type_ml: 'ഉരുണ്ട തടികൾ',
-    district: 'Wayanad (വയനാട്)',
-    locality: 'Mananthavady Depot',
-    quantity: 35,
-    unit: 'CFT',
-    price_per_cft: 4800,
-    seller_name: 'Malabar Heritage Hardwoods',
-    seller_verified: true,
-    image_url: '/images/timber/rosewood-logs.jpg',
-    dimensions: '12 ft Length × 38 in Girth',
-    grade: 'Super Grade Heartwood (Veetti)',
-    transit_pass: true,
-    moisture: 'Air-Dried Seasoned',
-  },
-  {
-    id: '7',
-    title: 'Split Firewood & Heavy Industrial Boiler Timber Blocks',
-    species: 'Rubberwood',
-    species_ml: 'റബർ / വിറക്',
-    type: 'Firewood',
-    type_ml: 'വിറക് തടികൾ',
-    district: 'Kollam (കൊല്ലം)',
-    locality: 'Punalur Yard',
-    quantity: 15,
-    unit: 'Tonnes',
-    price_per_cft: 280,
-    seller_name: 'Punalur Wood Fuel Depot',
-    seller_verified: true,
-    image_url: '/images/timber/firewood-logs.jpg',
-    dimensions: 'Split Logs (2 to 3 ft)',
-    grade: 'High-Calorie Split Timber',
-    transit_pass: true,
-    moisture: 'Sun Dried',
-  },
-];
+// Alias for backwards compatibility
+const EXTENDED_LISTINGS: TimberListingItem[] = TIMBER_LISTINGS;
 
 const SPECIES_PILLS = [
   { key: 'all', label: 'All Species', ml: 'എല്ലാം' },
@@ -545,12 +384,16 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 key={item.id}
                 className="bg-white rounded-3xl border border-[#8E7F6B]/30 overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex flex-col group"
               >
-                {/* Real Timber Photo */}
-                <div className="relative aspect-[16/10] bg-[#d5cfc4]/50 overflow-hidden">
+                {/* Real Timber Photo - Clickable to open timber detail */}
+                <Link
+                  to={`/listing/${item.id}`}
+                  className="relative aspect-[16/10] bg-[#d5cfc4]/50 overflow-hidden block cursor-pointer"
+                  title={item.title}
+                >
                   <img
                     src={item.image_url}
                     alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-102 transition duration-300"
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                   />
                   <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
                     <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-[#4A3626] shadow-xs flex items-center gap-1">
@@ -569,14 +412,16 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   <div className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] font-mono px-2 py-0.5 rounded-md">
                     {item.quantity} {item.unit}
                   </div>
-                </div>
+                </Link>
 
                 {/* Content */}
                 <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
                   <div>
-                    <h3 className="font-bold text-[#4A3626] text-sm line-clamp-1 group-hover:text-[#5B6147] transition">
-                      {item.title}
-                    </h3>
+                    <Link to={`/listing/${item.id}`} className="block">
+                      <h3 className="font-bold text-[#4A3626] text-sm line-clamp-1 group-hover:text-[#5B6147] transition">
+                        {lang === 'en' ? item.title : (item.title_ml || item.title)}
+                      </h3>
+                    </Link>
                     <p className="text-xs text-[#7A5A3A] mt-1 flex items-center gap-1">
                       <span>{lang === 'en' ? item.type : item.type_ml}</span>
                       <span>•</span>

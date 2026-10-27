@@ -42,8 +42,8 @@ export function BrandLogo({
         />
       </div>
 
-      {/* Clean Brand Name without subtitle clutter, vertically centered */}
-      <div className="flex items-center leading-none">
+      {/* Clean Brand Name with TM placed neatly directly on top right */}
+      <div className="relative inline-flex items-baseline leading-none">
         <span
           className={`${textSizes[size]} font-serif font-black tracking-wider ${
             isDark ? 'text-stone-100' : 'text-[#4A3626]'
@@ -52,7 +52,9 @@ export function BrandLogo({
         >
           TIM<span className="text-[#5B6147]">O</span>RA
         </span>
-        <span className="text-[10px] font-bold text-[#8A8F6E] ml-0.5">™</span>
+        <span className="text-[8px] sm:text-[9px] font-bold text-[#8A8F6E] -top-1.5 relative ml-0.5 select-none font-sans">
+          ™
+        </span>
       </div>
     </div>
   );

@@ -267,17 +267,21 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
   };
 
   return (
-    <div className="relative">
+    <div className="relative flex-shrink-0">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 py-1.5 px-3 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 shadow-sm transition"
+        className="flex items-center gap-1.5 sm:gap-2 py-1.5 px-2 sm:px-3 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 shadow-xs transition"
       >
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#5B6147] to-[#4A3626] text-white flex items-center justify-center text-xs font-bold shadow-xs">
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#5B6147] to-[#4A3626] text-white flex items-center justify-center text-xs font-bold shadow-xs flex-shrink-0">
           {user.name[0] || 'U'}
         </div>
-        <div className="hidden lg:flex flex-col items-start text-left">
-          <span className="text-xs font-bold text-stone-900 line-clamp-1">{user.name}</span>
-          <span className="text-[10px] text-stone-500 font-medium leading-none">{user.phone}</span>
+        <div className="hidden sm:flex flex-col items-start text-left">
+          <span className="text-xs font-bold text-stone-900 truncate max-w-[80px] md:max-w-[100px] lg:max-w-[110px] xl:max-w-[130px]">
+            {user.name}
+          </span>
+          <span className="text-[10px] text-stone-500 font-medium leading-none hidden xl:block">
+            {user.phone}
+          </span>
         </div>
         <ChevronDown className={`w-3.5 h-3.5 text-stone-400 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -388,17 +392,17 @@ function AppHeader({
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-        {/* Brand Logo without subtitle clutter */}
-        <Link to="/" className="group flex items-center flex-shrink-0">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 h-16 flex items-center justify-between gap-2">
+        {/* Brand Logo with clear right spacing */}
+        <Link to="/" className="group flex items-center flex-shrink-0 mr-2 md:mr-3 lg:mr-5">
           <BrandLogo size="md" lang={lang} />
         </Link>
 
-        {/* Desktop Navigation Links - Single line, no wrapping */}
-        <nav className="hidden md:flex items-center gap-3 lg:gap-5 xl:gap-6 text-xs lg:text-sm font-semibold text-stone-600 whitespace-nowrap flex-shrink-0">
+        {/* Desktop Navigation Links - Compact, elegant, never wraps or overflows */}
+        <nav className="hidden md:flex items-center gap-1.5 md:gap-2 lg:gap-3 xl:gap-4 text-xs lg:text-[13px] font-semibold text-stone-600 whitespace-nowrap flex-shrink min-w-0">
           <Link
             to="/marketplace"
-            className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 ${
+            className={`whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 ${
               isCurrent('/marketplace')
                 ? 'text-[#5B6147] border-[#5B6147] font-bold'
                 : 'border-transparent hover:text-[#5B6147]'
@@ -409,7 +413,7 @@ function AppHeader({
 
           <Link
             to="/calculator"
-            className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 ${
+            className={`whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 flex items-center gap-1.5 ${
               isCurrent('/calculator')
                 ? 'text-[#5B6147] border-[#5B6147] font-bold'
                 : 'border-transparent hover:text-[#5B6147]'
@@ -421,7 +425,7 @@ function AppHeader({
 
           <Link
             to="/carpenters"
-            className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 ${
+            className={`whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 flex items-center gap-1.5 ${
               isCurrent('/carpenters')
                 ? 'text-[#5B6147] border-[#5B6147] font-bold'
                 : 'border-transparent hover:text-[#5B6147]'
@@ -433,7 +437,7 @@ function AppHeader({
 
           <Link
             to="/transport"
-            className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 ${
+            className={`whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 flex items-center gap-1.5 ${
               isCurrent('/transport')
                 ? 'text-[#5B6147] border-[#5B6147] font-bold'
                 : 'border-transparent hover:text-[#5B6147]'
@@ -445,7 +449,7 @@ function AppHeader({
 
           <Link
             to="/mills"
-            className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 ${
+            className={`whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 flex items-center gap-1.5 ${
               isCurrent('/mills') || isCurrent('/timber-mills')
                 ? 'text-[#5B6147] border-[#5B6147] font-bold'
                 : 'border-transparent hover:text-[#5B6147]'
@@ -459,7 +463,7 @@ function AppHeader({
           {isAuthenticated && user?.role === 'buyer' && (
             <Link
               to="/dashboard/buyer"
-              className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 ${
+              className={`whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 flex items-center gap-1.5 ${
                 isCurrent('/dashboard/buyer')
                   ? 'text-[#5B6147] border-[#5B6147] font-bold'
                   : 'border-transparent hover:text-[#5B6147] text-stone-700'
@@ -473,7 +477,7 @@ function AppHeader({
           {isAuthenticated && user?.role === 'seller' && (
             <Link
               to="/dashboard/seller"
-              className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 px-3 py-1 rounded-lg bg-stone-100 text-[#4A3626] border ${
+              className={`whitespace-nowrap flex-shrink-0 transition px-2 py-1 rounded-lg bg-stone-100 text-[#4A3626] border flex items-center gap-1.5 ${
                 isCurrent('/dashboard/seller') ? 'border-[#5B6147] font-bold' : 'border-stone-300'
               }`}
             >
@@ -485,7 +489,7 @@ function AppHeader({
           {isAuthenticated && user?.role === 'admin' && (
             <Link
               to="/admin"
-              className={`whitespace-nowrap flex-shrink-0 transition pb-1 border-b-2 flex items-center gap-1.5 px-3 py-1 rounded-lg bg-stone-100 text-stone-900 border ${
+              className={`whitespace-nowrap flex-shrink-0 transition px-2 py-1 rounded-lg bg-stone-100 text-stone-900 border flex items-center gap-1.5 ${
                 isCurrent('/admin') ? 'border-stone-500 font-bold' : 'border-stone-300'
               }`}
             >
@@ -496,11 +500,11 @@ function AppHeader({
         </nav>
 
         {/* Right Action Cluster: Language Switcher + Auth */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {/* Language Switcher */}
           <button
             onClick={toggleLanguage}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-xl border border-stone-200 hover:bg-stone-100 text-stone-700 transition"
+            className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-bold rounded-xl border border-stone-200 hover:bg-stone-100 text-stone-700 transition flex-shrink-0"
             title="Toggle Language / ഭാഷ മാറ്റുക"
           >
             <Globe className="w-3.5 h-3.5 text-[#3F452F]" />
@@ -511,16 +515,16 @@ function AppHeader({
           {isAuthenticated ? (
             <UserNavMenu lang={lang} />
           ) : (
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
               <Link
                 to="/login"
-                className="px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-bold rounded-xl text-stone-700 hover:text-stone-900 hover:bg-stone-100 transition"
+                className="px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-xl text-stone-700 hover:text-stone-900 hover:bg-stone-100 transition"
               >
                 {lang === 'en' ? 'Sign In' : 'ലോഗിൻ'}
               </Link>
               <Link
                 to="/register"
-                className="px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-bold rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white shadow-xs transition"
+                className="px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white shadow-xs transition"
               >
                 {lang === 'en' ? 'Register' : 'രജിസ്റ്റർ'}
               </Link>
