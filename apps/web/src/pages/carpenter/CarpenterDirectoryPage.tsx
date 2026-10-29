@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Hammer, MapPin, Award, Phone, Star, CheckCircle, ShieldCheck, Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { LoginAlertModal } from '../../components/LoginAlertModal';
+import { BackButton } from '../../components/BackButton';
 
 const DEMO_CARPENTERS = [
   {
@@ -84,7 +85,11 @@ export function CarpenterDirectoryPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) 
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div className="flex items-center">
+        <BackButton fallbackPath="/marketplace" lang={lang} />
+      </div>
+
       {/* Top Banner */}
       <div className="p-6 sm:p-8 bg-gradient-to-br from-[#E7E1D6] via-[#d5cfc4] to-[#c4bdb0] text-[#4A3626] rounded-3xl shadow-md border border-[#c4bdb0]">
         <div className="max-w-3xl space-y-3">

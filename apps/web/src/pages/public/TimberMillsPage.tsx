@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { LoginAlertModal } from '../../components/LoginAlertModal';
+import { BackButton } from '../../components/BackButton';
 
 export interface TimberMillReview {
   id: string;
@@ -400,7 +401,11 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div className="flex items-center">
+        <BackButton fallbackPath="/marketplace" lang={lang} />
+      </div>
+
       {/* 1. TOP HERO BANNER (WARM TIMBER PALETTE) */}
       <section className="relative p-6 sm:p-10 bg-gradient-to-br from-[#E7E1D6] via-[#d5cfc4] to-[#c4bdb0] text-[#4A3626] rounded-3xl shadow-md border border-[#c4bdb0] overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-stone-400/15 rounded-full blur-3xl pointer-events-none" />

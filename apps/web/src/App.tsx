@@ -40,32 +40,58 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 
 import { SessionTimeoutModal } from './components/SessionTimeoutModal';
 import { SignOutConfirmModal } from './components/SignOutConfirmModal';
+import { SignOutRequiredModal } from './components/SignOutRequiredModal';
 import { PageTransitionLoader } from './components/PageTransitionLoader';
 
-// Protected Route Guard with Browser Back-Button Trap (Keeps user on their current page)
+// Protected Route Guard with Browser Back-Button Confirmation Alert
 function ProtectedRoute({
   children,
   allowedRoles,
+  lang = 'en',
 }: {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
+  lang?: 'en' | 'ml';
 }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [showSignOutPrompt, setShowSignOutPrompt] = React.useState(false);
+  const promptOpenRef = React.useRef(false);
+  promptOpenRef.current = showSignOutPrompt;
 
   React.useEffect(() => {
-    if (isAuthenticated) {
-      window.history.pushState(null, '', window.location.href);
+    if (!isAuthenticated || !user) return;
 
-      const handlePopState = () => {
-        // Push state again so back button cannot navigate back out of protected portal
-        window.history.pushState(null, '', window.location.href);
-      };
+    // Establish history barrier entry on mount / route transition
+    window.history.pushState({ protectedDashboard: true }, '', window.location.href);
 
-      window.addEventListener('popstate', handlePopState);
-      return () => window.removeEventListener('popstate', handlePopState);
+    const handlePopState = () => {
+      // Re-push current location immediately to prevent moving off dashboard
+      window.history.pushState({ protectedDashboard: true }, '', window.location.href);
+
+      // Prevent repeated Back presses from creating duplicate alerts or infinite loops
+      if (promptOpenRef.current) return;
+
+      // Show Sign Out Required confirmation modal
+      setShowSignOutPrompt(true);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isAuthenticated, user, location.pathname]);
+
+  const handleSignOutConfirm = async () => {
+    try {
+      logout();
+      setShowSignOutPrompt(false);
+      navigate('/', { replace: true });
+    } catch (err) {
+      throw err;
     }
-  }, [isAuthenticated, location.pathname]);
+  };
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
@@ -82,7 +108,17 @@ function ProtectedRoute({
     if (user.role === 'buyer') return <Navigate to="/dashboard/buyer" replace />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <SignOutRequiredModal
+        isOpen={showSignOutPrompt}
+        onClose={() => setShowSignOutPrompt(false)}
+        onConfirm={handleSignOutConfirm}
+        lang={lang}
+      />
+    </>
+  );
 }
 
 // Guest-Only Route Guard (Prevents logged-in users from accessing Login/Register via URL or Browser Back button)
@@ -446,11 +482,6 @@ function AppHeader({
 }) {
   const { user, isAuthenticated } = useAuth();
   const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
 
   const isCurrent = (path: string) => {
     if (path === '/marketplace' && (location.pathname === '/' || location.pathname === '/marketplace')) {
@@ -630,94 +661,8 @@ function AppHeader({
               </Link>
             </div>
           )}
-          {/* Mobile Hamburger Menu Button */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl text-stone-700 hover:text-stone-900 hover:bg-stone-100 transition"
-            aria-label="Toggle navigation menu"
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
         </div>
       </div>
-
-      {/* Mobile Slide-down Navigation Drawer */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-white/98 backdrop-blur-md border-b border-stone-200 px-4 py-4 space-y-2 animate-fadeIn shadow-lg">
-          <div className="space-y-1">
-            <Link
-              to="/marketplace"
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
-                isCurrent('/marketplace') ? 'bg-[#5B6147] text-white' : 'text-[#4A3626] hover:bg-stone-100'
-              }`}
-            >
-              <Store className="w-4 h-4" />
-              <span>{lang === 'en' ? 'Marketplace' : 'മാർക്കറ്റ്'}</span>
-            </Link>
-
-            <Link
-              to="/calculator"
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
-                isCurrent('/calculator') ? 'bg-[#5B6147] text-white' : 'text-[#4A3626] hover:bg-stone-100'
-              }`}
-            >
-              <Calculator className="w-4 h-4" />
-              <span>{lang === 'en' ? 'CFT Timber Calculator' : 'തടി കാൽക്കുലേറ്റർ'}</span>
-            </Link>
-
-            <Link
-              to="/carpenters"
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
-                isCurrent('/carpenters') ? 'bg-[#5B6147] text-white' : 'text-[#4A3626] hover:bg-stone-100'
-              }`}
-            >
-              <Hammer className="w-4 h-4" />
-              <span>{lang === 'en' ? 'Carpenters Directory' : 'ആശാരിമാർ'}</span>
-            </Link>
-
-            <Link
-              to="/transport"
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
-                isCurrent('/transport') ? 'bg-[#5B6147] text-white' : 'text-[#4A3626] hover:bg-stone-100'
-              }`}
-            >
-              <Truck className="w-4 h-4" />
-              <span>{lang === 'en' ? 'Timber Lorries & Transport' : 'ലോറികൾ'}</span>
-            </Link>
-
-            <Link
-              to="/mills"
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
-                isCurrent('/mills') || isCurrent('/timber-mills') ? 'bg-[#5B6147] text-white' : 'text-[#4A3626] hover:bg-stone-100'
-              }`}
-            >
-              <Factory className="w-4 h-4" />
-              <span>{lang === 'en' ? 'Sawmills & Depots' : 'തടി മില്ലുകൾ'}</span>
-            </Link>
-
-            {isAuthenticated && (
-              <Link
-                to={
-                  user?.role === 'seller'
-                    ? (user?.sellerSubtype === 'mill_owner' ? '/dashboard/mill' : '/dashboard/seller')
-                    : user?.role === 'carpenter'
-                    ? '/dashboard/carpenter'
-                    : user?.role === 'transport'
-                    ? '/dashboard/transport'
-                    : user?.role === 'admin'
-                    ? '/admin'
-                    : '/dashboard/buyer'
-                }
-                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-[#E7E1D6]/80 text-[#4A3626] mt-2 border border-[#8E7F6B]/30"
-              >
-                <LayoutDashboard className="w-4 h-4 text-[#5B6147]" />
-                <span>{lang === 'en' ? 'Open Dashboard' : 'ഡാഷ്‌ബോർഡ്'}</span>
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
     </header>
   );
 }
@@ -783,7 +728,7 @@ export function App() {
               <Route
                 path="/dashboard/seller"
                 element={
-                  <ProtectedRoute allowedRoles={['seller']}>
+                  <ProtectedRoute allowedRoles={['seller']} lang={lang}>
                     <SellerDashboard lang={lang} />
                   </ProtectedRoute>
                 }
@@ -791,7 +736,7 @@ export function App() {
               <Route
                 path="/dashboard/mill"
                 element={
-                  <ProtectedRoute allowedRoles={['seller']}>
+                  <ProtectedRoute allowedRoles={['seller']} lang={lang}>
                     <TimberMillOwnerDashboard lang={lang} />
                   </ProtectedRoute>
                 }
@@ -799,7 +744,7 @@ export function App() {
               <Route
                 path="/dashboard/carpenter"
                 element={
-                  <ProtectedRoute allowedRoles={['carpenter']}>
+                  <ProtectedRoute allowedRoles={['carpenter']} lang={lang}>
                     <CarpenterDashboard lang={lang} />
                   </ProtectedRoute>
                 }
@@ -807,7 +752,7 @@ export function App() {
               <Route
                 path="/dashboard/transport"
                 element={
-                  <ProtectedRoute allowedRoles={['transport']}>
+                  <ProtectedRoute allowedRoles={['transport']} lang={lang}>
                     <TransportOwnerDashboard lang={lang} />
                   </ProtectedRoute>
                 }
@@ -815,7 +760,7 @@ export function App() {
               <Route
                 path="/dashboard/buyer"
                 element={
-                  <ProtectedRoute allowedRoles={['buyer']}>
+                  <ProtectedRoute allowedRoles={['buyer']} lang={lang}>
                     <BuyerDashboard lang={lang} />
                   </ProtectedRoute>
                 }
@@ -823,7 +768,7 @@ export function App() {
               <Route
                 path="/admin"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={['admin']} lang={lang}>
                     <AdminDashboard lang={lang} />
                   </ProtectedRoute>
                 }

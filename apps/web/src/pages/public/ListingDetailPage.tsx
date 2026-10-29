@@ -20,6 +20,7 @@ import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { getTimberListingById } from '../../utils/timberListings';
 import { LoginAlertModal, AlertEntityType } from '../../components/LoginAlertModal';
+import { BackButton } from '../../components/BackButton';
 
 export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { id } = useParams<{ id: string }>();
@@ -103,14 +104,11 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-7 animate-fadeIn">
       {/* State-Preserving In-Page Back Button */}
-      <button
-        type="button"
-        onClick={handleBackNavigation}
-        className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-[#5B6147] transition group"
-      >
-        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-        <span>{lang === 'en' ? 'Back to Marketplace' : 'തിരികെ മാർക്കറ്റിലേക്ക്'}</span>
-      </button>
+      <BackButton
+        label={lang === 'en' ? 'Back to Marketplace' : 'തിരികെ മാർക്കറ്റിലേക്ക്'}
+        fallbackPath="/marketplace"
+        lang={lang}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Images Gallery with Reserved Aspect Ratio */}

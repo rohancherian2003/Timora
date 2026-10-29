@@ -98,7 +98,13 @@ export const AuthProvider = ({ children }) => {
         setToken(null);
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem('timora_access_token');
+        localStorage.removeItem('timora_user');
         localStorage.removeItem(LAST_ACTIVE_KEY);
+        try {
+            sessionStorage.clear();
+        }
+        catch { }
         if (timedOut) {
             setIsSessionTimedOut(true);
         }

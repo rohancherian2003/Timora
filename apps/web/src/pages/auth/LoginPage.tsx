@@ -24,6 +24,7 @@ import {
 import { validateIndianPhone } from '@timora/shared';
 import { useAuth, UserRole, SellerSubtype, DEMO_PROFILES } from '../../context/AuthContext';
 import { BrandLogo } from '../../components/BrandLogo';
+import { BackButton } from '../../components/BackButton';
 
 export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const navigate = useNavigate();
@@ -206,7 +207,11 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
   return (
     <div className="min-h-[82vh] flex items-center justify-center px-4 py-8 bg-[#FAF8F5]">
-      <div className="max-w-md w-full space-y-5 bg-white p-6 sm:p-8 rounded-3xl border border-[#8E7F6B]/30 shadow-xl">
+      <div className="max-w-md w-full space-y-5 bg-white p-6 sm:p-8 rounded-3xl border border-[#8E7F6B]/30 shadow-xl relative">
+        <div className="flex items-center justify-between">
+          <BackButton fallbackPath="/" lang={lang} />
+        </div>
+
         {/* Header Branding */}
         <div className="text-center space-y-1">
           <div className="inline-block transform hover:scale-105 transition-transform">

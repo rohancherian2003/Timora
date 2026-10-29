@@ -5,6 +5,7 @@ import { CheckCircle2, AlertCircle, ArrowRight, Loader2, Store, ShoppingBag, Ham
 import { validateIndianPhone, validatePin, validatePinConfirmation } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { BrandLogo } from '../../components/BrandLogo';
+import { BackButton } from '../../components/BackButton';
 const KERALA_DISTRICTS = [
     { id: 1, name: 'Thiruvananthapuram (തിരുവനന്തപുരം)' },
     { id: 2, name: 'Kollam (കൊല്ലം)' },
@@ -190,7 +191,7 @@ export function RegisterPage({ lang = 'en' }) {
             setLoading(false);
         }
     };
-    return (_jsx("div", { className: "min-h-[82vh] flex items-center justify-center px-4 py-8 bg-[#FAF8F5]", children: _jsxs("div", { className: "max-w-md w-full space-y-5 bg-white p-6 sm:p-8 rounded-3xl border border-[#8E7F6B]/30 shadow-xl", children: [_jsxs("div", { className: "text-center space-y-1", children: [_jsx("div", { className: "inline-block transform hover:scale-105 transition-transform", children: _jsx(BrandLogo, { size: "md" }) }), _jsx("h1", { className: "text-xl sm:text-2xl font-extrabold font-serif text-[#4A3626] mt-2", children: lang === 'en' ? 'Create Your Account' : 'പുതിയ അക്കൗണ്ട് സൃഷ്ടിക്കുക' }), _jsx("p", { className: "text-xs text-[#7A5A3A] font-medium", children: lang === 'en' ? 'Direct timber trading across Kerala with Form IV compliance' : 'കേരളത്തിലെ വിശ്വസനീയമായ തടി വ്യാപാര ശൃംഖല' })] }), _jsx("div", { className: "flex items-center justify-between px-2 pt-1", children: [
+    return (_jsx("div", { className: "min-h-[82vh] flex items-center justify-center px-4 py-8 bg-[#FAF8F5]", children: _jsxs("div", { className: "max-w-md w-full space-y-5 bg-white p-6 sm:p-8 rounded-3xl border border-[#8E7F6B]/30 shadow-xl relative", children: [_jsx("div", { className: "flex items-center justify-between", children: _jsx(BackButton, { fallbackPath: "/", lang: lang }) }), _jsxs("div", { className: "text-center space-y-1", children: [_jsx("div", { className: "inline-block transform hover:scale-105 transition-transform", children: _jsx(BrandLogo, { size: "md" }) }), _jsx("h1", { className: "text-xl sm:text-2xl font-extrabold font-serif text-[#4A3626] mt-2", children: lang === 'en' ? 'Create Your Account' : 'പുതിയ അക്കൗണ്ട് സൃഷ്ടിക്കുക' }), _jsx("p", { className: "text-xs text-[#7A5A3A] font-medium", children: lang === 'en' ? 'Direct timber trading across Kerala with Form IV compliance' : 'കേരളത്തിലെ വിശ്വസനീയമായ തടി വ്യാപാര ശൃംഖല' })] }), _jsx("div", { className: "flex items-center justify-between px-2 pt-1", children: [
                         { num: 1, label: lang === 'en' ? 'Details' : 'വിവരങ്ങൾ' },
                         { num: 2, label: lang === 'en' ? 'OTP' : 'ഒ.ടി.പി' },
                         { num: 3, label: lang === 'en' ? 'Role & PIN' : 'റോളും പിന്നും' },

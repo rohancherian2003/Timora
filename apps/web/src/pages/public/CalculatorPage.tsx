@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Calculator, Info, RotateCcw } from 'lucide-react';
+import { BackButton } from '../../components/BackButton';
 import {
   calcRectangularCFT,
   calcKeralaHoppusGirthCFT,
@@ -69,7 +70,11 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+      <div className="flex items-center">
+        <BackButton fallbackPath="/marketplace" lang={lang} />
+      </div>
+
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 sm:p-8 bg-gradient-to-br from-[#E7E1D6] via-[#d5cfc4] to-[#c4bdb0] rounded-3xl border border-[#c4bdb0] shadow-sm">
         <div>
