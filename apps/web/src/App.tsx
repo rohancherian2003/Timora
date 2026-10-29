@@ -22,6 +22,7 @@ import {
 import { AuthProvider, useAuth, UserRole } from './context/AuthContext';
 import { BrandLogo } from './components/BrandLogo';
 import { OfflineBanner } from './components/OfflineBanner';
+import { NotificationBell } from './components/NotificationBell';
 import { MarketplacePage } from './pages/public/MarketplacePage';
 import { ListingDetailPage } from './pages/public/ListingDetailPage';
 import { CalculatorPage } from './pages/public/CalculatorPage';
@@ -609,7 +610,10 @@ function AppHeader({
 
           {/* Auth State Control */}
           {isAuthenticated ? (
-            <UserNavMenu lang={lang} />
+            <div className="flex items-center gap-1 sm:gap-2">
+              <NotificationBell lang={lang} />
+              <UserNavMenu lang={lang} />
+            </div>
           ) : (
             <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
               <Link

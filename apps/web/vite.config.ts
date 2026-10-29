@@ -30,7 +30,6 @@ export default defineConfig({
         ],
       },
       workbox: {
-        importScripts: ['/sw-push.js'],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/api/v1/species') || url.pathname.startsWith('/api/v1/districts'),

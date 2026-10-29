@@ -150,7 +150,7 @@ export class AdminService {
         reason,
       });
 
-      // Dispatch in-dashboard and Web Push notification to user
+      // Dispatch in-dashboard notification to user
       const targetUserId = entityType === 'mill'
         ? (await client.query('SELECT seller_id FROM timber_mills WHERE id = $1', [entityId])).rows[0]?.seller_id
         : entityId;
@@ -201,6 +201,17 @@ export class AdminService {
         newState: { approval_status: 'approved', note },
       });
 
+      // In-dashboard notification to seller
+      notificationsService.dispatch({
+        userId: sellerId,
+        category: 'verification',
+        title_en: 'Seller Account Approved',
+        title_ml: 'കച്ചവട അക്കൗണ്ട് അംഗീകരിച്ചു',
+        body_en: note || 'Your seller registration has been approved. You can now post timber listings.',
+        body_ml: note || 'നിങ്ങളുടെ വിൽപ്പന അക്കൗണ്ട് അംഗീകരിച്ചു. ഇനി തടി ലിസ്റ്റിംഗുകൾ ചേർക്കാം.',
+        action_url: '/dashboard/seller',
+      }).catch(() => {});
+
       return { success: true, message: 'Seller approved successfully.' };
     });
   }
@@ -232,6 +243,17 @@ export class AdminService {
         newState: { approval_status: 'rejected' },
         reason,
       });
+
+      // In-dashboard notification to seller
+      notificationsService.dispatch({
+        userId: sellerId,
+        category: 'verification',
+        title_en: 'Seller Registration Not Approved',
+        title_ml: 'കച്ചവട അപേക്ഷ നിരസിച്ചു',
+        body_en: `Your seller registration was rejected. Reason: ${reason}`,
+        body_ml: `നിങ്ങളുടെ അപേക്ഷ നിരസിക്കപ്പെട്ടു. കാരണം: ${reason}`,
+        action_url: '/dashboard/seller',
+      }).catch(() => {});
 
       return { success: true, message: 'Seller registration rejected.' };
     });
@@ -307,6 +329,19 @@ export class AdminService {
         newState: { status: 'approved' },
       });
 
+      // In-dashboard notification to seller
+      if (listing.seller_id) {
+        notificationsService.dispatch({
+          userId: listing.seller_id,
+          category: 'listing',
+          title_en: 'Timber Listing Approved',
+          title_ml: 'തടി ലിസ്റ്റിംഗ് അംഗീകരിച്ചു',
+          body_en: `Your timber listing "${listing.title || 'Timber Listing'}" has been approved and published to the marketplace.`,
+          body_ml: `നിങ്ങളുടെ തടി ലിസ്റ്റിംഗ് "${listing.title || 'തടി ലിസ്റ്റിംഗ്'}" അംഗീകരിച്ച് മാർക്കറ്റിൽ പ്രസിദ്ധീകരിച്ചു.`,
+          action_url: `/dashboard/seller`,
+        }).catch(() => {});
+      }
+
       return { success: true, message: 'Listing approved and published to marketplace.' };
     });
   }
@@ -317,10 +352,11 @@ export class AdminService {
   async rejectListing(adminId: string, listingId: string, reason: string) {
     return await withTransaction(async (client) => {
       const listingRes = await client.query(
-        `SELECT status FROM timber_listings WHERE id = $1`,
+        `SELECT status, seller_id, title FROM timber_listings WHERE id = $1`,
         [listingId]
       );
       if (listingRes.rows.length === 0) throw new AppError(404, 'NOT_FOUND', 'Listing not found.');
+      const listing = listingRes.rows[0];
 
       await client.query(
         `UPDATE timber_listings
@@ -342,6 +378,19 @@ export class AdminService {
         entityId: listingId,
         reason,
       });
+
+      // In-dashboard notification to seller
+      if (listing.seller_id) {
+        notificationsService.dispatch({
+          userId: listing.seller_id,
+          category: 'listing',
+          title_en: 'Timber Listing Rejected',
+          title_ml: 'തടി ലിസ്റ്റിംഗ് നിരസിച്ചു',
+          body_en: `Your timber listing was rejected. Reason: ${reason}`,
+          body_ml: `നിങ്ങളുടെ തടി ലിസ്റ്റിംഗ് നിരസിച്ചു. കാരണം: ${reason}`,
+          action_url: `/dashboard/seller`,
+        }).catch(() => {});
+      }
 
       return { success: true, message: 'Listing rejected with recorded reason.' };
     });

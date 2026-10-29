@@ -9,14 +9,11 @@ import {
   Building2,
   Hammer,
   Truck,
-  Bell,
-  BellOff,
   Phone,
   MapPin,
   Award
 } from 'lucide-react';
 import { useAuth, UserProfile } from '../context/AuthContext';
-import { usePushNotifications } from '../hooks/usePushNotifications';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -43,7 +40,6 @@ const KERALA_DISTRICTS = [
 
 export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileModalProps) {
   const { user, updateProfile } = useAuth();
-  const pushNotifications = usePushNotifications();
 
   const [name, setName] = useState(user?.name || '');
   const [businessName, setBusinessName] = useState(user?.businessName || '');
@@ -331,43 +327,6 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
               </div>
             </>
           )}
-
-          {/* Web Push Notification Preference Section */}
-          <div className="pt-3 border-t border-stone-200">
-            <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className={`p-2 rounded-xl ${pushNotifications.isSubscribed ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-200 text-stone-600'}`}>
-                  {pushNotifications.isSubscribed ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-                </div>
-                <div>
-                  <span className="font-bold text-[#4A3626] text-xs block">
-                    {lang === 'en' ? 'Web Push Notifications' : 'ബ്രൗസർ പുഷ് അറിയിപ്പുകൾ'}
-                  </span>
-                  <span className="text-[10px] text-stone-500">
-                    {pushNotifications.isSubscribed
-                      ? (lang === 'en' ? 'Subscribed on this device' : 'ഈ ഡിവൈസിൽ സജീവമാണ്')
-                      : (lang === 'en' ? 'Receive real-time timber enquiries & updates' : 'തത്സമയ അറിയിപ്പുകൾ ലഭിക്കാൻ ഓൺ ചെയ്യുക')}
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={pushNotifications.isSubscribed ? pushNotifications.unsubscribe : pushNotifications.subscribe}
-                disabled={pushNotifications.loading}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-xs ${
-                  pushNotifications.isSubscribed
-                    ? 'bg-rose-50 text-rose-700 border border-rose-300 hover:bg-rose-100'
-                    : 'bg-[#5B6147] text-white hover:bg-[#3F452F]'
-                }`}
-              >
-                {pushNotifications.loading
-                  ? '...'
-                  : pushNotifications.isSubscribed
-                  ? (lang === 'en' ? 'Disable' : 'ഓഫ് ചെയ്യുക')
-                  : (lang === 'en' ? 'Enable' : 'ഓൺ ചെയ്യുക')}
-              </button>
-            </div>
-          </div>
 
           {/* Buttons */}
           <div className="pt-4 flex items-center justify-end gap-2.5 border-t border-stone-200">
