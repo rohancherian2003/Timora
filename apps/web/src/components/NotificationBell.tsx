@@ -161,7 +161,7 @@ export function NotificationBell({ lang = 'en' }: NotificationBellProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-stone-200 z-50 overflow-hidden animate-fadeIn text-left">
+        <div className="fixed inset-x-3 top-20 sm:top-auto sm:inset-x-auto sm:absolute sm:right-0 sm:mt-2 w-auto sm:w-96 max-w-[calc(100vw-1.5rem)] bg-white rounded-2xl shadow-2xl border border-stone-200 z-50 overflow-hidden animate-fadeIn text-left">
           {/* Header */}
           <div className="p-3.5 bg-[#FAF8F5] border-b border-stone-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
