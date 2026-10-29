@@ -1,6 +1,7 @@
 // ─── User & Auth ─────────────────────────────────────────────────────────────
 
-export type UserRole = 'buyer' | 'seller' | 'carpenter' | 'admin';
+export type UserRole = 'buyer' | 'seller' | 'carpenter' | 'transport' | 'admin';
+export type SellerSubtype = 'individual' | 'mill_owner';
 export type AccountTier = 'free' | 'premium';
 export type Language = 'en' | 'ml';
 
@@ -10,11 +11,20 @@ export type OtpPurpose =
   | 'forgot_pin'
   | 'phone_change';
 
+export type ApprovalStatus =
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'ACTION_REQUIRED'
+  | 'REJECTED'
+  | 'SUSPENDED';
+
+// Backwards-compatible alias for legacy code
 export type SellerApprovalStatus =
   | 'pending'
   | 'approved'
   | 'rejected'
-  | 'suspended';
+  | 'suspended'
+  | ApprovalStatus;
 
 // ─── Marketplace ─────────────────────────────────────────────────────────────
 
@@ -160,10 +170,54 @@ export interface UserProfile {
 
 export interface SellerProfile {
   user_id: string;
+  seller_subtype?: SellerSubtype;
   business_name?: string;
   district?: KeralaDistrict;
   locality?: string;
   approval_status: SellerApprovalStatus;
+  approval_note?: string;
+}
+
+export interface TimberMillProfile {
+  id: string;
+  owner_id: string;
+  owner_name: string;
+  mill_name: string;
+  license_no?: string;
+  district_id?: number;
+  district?: KeralaDistrict;
+  locality?: string;
+  daily_cft_capacity?: number;
+  saw_types?: string[];
+  approval_status: ApprovalStatus;
+  approval_note?: string;
+  created_at?: string;
+}
+
+export interface TransportOwnerProfile {
+  id: string;
+  user_id: string;
+  owner_name: string;
+  business_name: string;
+  vehicle_types?: string[];
+  vehicle_count?: number;
+  max_tonnage?: number;
+  district_id?: number;
+  district?: KeralaDistrict;
+  service_districts?: number[];
+  form_iv_cleared?: boolean;
+  approval_status: ApprovalStatus;
+  approval_note?: string;
+  created_at?: string;
+}
+
+export interface VerificationStatusInfo {
+  status: ApprovalStatus;
+  role: UserRole;
+  entityName?: string;
+  note?: string;
+  submittedAt?: string;
+  reviewedAt?: string;
 }
 
 export interface TimberListingImage {

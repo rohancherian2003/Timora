@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Hammer, MapPin, Award, Phone, Star, CheckCircle, ShieldCheck } from 'lucide-react';
+import { Hammer, MapPin, Award, Phone, Star, CheckCircle, ShieldCheck, Lock } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { LoginAlertModal } from '../../components/LoginAlertModal';
 
 const DEMO_CARPENTERS = [
   {
@@ -57,7 +59,11 @@ const DEMO_CARPENTERS = [
 ];
 
 export function CarpenterDirectoryPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
+  const { isAuthenticated } = useAuth();
   const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
+  const [alertModal, setAlertModal] = useState<{ isOpen: boolean; carpenterName?: string }>({
+    isOpen: false,
+  });
 
   const filtered = DEMO_CARPENTERS.filter((c) => {
     if (selectedDistrict !== 'all' && !c.district.toLowerCase().includes(selectedDistrict.toLowerCase())) {
@@ -65,6 +71,17 @@ export function CarpenterDirectoryPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) 
     }
     return true;
   });
+
+  const handleContactClick = (carpenterName: string, phone: string) => {
+    if (!isAuthenticated) {
+      setAlertModal({
+        isOpen: true,
+        carpenterName,
+      });
+      return;
+    }
+    window.location.href = `tel:${phone}`;
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -174,21 +191,43 @@ export function CarpenterDirectoryPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) 
             <div className="pt-4 border-t border-stone-200 flex items-center justify-between">
               <div>
                 <span className="block text-[10px] font-bold text-stone-400 uppercase">
-                  {lang === 'en' ? 'Phone' : 'ഫോൺ'}
+                  {lang === 'en' ? 'Contact' : 'ഫോൺ'}
                 </span>
-                <span className="font-mono text-xs font-bold text-stone-900">{c.phone}</span>
+                <span className="font-mono text-xs font-bold text-stone-900">
+                  {isAuthenticated ? c.phone : '+91 9447••••••'}
+                </span>
               </div>
-              <a
-                href={`tel:${c.phone}`}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs font-bold shadow-sm transition"
+              <button
+                type="button"
+                onClick={() => handleContactClick(c.name, c.phone)}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs font-bold shadow-xs transition"
               >
-                <Phone className="w-3.5 h-3.5" />
-                <span>{lang === 'en' ? 'Call Master Craftsman' : 'വിളിക്കുക'}</span>
-              </a>
+                {isAuthenticated ? (
+                  <>
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>{lang === 'en' ? 'Call Master Craftsman' : 'വിളിക്കുക'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5 text-white/80" />
+                    <span>{lang === 'en' ? 'Sign in to Contact' : 'ബന്ധപ്പെടാൻ ലോഗിൻ'}</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Context-Aware Minimal Login Alert Modal */}
+      <LoginAlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ isOpen: false })}
+        lang={lang}
+        entityType="carpenter"
+        entityName={alertModal.carpenterName}
+        returnUrl="/carpenters"
+      />
     </div>
   );
 }

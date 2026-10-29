@@ -20,6 +20,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { LoginAlertModal } from '../../components/LoginAlertModal';
 
 export interface TimberMillReview {
   id: string;
@@ -318,7 +319,8 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [selectedSpecies, setSelectedSpecies] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Login Gate Modal State
+  // Login Alert Modal State
+  const [loginAlertMill, setLoginAlertMill] = useState<TimberMill | null>(null);
   const [showAuthGate, setShowAuthGate] = useState(false);
   const [gateActionName, setGateActionName] = useState<string>('');
 
@@ -364,8 +366,7 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   // Action guard: Requires Login!
   const handleProtectedAction = (actionName: string, mill: TimberMill, callback: () => void) => {
     if (!isAuthenticated) {
-      setGateActionName(actionName);
-      setShowAuthGate(true);
+      setLoginAlertMill(mill);
       return;
     }
     callback();
@@ -1096,6 +1097,16 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </div>
         </div>
       )}
+
+      {/* Context-Aware Minimal Login Alert Modal */}
+      <LoginAlertModal
+        isOpen={!!loginAlertMill}
+        onClose={() => setLoginAlertMill(null)}
+        lang={lang}
+        entityType="mill"
+        entityName={loginAlertMill?.name}
+        returnUrl="/mills"
+      />
     </div>
   );
 }

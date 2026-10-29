@@ -22,8 +22,13 @@ export interface TimberListingItem {
   grade: string;
   transit_pass: boolean;
   moisture: string;
+  moisture_level?: string;
   condition_notes?: string;
   condition_notes_ml?: string;
+  description?: string;
+  description_ml?: string;
+  seller_id?: string;
+  phone?: string;
 }
 
 export const TIMBER_LISTINGS: TimberListingItem[] = [

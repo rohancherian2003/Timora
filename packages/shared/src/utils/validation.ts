@@ -33,16 +33,29 @@ export function validateIndianPhone(raw: string): { valid: boolean; normalized?:
 
 /**
  * Validate a 6-digit numeric PIN.
+ * allowDemo allows standard test PINs like 123456 during development/demo workflows.
  */
-export function validatePin(pin: string): { valid: boolean; message?: string } {
+export function validatePin(pin: string, allowDemo = false): { valid: boolean; message?: string } {
   if (!/^\d{6}$/.test(pin)) {
     return { valid: false, message: 'PIN must be exactly 6 digits.' };
   }
-  // Reject trivial PINs
-  const trivial = ['000000', '111111', '222222', '333333', '444444', '555555',
-                   '666666', '777777', '888888', '999999', '123456', '654321'];
-  if (trivial.includes(pin)) {
-    return { valid: false, message: 'Please choose a less obvious PIN.' };
+  if (!allowDemo) {
+    // Reject trivial PINs in strict mode
+    const trivial = ['000000', '111111', '222222', '333333', '444444', '555555',
+                     '666666', '777777', '888888', '999999', '123456', '654321'];
+    if (trivial.includes(pin)) {
+      return { valid: false, message: 'Please choose a less obvious PIN.' };
+    }
+  }
+  return { valid: true };
+}
+
+/**
+ * Validate PIN and Confirmation PIN match.
+ */
+export function validatePinConfirmation(pin: string, confirmPin: string): { valid: boolean; message?: string } {
+  if (pin !== confirmPin) {
+    return { valid: false, message: 'Security PIN and Confirmation PIN do not match.' };
   }
   return { valid: true };
 }

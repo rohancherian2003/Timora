@@ -20,6 +20,12 @@ export class ListingsController {
   async getListingById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await listingsService.getListingById(req.params.id as string);
+      
+      // Guest privacy sanitization: omit private seller phone number if not logged in
+      if (!req.user && result) {
+        delete (result as Record<string, unknown>).seller_phone;
+      }
+
       const response: ApiSuccessResponse = {
         success: true,
         data: result,

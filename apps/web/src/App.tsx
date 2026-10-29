@@ -28,6 +28,9 @@ import { RegisterPage } from './pages/auth/RegisterPage';
 import { CarpenterDirectoryPage } from './pages/carpenter/CarpenterDirectoryPage';
 import { TimberMillsPage } from './pages/public/TimberMillsPage';
 import { SellerDashboard } from './pages/seller/SellerDashboard';
+import { TimberMillOwnerDashboard } from './pages/seller/TimberMillOwnerDashboard';
+import { CarpenterDashboard } from './pages/carpenter/CarpenterDashboard';
+import { TransportOwnerDashboard } from './pages/transport/TransportOwnerDashboard';
 import { BuyerDashboard } from './pages/buyer/BuyerDashboard';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 
@@ -65,10 +68,14 @@ function ProtectedRoute({
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // If buyer tries to view seller or vice-versa, redirect to their role home
-    if (user.role === 'seller') return <Navigate to="/dashboard/seller" replace />;
-    if (user.role === 'buyer') return <Navigate to="/dashboard/buyer" replace />;
+    // Redirect to authoritative role home
+    if (user.role === 'seller') {
+      return <Navigate to={user.sellerSubtype === 'mill_owner' ? '/dashboard/mill' : '/dashboard/seller'} replace />;
+    }
+    if (user.role === 'carpenter') return <Navigate to="/dashboard/carpenter" replace />;
+    if (user.role === 'transport') return <Navigate to="/dashboard/transport" replace />;
     if (user.role === 'admin') return <Navigate to="/admin" replace />;
+    if (user.role === 'buyer') return <Navigate to="/dashboard/buyer" replace />;
   }
 
   return <>{children}</>;
@@ -79,10 +86,13 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuth();
 
   if (isAuthenticated && user) {
-    if (user.role === 'seller') return <Navigate to="/dashboard/seller" replace />;
-    if (user.role === 'buyer') return <Navigate to="/dashboard/buyer" replace />;
+    if (user.role === 'seller') {
+      return <Navigate to={user.sellerSubtype === 'mill_owner' ? '/dashboard/mill' : '/dashboard/seller'} replace />;
+    }
+    if (user.role === 'carpenter') return <Navigate to="/dashboard/carpenter" replace />;
+    if (user.role === 'transport') return <Navigate to="/dashboard/transport" replace />;
     if (user.role === 'admin') return <Navigate to="/admin" replace />;
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard/buyer" replace />;
   }
 
   return <>{children}</>;
@@ -156,13 +166,37 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
 
       {isAuthenticated && user?.role === 'seller' && (
         <Link
-          to="/dashboard/seller"
+          to={user.sellerSubtype === 'mill_owner' ? '/dashboard/mill' : '/dashboard/seller'}
           className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition ${
-            isActive('/dashboard/seller') ? 'text-[#5B6147] font-bold' : 'text-stone-500 hover:text-stone-800'
+            isActive('/dashboard/seller') || isActive('/dashboard/mill') ? 'text-[#5B6147] font-bold' : 'text-stone-500 hover:text-stone-800'
           }`}
         >
           <LayoutDashboard className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">{lang === 'en' ? 'Hub' : 'കച്ചവടം'}</span>
+          <span className="text-[10px] mt-0.5">{user.sellerSubtype === 'mill_owner' ? (lang === 'en' ? 'Mill' : 'മിൽ') : (lang === 'en' ? 'Hub' : 'കച്ചവടം')}</span>
+        </Link>
+      )}
+
+      {isAuthenticated && user?.role === 'carpenter' && (
+        <Link
+          to="/dashboard/carpenter"
+          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition ${
+            isActive('/dashboard/carpenter') ? 'text-[#5B6147] font-bold' : 'text-stone-500 hover:text-stone-800'
+          }`}
+        >
+          <Hammer className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">{lang === 'en' ? 'Hub' : 'ആശാരി'}</span>
+        </Link>
+      )}
+
+      {isAuthenticated && user?.role === 'transport' && (
+        <Link
+          to="/dashboard/transport"
+          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition ${
+            isActive('/dashboard/transport') ? 'text-[#5B6147] font-bold' : 'text-stone-500 hover:text-stone-800'
+          }`}
+        >
+          <Truck className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">{lang === 'en' ? 'Transit' : 'ലോറി'}</span>
         </Link>
       )}
 
@@ -193,7 +227,17 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
       {/* 5th Action: Login or Account */}
       {isAuthenticated ? (
         <Link
-          to={user?.role === 'seller' ? '/dashboard/seller' : user?.role === 'admin' ? '/admin' : '/dashboard/buyer'}
+          to={
+            user?.role === 'seller'
+              ? (user?.sellerSubtype === 'mill_owner' ? '/dashboard/mill' : '/dashboard/seller')
+              : user?.role === 'carpenter'
+              ? '/dashboard/carpenter'
+              : user?.role === 'transport'
+              ? '/dashboard/transport'
+              : user?.role === 'admin'
+              ? '/admin'
+              : '/dashboard/buyer'
+          }
           className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[#5B6147]"
         >
           <div className="w-5 h-5 rounded-full bg-stone-200 flex items-center justify-center text-[10px] font-bold text-[#4A3626] ring-1 ring-stone-1000">
@@ -230,12 +274,37 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
     navigate('/');
   };
 
+  const getDashboardPath = () => {
+    if (!user) return '/';
+    if (user.role === 'seller') {
+      return user.sellerSubtype === 'mill_owner' ? '/dashboard/mill' : '/dashboard/seller';
+    }
+    if (user.role === 'carpenter') return '/dashboard/carpenter';
+    if (user.role === 'transport') return '/dashboard/transport';
+    if (user.role === 'admin') return '/admin';
+    return '/dashboard/buyer';
+  };
+
   const getRoleBadge = () => {
     switch (user.role) {
       case 'seller':
         return (
           <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-stone-200 text-[#4A3626] border border-stone-300">
-            {lang === 'en' ? 'Seller Depot' : 'കച്ചവടക്കാരൻ'}
+            {user.sellerSubtype === 'mill_owner'
+              ? (lang === 'en' ? 'Timber Mill Owner' : 'തടി മിൽ ഉടമ')
+              : (lang === 'en' ? 'Individual Seller' : 'വ്യക്തിഗത കച്ചവടക്കാരൻ')}
+          </span>
+        );
+      case 'carpenter':
+        return (
+          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-amber-100 text-amber-900 border border-amber-300">
+            {lang === 'en' ? 'Master Carpenter' : 'വിദഗ്ദ്ധ ആശാരി'}
+          </span>
+        );
+      case 'transport':
+        return (
+          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-blue-100 text-blue-900 border border-blue-300">
+            {lang === 'en' ? 'Transport Owner' : 'വാഹന ഉടമ'}
           </span>
         );
       case 'admin':
@@ -248,22 +317,13 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
       default:
         return (
           <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
-            {lang === 'en' ? 'Timber Buyer' : 'ഉപഭോക്താവ്'}
+            {lang === 'en' ? 'Verified Buyer' : 'ഉപഭോക്താവ്'}
           </span>
         );
     }
   };
-
   const getDashboardLink = () => {
-    switch (user.role) {
-      case 'seller':
-        return '/dashboard/seller';
-      case 'admin':
-        return '/admin';
-      case 'buyer':
-      default:
-        return '/dashboard/buyer';
-    }
+    return getDashboardPath();
   };
 
   return (
@@ -476,13 +536,41 @@ function AppHeader({
 
           {isAuthenticated && user?.role === 'seller' && (
             <Link
-              to="/dashboard/seller"
+              to={user.sellerSubtype === 'mill_owner' ? '/dashboard/mill' : '/dashboard/seller'}
               className={`whitespace-nowrap flex-shrink-0 transition px-2 py-1 rounded-lg bg-stone-100 text-[#4A3626] border flex items-center gap-1.5 ${
-                isCurrent('/dashboard/seller') ? 'border-[#5B6147] font-bold' : 'border-stone-300'
+                isCurrent('/dashboard/seller') || isCurrent('/dashboard/mill') ? 'border-[#5B6147] font-bold' : 'border-stone-300'
               }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
-              <span className="whitespace-nowrap">{lang === 'en' ? 'Seller Hub' : 'കച്ചവട ഹബ്'}</span>
+              <span className="whitespace-nowrap">
+                {user.sellerSubtype === 'mill_owner'
+                  ? (lang === 'en' ? 'Mill Hub' : 'മിൽ ഹബ്')
+                  : (lang === 'en' ? 'Seller Hub' : 'കച്ചവട ഹബ്')}
+              </span>
+            </Link>
+          )}
+
+          {isAuthenticated && user?.role === 'carpenter' && (
+            <Link
+              to="/dashboard/carpenter"
+              className={`whitespace-nowrap flex-shrink-0 transition px-2 py-1 rounded-lg bg-stone-100 text-[#4A3626] border flex items-center gap-1.5 ${
+                isCurrent('/dashboard/carpenter') ? 'border-[#5B6147] font-bold' : 'border-stone-300'
+              }`}
+            >
+              <Hammer className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
+              <span className="whitespace-nowrap">{lang === 'en' ? 'Carpenter Hub' : 'ആശാരി ഹബ്'}</span>
+            </Link>
+          )}
+
+          {isAuthenticated && user?.role === 'transport' && (
+            <Link
+              to="/dashboard/transport"
+              className={`whitespace-nowrap flex-shrink-0 transition px-2 py-1 rounded-lg bg-stone-100 text-[#4A3626] border flex items-center gap-1.5 ${
+                isCurrent('/dashboard/transport') ? 'border-[#5B6147] font-bold' : 'border-stone-300'
+              }`}
+            >
+              <Truck className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
+              <span className="whitespace-nowrap">{lang === 'en' ? 'Transit Hub' : 'ലോറി ഹബ്'}</span>
             </Link>
           )}
 
@@ -596,6 +684,30 @@ export function App() {
                 element={
                   <ProtectedRoute allowedRoles={['seller']}>
                     <SellerDashboard lang={lang} />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/mill"
+                element={
+                  <ProtectedRoute allowedRoles={['seller']}>
+                    <TimberMillOwnerDashboard lang={lang} />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/carpenter"
+                element={
+                  <ProtectedRoute allowedRoles={['carpenter']}>
+                    <CarpenterDashboard lang={lang} />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/transport"
+                element={
+                  <ProtectedRoute allowedRoles={['transport']}>
+                    <TransportOwnerDashboard lang={lang} />
                   </ProtectedRoute>
                 }
               />

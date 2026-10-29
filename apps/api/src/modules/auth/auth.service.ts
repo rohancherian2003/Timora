@@ -118,7 +118,14 @@ export class AuthService {
     name: string;
     district_id?: number;
     language_pref?: Language;
+    seller_subtype?: 'individual' | 'mill_owner';
     business_name?: string;
+    mill_name?: string;
+    daily_cft_capacity?: number;
+    saw_types?: string[];
+    vehicle_types?: string[];
+    vehicle_count?: number;
+    max_tonnage?: number;
     locality?: string;
   }) {
     const { valid: phoneValid, normalized: phone } = validateIndianPhone(params.phone);
@@ -158,18 +165,47 @@ export class AuthService {
         [user.id, params.name, params.district_id || null, params.language_pref || 'en']
       );
 
-      // Create role-specific profile
+      // Create role-specific profile with PENDING_APPROVAL for business roles
       if (params.role === 'seller') {
+        const subtype = params.seller_subtype || 'individual';
         await client.query(
-          `INSERT INTO seller_profiles (user_id, business_name, district_id, locality, approval_status)
-           VALUES ($1, $2, $3, $4, 'pending')`,
-          [user.id, params.business_name || null, params.district_id || null, params.locality || null]
+          `INSERT INTO seller_profiles (user_id, seller_subtype, business_name, district_id, locality, approval_status)
+           VALUES ($1, $2, $3, $4, $5, 'PENDING_APPROVAL')`,
+          [user.id, subtype, params.business_name || null, params.district_id || null, params.locality || null]
         );
+
+        if (subtype === 'mill_owner') {
+          await client.query(
+            `INSERT INTO timber_mills (owner_id, mill_name, district_id, locality, daily_cft_capacity, saw_types, approval_status)
+             VALUES ($1, $2, $3, $4, $5, $6, 'PENDING_APPROVAL')`,
+            [
+              user.id,
+              params.mill_name || params.business_name || `${params.name} Timber Sawmill`,
+              params.district_id || null,
+              params.locality || null,
+              params.daily_cft_capacity || 0,
+              params.saw_types || [],
+            ]
+          );
+        }
       } else if (params.role === 'carpenter') {
         await client.query(
-          `INSERT INTO carpenter_profiles (user_id, district_id)
-           VALUES ($1, $2)`,
-          [user.id, params.district_id || null]
+          `INSERT INTO carpenter_profiles (user_id, business_name, district_id, approval_status)
+           VALUES ($1, $2, $3, 'PENDING_APPROVAL')`,
+          [user.id, params.business_name || params.name, params.district_id || null]
+        );
+      } else if (params.role === 'transport') {
+        await client.query(
+          `INSERT INTO transport_owner_profiles (user_id, business_name, district_id, vehicle_types, vehicle_count, max_tonnage, approval_status)
+           VALUES ($1, $2, $3, $4, $5, $6, 'PENDING_APPROVAL')`,
+          [
+            user.id,
+            params.business_name || `${params.name} Timber Haulage`,
+            params.district_id || null,
+            params.vehicle_types || ['Timber Lorry'],
+            params.vehicle_count || 1,
+            params.max_tonnage || 10.0,
+          ]
         );
       }
 
@@ -197,6 +233,7 @@ export class AuthService {
           phone: user.phone,
           role: user.role,
           name: params.name,
+          approval_status: params.role === 'buyer' ? 'APPROVED' : 'PENDING_APPROVAL',
         },
         accessToken,
         refreshToken,
@@ -215,10 +252,14 @@ export class AuthService {
 
     const res = await query(
       `SELECT u.id, u.phone, u.pin_hash, u.role, u.is_active, p.name, p.language_pref, p.account_tier,
-              sp.approval_status as seller_approval_status
+              sp.seller_subtype, sp.approval_status as seller_approval_status, sp.business_name as seller_business,
+              cp.approval_status as carpenter_approval_status,
+              tp.approval_status as transport_approval_status
        FROM users u
        LEFT JOIN user_profiles p ON p.user_id = u.id
        LEFT JOIN seller_profiles sp ON sp.user_id = u.id
+       LEFT JOIN carpenter_profiles cp ON cp.user_id = u.id
+       LEFT JOIN transport_owner_profiles tp ON tp.user_id = u.id
        WHERE u.phone = $1`,
       [phone]
     );
@@ -252,6 +293,11 @@ export class AuthService {
       [user.id, meta?.ip || null, meta?.userAgent || null]
     );
 
+    let approvalStatus = 'APPROVED';
+    if (user.role === 'seller') approvalStatus = user.seller_approval_status || 'PENDING_APPROVAL';
+    else if (user.role === 'carpenter') approvalStatus = user.carpenter_approval_status || 'PENDING_APPROVAL';
+    else if (user.role === 'transport') approvalStatus = user.transport_approval_status || 'PENDING_APPROVAL';
+
     const accessToken = jwt.sign(
       { id: user.id, phone: user.phone, role: user.role },
       env.JWT_SECRET,
@@ -269,9 +315,11 @@ export class AuthService {
         id: user.id,
         phone: user.phone,
         role: user.role,
+        seller_subtype: user.seller_subtype,
         name: user.name,
         language_pref: user.language_pref,
         account_tier: user.account_tier,
+        approval_status: approvalStatus,
         seller_approval_status: user.seller_approval_status,
       },
       accessToken,

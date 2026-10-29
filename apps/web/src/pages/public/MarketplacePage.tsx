@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Search,
   MapPin,
@@ -7,8 +7,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   X,
-  HelpCircle,
-  Activity,
+  SlidersHorizontal,
+  RotateCcw,
   Factory,
   LifeBuoy,
   Calculator,
@@ -16,63 +16,100 @@ import {
   Hammer,
   Truck,
   ArrowRight,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { TIMBER_LISTINGS, TimberListingItem } from '../../utils/timberListings';
 
-// Alias for backwards compatibility
-const EXTENDED_LISTINGS: TimberListingItem[] = TIMBER_LISTINGS;
-
 const SPECIES_PILLS = [
-  { key: 'all', label: 'All Species', ml: 'എല്ലാം' },
+  { key: 'all', label: 'All Species', ml: 'എല്ലാ ഇനങ്ങളും' },
   { key: 'teak', label: 'Teak', ml: 'തേക്ക്' },
   { key: 'mahogany', label: 'Mahogany', ml: 'മഹാഗണി' },
   { key: 'rosewood', label: 'Rosewood', ml: 'ഈട്ടി' },
   { key: 'anjili', label: 'Anjili', ml: 'ആഞ്ഞിലി' },
   { key: 'jackfruit', label: 'Jackfruit', ml: 'പ്ലാവ്' },
   { key: 'rubberwood', label: 'Rubberwood', ml: 'റബർ' },
+  { key: 'firewood', label: 'Firewood', ml: 'വിറക്' },
 ];
 
 const TYPE_TABS = [
-  { key: 'all', label: 'All Raw Timber', ml: 'എല്ലാ തടികളും' },
-  { key: 'Round Logs', label: 'Round Logs (ഉരുണ്ട തടി)', ml: 'ഉരുണ്ട തടികൾ' },
-  { key: 'Rough-sawn Planks', label: 'Rough Planks (പലക)', ml: 'അറുത്ത പലകകൾ' },
-  { key: 'Squared Beams', label: 'Squared Beams (ബീം)', ml: 'കഴുക്കോലുകൾ' },
-  { key: 'Firewood', label: 'Firewood (വിറക്)', ml: 'വിറക്' },
+  { key: 'all', label: 'All Types', ml: 'എല്ലാ രൂപങ്ങളും' },
+  { key: 'Round Logs', label: 'Round Logs', ml: 'ഉരുണ്ട തടി' },
+  { key: 'Rough-sawn Planks', label: 'Rough Planks', ml: 'അറുത്ത പലകകൾ' },
+  { key: 'Squared Beams', label: 'Squared Beams', ml: 'കഴുക്കോലുകൾ' },
+  { key: 'Firewood', label: 'Firewood', ml: 'വിറക്' },
+];
+
+const KERALA_DISTRICTS = [
+  { key: 'all', label: 'All 14 Districts', ml: 'എല്ലാ ജില്ലകളും' },
+  { key: 'Thiruvananthapuram', label: 'Thiruvananthapuram', ml: 'തിരുവനന്തപുരം' },
+  { key: 'Kollam', label: 'Kollam', ml: 'കൊല്ലം' },
+  { key: 'Pathanamthitta', label: 'Pathanamthitta', ml: 'പത്തനംതിട്ട' },
+  { key: 'Alappuzha', label: 'Alappuzha', ml: 'ആലപ്പുഴ' },
+  { key: 'Kottayam', label: 'Kottayam', ml: 'കോട്ടയം' },
+  { key: 'Idukki', label: 'Idukki', ml: 'ഇടുക്കി' },
+  { key: 'Ernakulam', label: 'Ernakulam', ml: 'എറണാകുളം' },
+  { key: 'Thrissur', label: 'Thrissur', ml: 'തൃശ്ശൂർ' },
+  { key: 'Palakkad', label: 'Palakkad', ml: 'പാലക്കാട്' },
+  { key: 'Malappuram', label: 'Malappuram', ml: 'മലപ്പുറം' },
+  { key: 'Kozhikode', label: 'Kozhikode', ml: 'കോഴിക്കോട്' },
+  { key: 'Wayanad', label: 'Wayanad', ml: 'വയനാട്' },
+  { key: 'Kannur', label: 'Kannur', ml: 'കണ്ണൂർ' },
+  { key: 'Kasaragod', label: 'Kasaragod', ml: 'കാസർഗോഡ്' },
 ];
 
 const DISALLOWED_FURNITURE_KEYWORDS = [
   'plywood', 'ply', 'chair', 'table', 'bed', 'sofa', 'desk', 'door lock',
-  'furniture', 'കട്ടിൽ', 'കസേര', 'മേശ', 'പ്ലൈവുഡ്', 'ഫർണിച്ചർ'
-];
-
-// LIVE YARD ACTIVITY TICKER ITEMS
-const LIVE_MARKET_UPDATES = [
-  { depot: 'Nilambur Depot', msg: '65 CFT First-Grade Teak Round Logs transit permit issued', ml: 'നിലമ്പൂർ: 65 CFT തേക്ക് ലോഗുകൾ പരിശോധിച്ചുറപ്പിച്ചു' },
-  { depot: 'Perumbavoor Mills', msg: '120 CFT Wild Anjili logs loaded for Ernakulam transit', ml: 'പെരുമ്പാവൂർ: 120 CFT ആഞ്ഞിലി തടികൾ ലോഡ് ചെയ്തു' },
-  { depot: 'Pala Timber Mart', msg: 'Mahogany 12ft squared beams booked for roofing joinery', ml: 'പാല: മഹാഗണി കഴുക്കോലുകൾ ബുക്കിംഗ് സ്വീകരിച്ചു' },
-  { depot: 'Wayanad Division', msg: 'Rosewood (Veetti) certified logs listed with Form IV pass', ml: 'വയനാട്: ഈട്ടി ലോഗുകൾ ഫോറസ്റ്റ് പാസ്സ് സഹിതം ലഭ്യമാണ്' },
-  { depot: 'Adoor Agro Depot', msg: '240 CFT Fresh Rubberwood logs ready for dispatch', ml: 'അടൂർ: 240 CFT റബർ തടികൾ വിൽപനയ്ക്ക് തയ്യാറായി' },
+  'furniture', 'കട്ടിൽ', 'കസേര', 'മേശ', 'പ്ലൈവുഡ്', 'ഫർണിച്ചർ',
 ];
 
 export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
-  const [selectedSpecies, setSelectedSpecies] = useState<string>('all');
-  const [selectedType, setSelectedType] = useState<string>('all');
-  const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [isRaiseTicketOpen, setIsRaiseTicketOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  // Search Validation Alert
+  // State derived from URL query parameters to guarantee state preservation
+  const selectedSpecies = searchParams.get('species') || 'all';
+  const selectedType = searchParams.get('type') || 'all';
+  const selectedDistrict = searchParams.get('district') || 'all';
+  const searchQuery = searchParams.get('q') || '';
+
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [isRaiseTicketOpen, setIsRaiseTicketOpen] = useState(false);
   const [validationAlert, setValidationAlert] = useState<{
     type: 'warning' | 'info';
     title: string;
     message: string;
   } | null>(null);
 
-  // Handle Search Input with Validation
+  // Update query params helper
+  const updateFilter = (key: string, value: string) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (!value || value === 'all') {
+      nextParams.delete(key);
+    } else {
+      nextParams.set(key, value);
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const handleClearAllFilters = () => {
+    setSearchParams({}, { replace: true });
+    setValidationAlert(null);
+  };
+
+  const hasActiveFilters =
+    selectedSpecies !== 'all' ||
+    selectedType !== 'all' ||
+    selectedDistrict !== 'all' ||
+    searchQuery.trim().length > 0;
+
+  // Search input handler with Raw Timber keyword validation
   const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
+    updateFilter('q', value);
     const lower = value.toLowerCase().trim();
 
     const matchedDisallowed = DISALLOWED_FURNITURE_KEYWORDS.find((kw) => lower.includes(kw));
@@ -82,20 +119,8 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         title: lang === 'en' ? 'Raw Timber Only Platform' : 'റോ തടികൾ മാത്രമുള്ള വിപണി',
         message:
           lang === 'en'
-            ? 'Timora exclusively trades raw timber logs and rough-sawn lumber. Finished furniture and plywood are not listed. Search for Teak, Mahogany, Anjili, or Rubberwood instead.'
-            : 'ടിമോറയിൽ ഉരുണ്ട തടികളും അറുത്ത മരങ്ങളും മാത്രമാണ് വ്യാപാരം ചെയ്യുന്നത്. ഫർണിച്ചറോ പ്ലൈവുഡോ ലഭ്യമല്ല. തേക്ക്, മഹാഗണി, ആഞ്ഞിലി, റബർ എന്നിവ തിരയുക.',
-      });
-      return;
-    }
-
-    if (/[!@#$%^&*()_+=\[\]{};':"\\|,.<>\/?]+/.test(value)) {
-      setValidationAlert({
-        type: 'warning',
-        title: lang === 'en' ? 'Invalid Search Character' : 'അസാധുവായ അക്ഷരങ്ങൾ',
-        message:
-          lang === 'en'
-            ? 'Please use standard timber species names like Teak, Mahogany, or Anjili.'
-            : 'ദയവായി തടി ഇനങ്ങളുടെ പേര് മാത്രം നൽകുക (ഉദാ: തേക്ക്, മഹാഗണി, ആഞ്ഞിലി).',
+            ? 'Timora exclusively trades raw timber logs and rough-sawn lumber. Finished furniture is not listed. Search for Teak, Mahogany, Anjili, or Rubberwood instead.'
+            : 'ടിമോറയിൽ ഉരുണ്ട തടികളും അറുത്ത മരങ്ങളും മാത്രമാണ് വ്യാപാരം ചെയ്യുന്നത്. ഫർണിച്ചറോ പ്ലൈവുഡോ ലഭ്യമല്ല. തേക്ക്, മഹാഗണി, ആഞ്ഞിലി എന്നിവ തിരയുക.',
       });
       return;
     }
@@ -105,9 +130,16 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     }
   };
 
-  const filtered = EXTENDED_LISTINGS.filter((item) => {
-    if (selectedSpecies !== 'all' && !item.species.toLowerCase().includes(selectedSpecies.toLowerCase())) {
-      return false;
+  // Filter listings
+  const filteredListings = TIMBER_LISTINGS.filter((item) => {
+    if (selectedSpecies !== 'all') {
+      if (selectedSpecies === 'firewood') {
+        if (!item.type.toLowerCase().includes('firewood') && !item.title.toLowerCase().includes('firewood')) {
+          return false;
+        }
+      } else if (!item.species.toLowerCase().includes(selectedSpecies.toLowerCase())) {
+        return false;
+      }
     }
     if (selectedType !== 'all' && item.type !== selectedType) {
       return false;
@@ -115,355 +147,447 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     if (selectedDistrict !== 'all' && !item.district.toLowerCase().includes(selectedDistrict.toLowerCase())) {
       return false;
     }
-    if (
-      searchQuery &&
-      !item.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !item.locality.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !item.species.toLowerCase().includes(searchQuery.toLowerCase())
-    ) {
-      return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchTitle = item.title.toLowerCase().includes(q);
+      const matchSpecies = item.species.toLowerCase().includes(q);
+      const matchDistrict = item.district.toLowerCase().includes(q);
+      const matchLocality = item.locality.toLowerCase().includes(q);
+      if (!matchTitle && !matchSpecies && !matchDistrict && !matchLocality) {
+        return false;
+      }
     }
     return true;
   });
 
+  const scrollToCatalog = () => {
+    const el = document.getElementById('timber-catalog');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#E7E1D6] text-[#4A3626] space-y-10 pb-20 relative">
-      
-      {/* 1. CONTINUOUS AUTO-SCROLLING LIVE YARD TICKER */}
-      <div className="bg-[#d5cfc4]/70 border-b border-[#8E7F6B]/30 py-2.5 overflow-hidden ticker-track select-none">
-        <div className="flex animate-marquee items-center gap-8 whitespace-nowrap text-xs text-[#4A3626]">
-          {[...LIVE_MARKET_UPDATES, ...LIVE_MARKET_UPDATES].map((u, i) => (
-            <span key={i} className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full bg-[#5B6147] text-white font-bold text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-xs">
-                <Activity className="w-2.5 h-2.5" />
-                {u.depot}
-              </span>
-              <span className="text-[#4A3626] font-semibold">{lang === 'en' ? u.msg : u.ml}</span>
-              <span className="text-[#8E7F6B]/70 text-sm mx-2">✦</span>
-            </span>
-          ))}
-        </div>
-      </div>
+    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-16">
+      {/* 1. REFINED MINIMAL HERO SECTION */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#E7E1D6]/80 via-[#FAF8F5] to-white border-b border-[#8E7F6B]/20 pt-6 pb-8 sm:pt-8 sm:pb-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
+          {/* Main Headline & Supporting Copy */}
+          <div className="text-center max-w-3xl mx-auto space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E7E1D6] border border-[#8E7F6B]/30 text-[#4A3626] text-xs font-bold shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-[#5B6147]" />
+              <span>{lang === 'en' ? 'Direct Depot & Sawmill Sourcing' : 'നേരിട്ടുള്ള തടി വ്യാപാരം'}</span>
+            </div>
 
-      {/* 2. MINIMAL & PURPOSE-DRIVEN HERO SECTION */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-6 pt-4 sm:pt-8">
-        
-        {/* BRAND MOTTO PLAQUE (Clean, Minimal, Distinctive) */}
-        <div className="inline-block mx-auto">
-          <div className="rounded-full bg-white/70 backdrop-blur-xs border border-[#8E7F6B]/30 px-6 py-2 shadow-xs flex items-center justify-center gap-3">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#5B6147]" />
-            <span
-              className="font-serif font-black tracking-[0.24em] text-[#4A3626] text-xs sm:text-sm uppercase select-none"
-              style={{ fontFamily: 'Georgia, Cambria, serif' }}
-            >
-              TIMBER <span className="text-[#5B6147] font-sans font-extrabold mx-2">·</span> PEOPLE <span className="text-[#5B6147] font-sans font-extrabold mx-2">·</span> POSSIBILITIES
-            </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#5B6147]" />
-          </div>
-        </div>
+            <h1 className="text-2xl sm:text-4xl font-extrabold font-serif text-[#4A3626] tracking-tight leading-tight">
+              {lang === 'en' ? "Kerala's Smart Timber Marketplace" : 'കേരള സ്മാർട്ട് തടി വിപണി'}
+            </h1>
 
-        {/* Clear Headline */}
-        <div className="space-y-3 max-w-3xl mx-auto">
-          <h1
-            className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight text-[#4A3626]"
-            style={{ fontFamily: 'Georgia, Cambria, serif' }}
-          >
-            {lang === 'en' ? (
-              <>
-                Buy, Sell & Source Raw Timber <br />
-                <span className="text-[#5B6147]">Direct From Kerala Sawmills</span>
-              </>
-            ) : (
-              <>
-                വീടുപണിക്കും ആവശ്യങ്ങൾക്കും <br />
-                <span className="text-[#5B6147]">തടി നേരിട്ട് വാങ്ങാനും വിൽക്കാനും</span>
-              </>
-            )}
-          </h1>
-          <p className="text-sm sm:text-base text-[#7A5A3A] font-medium max-w-2xl mx-auto leading-relaxed">
-            {lang === 'en'
-              ? 'Connecting house owners, buyers, carpenters, and licensed timber mills across Kerala with verified Forest Form IV passes and genuine Hoppus CFT pricing.'
-              : 'കേരളത്തിലെ വീടുപണിയുന്നവർക്കും ആശാരിമാർക്കും തടി ഡിപ്പോകൾക്കും ഇടനിലക്കാരില്ലാതെ നേരിട്ട് വിൽക്കാനും വാങ്ങാനും.'}
-          </p>
-        </div>
-
-        {/* Minimal Search Bar with Validation */}
-        <div className="max-w-2xl mx-auto relative">
-          <div className="relative flex items-center bg-white rounded-2xl shadow-md border border-[#8E7F6B]/30 p-1.5 sm:p-2 focus-within:ring-2 focus-within:ring-[#5B6147] transition">
-            <Search className="w-5 h-5 text-[#8E7F6B] ml-3 flex-shrink-0" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder={
-                lang === 'en'
-                  ? 'Search Teak, Mahogany, Anjili, Rubberwood, Nilambur, Pala...'
-                  : 'തേക്ക്, മഹാഗണി, ആഞ്ഞിലി, റബർ, നിലമ്പൂർ തിരയുക...'
-              }
-              className="w-full px-3 py-2 text-sm bg-transparent border-none text-[#4A3626] font-semibold focus:outline-none placeholder:text-[#8E7F6B]/70"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setValidationAlert(null);
-                }}
-                className="p-1 text-[#8E7F6B] hover:text-[#4A3626]"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+            <p className="text-xs sm:text-sm text-[#7A5A3A] font-medium leading-relaxed max-w-xl mx-auto">
+              {lang === 'en'
+                ? 'Direct mill-to-buyer raw logs, rough-sawn planks, and squared beams with Kerala Form IV transit verification.'
+                : 'ഇടനിലക്കാരില്ലാതെ മില്ലുകളിൽ നിന്നും കർഷകരിൽ നിന്നും നേരിട്ട് തടികളും പലകകളും വാങ്ങാം.'}
+            </p>
           </div>
 
-          {/* Validation Notice */}
-          {validationAlert && (
-            <div className="absolute left-0 right-0 top-full mt-2 z-30 p-3.5 rounded-2xl bg-white/95 backdrop-blur-md border border-[#8E7F6B]/40 shadow-xl text-left flex items-start gap-3 animate-fadeIn">
-              <AlertTriangle className="w-4 h-4 text-[#7A5A3A] flex-shrink-0 mt-0.5" />
-              <div className="flex-1 text-xs text-[#4A3626]">
-                <span className="font-bold block text-xs">{validationAlert.title}</span>
-                <p className="mt-0.5 text-[#7A5A3A]">{validationAlert.message}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <button
-                    onClick={() => {
-                      setSelectedSpecies('teak');
-                      setSearchQuery('Teak');
-                      setValidationAlert(null);
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-[#5B6147] text-white text-[11px] font-bold"
-                  >
-                    തേക്ക് (Teak)
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedSpecies('mahogany');
-                      setSearchQuery('Mahogany');
-                      setValidationAlert(null);
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-[#5B6147] text-white text-[11px] font-bold"
-                  >
-                    മഹാഗണി (Mahogany)
-                  </button>
+          {/* Prominent Search Bar */}
+          <div className="max-w-2xl mx-auto">
+            <div className="relative group">
+              <Search className="w-5 h-5 absolute left-4 top-3.5 text-[#8E7F6B] group-focus-within:text-[#5B6147] transition-colors" />
+              <input
+                type="text"
+                placeholder={
+                  lang === 'en'
+                    ? 'Search Teak round logs, Anjili beams, Mahogany, or Kottayam depot...'
+                    : 'തേക്ക്, ആഞ്ഞിലി, മഹാഗണി, അല്ലെങ്കിൽ ജില്ല നൽകി തിരയുക...'
+                }
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full pl-12 pr-10 py-3.5 rounded-2xl border-2 border-[#8E7F6B]/30 bg-white text-xs sm:text-sm font-semibold text-[#4A3626] placeholder-[#8E7F6B] shadow-sm focus:border-[#5B6147] focus:ring-4 focus:ring-[#5B6147]/15 focus:outline-none transition-all"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => updateFilter('q', '')}
+                  className="absolute right-3.5 top-3.5 text-[#8E7F6B] hover:text-[#4A3626] p-0.5 rounded-full hover:bg-stone-100 transition"
+                  title="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Validation Alert */}
+            {validationAlert && (
+              <div className="mt-2.5 p-3 rounded-2xl bg-amber-50 border border-amber-300 text-xs text-amber-900 flex items-start gap-2 animate-fadeIn">
+                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <div className="font-bold">{validationAlert.title}</div>
+                  <div className="text-[11px] leading-relaxed text-amber-800">{validationAlert.message}</div>
                 </div>
               </div>
-              <button onClick={() => setValidationAlert(null)} className="text-[#8E7F6B] hover:text-[#4A3626]">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* Quick Nav Badges: Mills, Carpenters, Calculator, Transport */}
-        <div className="flex items-center justify-center flex-wrap gap-2.5 pt-1">
-          <Link
-            to="/mills"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white text-[#4A3626] border border-[#8E7F6B]/30 text-xs font-bold transition shadow-2xs"
-          >
-            <Factory className="w-3.5 h-3.5 text-[#5B6147]" />
-            <span>{lang === 'en' ? 'Sawmills Directory' : 'തടി മില്ലുകൾ'}</span>
-          </Link>
+          {/* 5 ESSENTIAL MARKETPLACE SHORTCUT TILES */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 max-w-4xl mx-auto pt-1">
+            {/* 1. Browse Timber */}
+            <button
+              type="button"
+              onClick={scrollToCatalog}
+              className="p-3 rounded-2xl bg-white hover:bg-[#E7E1D6]/60 border border-[#8E7F6B]/30 text-left transition flex items-center gap-2.5 shadow-2xs group"
+            >
+              <div className="p-2 rounded-xl bg-[#E7E1D6] group-hover:bg-[#5B6147] group-hover:text-white transition text-[#5B6147] flex-shrink-0">
+                <Trees className="w-4 h-4" />
+              </div>
+              <div className="truncate">
+                <div className="font-bold text-xs text-[#4A3626] truncate">
+                  {lang === 'en' ? 'Browse Timber' : 'തടികൾ'}
+                </div>
+                <div className="text-[10px] text-[#8E7F6B] truncate">
+                  {lang === 'en' ? '7 Active Batches' : 'ലഭ്യമായവ'}
+                </div>
+              </div>
+            </button>
 
-          <Link
-            to="/calculator"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white text-[#4A3626] border border-[#8E7F6B]/30 text-xs font-bold transition shadow-2xs"
-          >
-            <Calculator className="w-3.5 h-3.5 text-[#5B6147]" />
-            <span>{lang === 'en' ? 'Hoppus CFT Calc' : 'സി.എഫ്.ടി കണക്ക്'}</span>
-          </Link>
+            {/* 2. Timber Mills */}
+            <Link
+              to="/mills"
+              className="p-3 rounded-2xl bg-white hover:bg-[#E7E1D6]/60 border border-[#8E7F6B]/30 text-left transition flex items-center gap-2.5 shadow-2xs group"
+            >
+              <div className="p-2 rounded-xl bg-[#E7E1D6] group-hover:bg-[#5B6147] group-hover:text-white transition text-[#5B6147] flex-shrink-0">
+                <Factory className="w-4 h-4" />
+              </div>
+              <div className="truncate">
+                <div className="font-bold text-xs text-[#4A3626] truncate">
+                  {lang === 'en' ? 'Timber Mills' : 'തടി മില്ലുകൾ'}
+                </div>
+                <div className="text-[10px] text-[#8E7F6B] truncate">
+                  {lang === 'en' ? 'Licensed Sawmills' : 'മില്ലുകൾ'}
+                </div>
+              </div>
+            </Link>
 
-          <Link
-            to="/carpenters"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white text-[#4A3626] border border-[#8E7F6B]/30 text-xs font-bold transition shadow-2xs"
-          >
-            <Hammer className="w-3.5 h-3.5 text-[#5B6147]" />
-            <span>{lang === 'en' ? 'Carpenters' : 'തച്ചൻമാർ'}</span>
-          </Link>
+            {/* 3. Master Carpenters */}
+            <Link
+              to="/carpenters"
+              className="p-3 rounded-2xl bg-white hover:bg-[#E7E1D6]/60 border border-[#8E7F6B]/30 text-left transition flex items-center gap-2.5 shadow-2xs group"
+            >
+              <div className="p-2 rounded-xl bg-[#E7E1D6] group-hover:bg-[#5B6147] group-hover:text-white transition text-[#5B6147] flex-shrink-0">
+                <Hammer className="w-4 h-4" />
+              </div>
+              <div className="truncate">
+                <div className="font-bold text-xs text-[#4A3626] truncate">
+                  {lang === 'en' ? 'Carpenters' : 'ആശാരിമാർ'}
+                </div>
+                <div className="text-[10px] text-[#8E7F6B] truncate">
+                  {lang === 'en' ? 'Master Artisans' : 'വിദഗ്ദ്ധ തച്ചർ'}
+                </div>
+              </div>
+            </Link>
 
-          <Link
-            to="/transport"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white text-[#4A3626] border border-[#8E7F6B]/30 text-xs font-bold transition shadow-2xs"
-          >
-            <Truck className="w-3.5 h-3.5 text-[#5B6147]" />
-            <span>{lang === 'en' ? 'Logistics' : 'തടി ലോറികൾ'}</span>
-          </Link>
+            {/* 4. Timber Transport */}
+            <Link
+              to="/transport"
+              className="p-3 rounded-2xl bg-white hover:bg-[#E7E1D6]/60 border border-[#8E7F6B]/30 text-left transition flex items-center gap-2.5 shadow-2xs group"
+            >
+              <div className="p-2 rounded-xl bg-[#E7E1D6] group-hover:bg-[#5B6147] group-hover:text-white transition text-[#5B6147] flex-shrink-0">
+                <Truck className="w-4 h-4" />
+              </div>
+              <div className="truncate">
+                <div className="font-bold text-xs text-[#4A3626] truncate">
+                  {lang === 'en' ? 'Transport' : 'തടി ലോറികൾ'}
+                </div>
+                <div className="text-[10px] text-[#8E7F6B] truncate">
+                  {lang === 'en' ? 'Form IV Transit' : 'ട്രാൻസിറ്റ്'}
+                </div>
+              </div>
+            </Link>
+
+            {/* 5. CFT Calculator */}
+            <Link
+              to="/calculator"
+              className="p-3 rounded-2xl bg-white hover:bg-[#E7E1D6]/60 border border-[#8E7F6B]/30 text-left transition flex items-center gap-2.5 shadow-2xs group col-span-2 sm:col-span-1"
+            >
+              <div className="p-2 rounded-xl bg-[#E7E1D6] group-hover:bg-[#5B6147] group-hover:text-white transition text-[#5B6147] flex-shrink-0">
+                <Calculator className="w-4 h-4" />
+              </div>
+              <div className="truncate">
+                <div className="font-bold text-xs text-[#4A3626] truncate">
+                  {lang === 'en' ? 'CFT Calculator' : 'കാൽക്കുലേറ്റർ'}
+                </div>
+                <div className="text-[10px] text-[#8E7F6B] truncate">
+                  {lang === 'en' ? 'Kerala Hoppus' : 'ഹോപ്പസ് റൂൾ'}
+                </div>
+              </div>
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* 3. MINIMAL FILTER BAR & STOCK DISCOVERY */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
-        
-        {/* Type Filter Buttons */}
-        <div className="flex items-center justify-between border-b border-[#8E7F6B]/20 pb-3 gap-3 overflow-x-auto">
-          <div className="flex items-center gap-2">
-            {TYPE_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setSelectedType(tab.key)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                  selectedType === tab.key
-                    ? 'bg-[#3F452F] text-white shadow-xs'
-                    : 'bg-white/80 text-[#7A5A3A] hover:bg-white border border-[#8E7F6B]/30'
-                }`}
-              >
-                {lang === 'en' ? tab.label : tab.ml}
-              </button>
-            ))}
+      {/* 2. REFINED FILTER BAR & CATALOG CONTAINER */}
+      <section id="timber-catalog" className="max-w-6xl mx-auto px-4 sm:px-6 space-y-4">
+        {/* Compact Primary Species Filter Row */}
+        <div className="flex items-center justify-between gap-3 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex items-center gap-1.5 flex-nowrap">
+            {SPECIES_PILLS.map((pill) => {
+              const isActive = selectedSpecies === pill.key;
+              return (
+                <button
+                  key={pill.key}
+                  type="button"
+                  onClick={() => updateFilter('species', pill.key)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                    isActive
+                      ? 'bg-[#5B6147] text-white shadow-xs'
+                      : 'bg-white text-stone-700 hover:bg-[#E7E1D6]/60 border border-[#8E7F6B]/30'
+                  }`}
+                >
+                  <Tag className={`w-3 h-3 ${isActive ? 'text-white' : 'text-stone-400'}`} />
+                  <span>{lang === 'en' ? pill.label : pill.ml}</span>
+                </button>
+              );
+            })}
           </div>
 
-          <span className="text-xs font-bold text-[#7A5A3A] whitespace-nowrap hidden sm:inline">
-            {filtered.length} {lang === 'en' ? 'Lots Available' : 'തടികൾ ലഭ്യമാണ്'}
-          </span>
-        </div>
-
-        {/* Species & District Filter Pills */}
-        <div className="bg-white/70 backdrop-blur-xs p-3.5 rounded-2xl border border-[#8E7F6B]/30 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs font-bold text-[#8E7F6B] uppercase tracking-wider mr-1">
-              {lang === 'en' ? 'Species:' : 'ഇനം:'}
-            </span>
-            {SPECIES_PILLS.map((sp) => (
-              <button
-                key={sp.key}
-                onClick={() => setSelectedSpecies(sp.key)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
-                  selectedSpecies === sp.key
-                    ? 'bg-[#5B6147] text-white font-bold shadow-2xs'
-                    : 'bg-white/90 text-[#4A3626] hover:bg-white border border-[#8E7F6B]/20'
-                }`}
-              >
-                {lang === 'en' ? sp.label : sp.ml}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <MapPin className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
-            <select
-              value={selectedDistrict}
-              onChange={(e) => setSelectedDistrict(e.target.value)}
-              className="px-3 py-1.5 border border-[#8E7F6B]/30 rounded-xl text-[#4A3626] font-semibold text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#5B6147] w-full md:w-52"
+          {/* Toggle Secondary Filter Drawer */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsFilterDrawerOpen(!isFilterDrawerOpen)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold border transition flex items-center gap-1.5 ${
+                isFilterDrawerOpen || selectedType !== 'all' || selectedDistrict !== 'all'
+                  ? 'bg-[#E7E1D6] border-[#5B6147] text-[#4A3626]'
+                  : 'bg-white border-stone-300 text-stone-600 hover:bg-stone-50'
+              }`}
             >
-              <option value="all">{lang === 'en' ? 'All Districts' : 'എല്ലാ ജില്ലകളും'}</option>
-              <option value="malappuram">Malappuram (മലപ്പുറം)</option>
-              <option value="kottayam">Kottayam (കോട്ടയം)</option>
-              <option value="ernakulam">Ernakulam (എറണാകുളം)</option>
-              <option value="pathanamthitta">Pathanamthitta (പത്തനംതിട്ട)</option>
-              <option value="thrissur">Thrissur (തൃശ്ശൂർ)</option>
-              <option value="wayanad">Wayanad (വയനാട്)</option>
-              <option value="kollam">Kollam (കൊല്ലം)</option>
-            </select>
+              <SlidersHorizontal className="w-3.5 h-3.5 text-[#5B6147]" />
+              <span className="hidden sm:inline">{lang === 'en' ? 'Filters' : 'ഫിൽട്ടറുകൾ'}</span>
+              {(selectedType !== 'all' || selectedDistrict !== 'all') && (
+                <span className="w-2 h-2 rounded-full bg-[#5B6147]" />
+              )}
+              {isFilterDrawerOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </button>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleClearAllFilters}
+                className="p-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 transition"
+                title={lang === 'en' ? 'Reset all filters' : 'ഫിൽട്ടറുകൾ ഒഴിവാക്കുക'}
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* LISTINGS GRID */}
-        {filtered.length === 0 ? (
-          <div className="bg-white/80 rounded-3xl border border-[#8E7F6B]/30 p-10 text-center space-y-3">
-            <Trees className="w-10 h-10 text-[#8E7F6B] mx-auto" />
-            <h3 className="text-base font-bold text-[#4A3626]">
-              {lang === 'en' ? 'No Timber Stock Found' : 'തടികൾ ഒന്നും കണ്ടെത്തിയില്ല'}
+        {/* Collapsible Secondary Filter Drawer (District & Form/Type) */}
+        {isFilterDrawerOpen && (
+          <div className="p-4 bg-white rounded-3xl border border-[#8E7F6B]/30 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-4 animate-scaleUp">
+            {/* Timber Form / Cut Type */}
+            <div>
+              <label className="block text-xs font-bold text-[#4A3626] mb-1.5">
+                {lang === 'en' ? 'Cut / Log Type' : 'തടിയുടെ രൂപം'}
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {TYPE_TABS.map((tab) => {
+                  const isActive = selectedType === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => updateFilter('type', tab.key)}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-bold transition ${
+                        isActive
+                          ? 'bg-[#4A3626] text-white'
+                          : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                      }`}
+                    >
+                      {lang === 'en' ? tab.label : tab.ml}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Kerala District Selector */}
+            <div>
+              <label className="block text-xs font-bold text-[#4A3626] mb-1.5">
+                {lang === 'en' ? 'Kerala District Location' : 'ജില്ല'}
+              </label>
+              <div className="relative">
+                <MapPin className="w-4 h-4 absolute left-3 top-2.5 text-[#8E7F6B]" />
+                <select
+                  value={selectedDistrict}
+                  onChange={(e) => updateFilter('district', e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-stone-300 text-xs font-semibold text-[#4A3626] focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50"
+                >
+                  {KERALA_DISTRICTS.map((dist) => (
+                    <option key={dist.key} value={dist.key}>
+                      {lang === 'en' ? dist.label : dist.ml}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Active Results Summary */}
+        <div className="flex items-center justify-between text-xs text-[#7A5A3A] px-1 font-medium">
+          <span>
+            {lang === 'en'
+              ? `Showing ${filteredListings.length} verified timber lots`
+              : `${filteredListings.length} തടി ലോറ്റുകൾ ലഭ്യമാണ്`}
+          </span>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleClearAllFilters}
+              className="text-[#5B6147] hover:underline font-bold text-[11px]"
+            >
+              {lang === 'en' ? 'Clear All Filters' : 'ഫിൽട്ടറുകൾ റദ്ദാക്കുക'}
+            </button>
+          )}
+        </div>
+
+        {/* 3. TIMBER CARDS GRID WITH 6-POINT VISUAL HIERARCHY */}
+        {filteredListings.length === 0 ? (
+          <div className="p-12 text-center bg-white rounded-3xl border border-stone-300 space-y-3">
+            <Trees className="w-10 h-10 text-stone-300 mx-auto" />
+            <h3 className="font-serif font-bold text-base text-[#4A3626]">
+              {lang === 'en' ? 'No timber listings match your criteria' : 'ലിസ്റ്റിംഗുകൾ കണ്ടെത്തിയില്ല'}
             </h3>
-            <p className="text-xs text-[#7A5A3A]">
-              {lang === 'en' ? 'Try adjusting species or district filters.' : 'മറ്റു ജില്ലകളോ തടി ഇനങ്ങളോ തിരഞ്ഞെടുത്ത് വീണ്ടും തിരയുക.'}
+            <p className="text-xs text-stone-500">
+              {lang === 'en'
+                ? 'Try broadening your search query or selecting "All Species".'
+                : 'തിരയൽ വാക്ക് മാറ്റുകയോ "എല്ലാ ഇനങ്ങളും" തിരഞ്ഞെടുക്കുകയോ ചെയ്യുക.'}
             </p>
             <button
-              onClick={() => {
-                setSelectedSpecies('all');
-                setSelectedType('all');
-                setSelectedDistrict('all');
-                setSearchQuery('');
-                setValidationAlert(null);
-              }}
-              className="px-4 py-2 bg-[#5B6147] text-white rounded-xl text-xs font-bold hover:bg-[#3F452F] transition"
+              type="button"
+              onClick={handleClearAllFilters}
+              className="px-4 py-2 rounded-xl bg-[#5B6147] text-white font-bold text-xs"
             >
-              {lang === 'en' ? 'Reset Filters' : 'ഫിൽട്ടറുകൾ മാറ്റുക'}
+              {lang === 'en' ? 'Reset Filters' : 'ഫിൽട്ടറുകൾ ഒഴിവാക്കുക'}
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-3xl border border-[#8E7F6B]/30 overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex flex-col group"
-              >
-                {/* Real Timber Photo - Clickable to open timber detail */}
-                <Link
-                  to={`/listing/${item.id}`}
-                  className="relative aspect-[16/10] bg-[#d5cfc4]/50 overflow-hidden block cursor-pointer"
-                  title={item.title}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredListings.map((item, index) => {
+              const isFirewood = item.type.toLowerCase().includes('firewood') || item.title.toLowerCase().includes('firewood');
+
+              return (
+                <div
+                  key={item.id}
+                  className="group bg-white rounded-3xl border border-[#8E7F6B]/30 hover:border-[#5B6147]/60 shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between"
                 >
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                  />
-                  <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-[#4A3626] shadow-xs flex items-center gap-1">
-                      <Tag className="w-3 h-3 text-[#5B6147]" />
-                      {lang === 'en' ? item.species : item.species_ml}
-                    </span>
-                  </div>
-
-                  {item.transit_pass && (
-                    <div className="absolute top-2.5 right-2.5 bg-emerald-700/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
-                      <CheckCircle2 className="w-3 h-3" />
-                      <span>{lang === 'en' ? 'Form IV Pass' : 'പാസ്സ് ഉണ്ട്'}</span>
-                    </div>
-                  )}
-
-                  <div className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] font-mono px-2 py-0.5 rounded-md">
-                    {item.quantity} {item.unit}
-                  </div>
-                </Link>
-
-                {/* Content */}
-                <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                  {/* Card Content Top */}
                   <div>
-                    <Link to={`/listing/${item.id}`} className="block">
-                      <h3 className="font-bold text-[#4A3626] text-sm line-clamp-1 group-hover:text-[#5B6147] transition">
+                    {/* 1. Timber Image with Reserved Aspect Ratio (Prevents CLS) */}
+                    <div className="relative aspect-[4/3] w-full bg-[#E7E1D6] overflow-hidden">
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        loading={index < 3 ? 'eager' : 'lazy'}
+                        className="w-full h-full object-cover transform group-hover:scale-[1.03] transition-transform duration-300"
+                      />
+
+                      {/* Transit Pass Badge */}
+                      {item.transit_pass && (
+                        <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-emerald-950/85 text-emerald-300 text-[10px] font-bold backdrop-blur-xs flex items-center gap-1 shadow-xs">
+                          <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                          <span>{lang === 'en' ? 'Form IV Pass' : 'ഫോറസ്റ്റ് പാസ്സ്'}</span>
+                        </div>
+                      )}
+
+                      {/* Grade Badge */}
+                      <div className="absolute top-3 right-3 px-2.5 py-1 rounded-md bg-stone-900/80 text-white text-[10px] font-bold backdrop-blur-xs">
+                        {item.grade}
+                      </div>
+                    </div>
+
+                    {/* Card Body */}
+                    <div className="p-4 sm:p-5 space-y-3">
+                      {/* 2. Species Pill & Form */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#E7E1D6] text-[#4A3626] text-[11px] font-bold">
+                          {lang === 'en' ? item.species : item.species_ml}
+                        </span>
+                        <span className="text-[11px] text-[#8E7F6B] font-medium">
+                          {lang === 'en' ? item.type : item.type_ml}
+                        </span>
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="font-serif font-extrabold text-base text-[#4A3626] leading-snug line-clamp-2">
                         {lang === 'en' ? item.title : (item.title_ml || item.title)}
                       </h3>
-                    </Link>
-                    <p className="text-xs text-[#7A5A3A] mt-1 flex items-center gap-1">
-                      <span>{lang === 'en' ? item.type : item.type_ml}</span>
-                      <span>•</span>
-                      <span>{item.dimensions}</span>
-                    </p>
-                    <div className="mt-2 pt-2 border-t border-[#8E7F6B]/20 flex items-center justify-between text-xs text-[#7A5A3A]">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-[#5B6147]" />
-                        <span className="line-clamp-1">{item.locality}</span>
+
+                      {/* Location (District & Locality) */}
+                      <div className="flex items-center gap-1.5 text-xs text-[#7A5A3A]">
+                        <MapPin className="w-3.5 h-3.5 text-[#5B6147] flex-shrink-0" />
+                        <span className="truncate">
+                          {lang === 'en'
+                            ? `${item.locality}, ${item.district}`
+                            : `${item.locality_ml || item.locality}, ${item.district}`}
+                        </span>
                       </div>
-                      <span className="text-[11px] text-[#8E7F6B]">{item.moisture}</span>
+
+                      {/* 3. Essential Dimensions & Stock */}
+                      <div className="p-2.5 rounded-2xl bg-[#FAF8F5] border border-stone-200 text-xs text-[#4A3626] grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-[10px] text-[#8E7F6B] uppercase font-bold block">
+                            {lang === 'en' ? 'Stock Volume' : 'ലഭ്യമായ അളവ്'}
+                          </span>
+                          <span className="font-bold">
+                            {item.quantity} {isFirewood ? 'Tonnes' : item.unit}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-[#8E7F6B] uppercase font-bold block">
+                            {lang === 'en' ? 'Specs / Moisture' : 'ഈർപ്പം / അളവ്'}
+                          </span>
+                          <span className="font-bold truncate block">
+                            {item.moisture_level ? `${item.moisture_level} Moisture` : (item.moisture || item.dimensions)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-[#8E7F6B]/20 flex items-center justify-between">
+                  {/* Card Bottom: 4. Price & 5. Action */}
+                  <div className="p-4 sm:p-5 pt-0 flex items-center justify-between border-t border-stone-100 gap-3">
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-[#8E7F6B] block">
-                        {lang === 'en' ? 'Rate / CFT' : 'നിരക്ക് / CFT'}
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#8E7F6B] block">
+                        {isFirewood
+                          ? (lang === 'en' ? 'Price / Tonne' : 'ഒരു ടൺ വില')
+                          : (lang === 'en' ? 'Rate / CFT' : 'ഒരു CFT യുടെ വില')}
                       </span>
-                      <span className="text-base font-extrabold text-[#4A3626]">
+                      <div className="text-xl font-black font-serif text-[#4A3626]">
                         {formatINR(item.price_per_cft)}
-                      </span>
+                      </div>
                     </div>
 
                     <Link
                       to={`/listing/${item.id}`}
-                      className="px-3.5 py-1.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs font-bold transition flex items-center gap-1 shadow-xs"
+                      state={{ fromSearch: searchParams.toString() }}
+                      className="px-4 py-2.5 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5"
                     >
                       <span>{lang === 'en' ? 'View Details' : 'വിശദാംശങ്ങൾ'}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
 
-      {/* 4. KERALA TIMBER MILLS SPOTLIGHT (Minimal Section) */}
+      {/* 4. KERALA TIMBER MILLS SPOTLIGHT */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="bg-white/80 rounded-3xl border border-[#8E7F6B]/30 p-6 sm:p-8 space-y-6">
+        <div className="bg-white rounded-3xl border border-[#8E7F6B]/30 p-6 sm:p-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E7E1D6] text-[#4A3626] text-[11px] font-bold mb-2">
@@ -483,43 +607,43 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-[#E7E1D6]/60 border border-[#8E7F6B]/30 space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#8E7F6B]/30 space-y-1.5">
               <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
                 KL-SAW-EKM-1048
               </span>
               <h4 className="font-bold text-[#4A3626] text-sm">Perumbavoor Modern Sawmills</h4>
-              <p className="text-xs text-[#7A5A3A]">Kandanthara, Perumbavoor, Ernakulam</p>
-              <p className="text-[11px] text-[#8E7F6B]">High-speed band saws, Anjili & Teak log slicing.</p>
+              <p className="text-stone-500">Kandanthara, Perumbavoor, Ernakulam</p>
+              <p className="text-[11px] text-[#7A5A3A]">High-speed band saws, Anjili & Teak log slicing.</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#E7E1D6]/60 border border-[#8E7F6B]/30 space-y-2">
+            <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#8E7F6B]/30 space-y-1.5">
               <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
                 KL-SAW-PTA-1982
               </span>
-              <h4 className="font-bold text-[#4A3626] text-sm">Adoor Central Timber Sawing Yard</h4>
-              <p className="text-xs text-[#7A5A3A]">Adoor Bypass, Pathanamthitta</p>
-              <p className="text-[11px] text-[#8E7F6B]">Traditional house joinery timber & door beams.</p>
+              <h4 className="font-bold text-[#4A3626] text-sm">Adoor Central Timber Yard</h4>
+              <p className="text-stone-500">Adoor Bypass, Pathanamthitta</p>
+              <p className="text-[11px] text-[#7A5A3A]">Traditional joinery timber & squared door beams.</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#E7E1D6]/60 border border-[#8E7F6B]/30 space-y-2">
+            <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#8E7F6B]/30 space-y-1.5">
               <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
                 KL-SAW-PTA-2104
               </span>
               <h4 className="font-bold text-[#4A3626] text-sm">Konni Forest Valley Plant</h4>
-              <p className="text-xs text-[#7A5A3A]">Konni Depot, Pathanamthitta</p>
-              <p className="text-[11px] text-[#8E7F6B]">Kiln seasoning plant & Nilambur Teak logs.</p>
+              <p className="text-stone-500">Konni Depot, Pathanamthitta</p>
+              <p className="text-[11px] text-[#7A5A3A]">Kiln seasoning plant & Nilambur Teak logs.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 5. FLOATING RIGHT-SIDE "RAISE A TICKET" BUTTON */}
+      {/* 5. FLOATING RAISE A TICKET BUTTON */}
       <div className="fixed right-3 sm:right-6 bottom-20 md:bottom-8 z-40">
         <button
           onClick={() => setIsRaiseTicketOpen(true)}
           className="group relative flex items-center gap-2 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl bg-gradient-to-r from-[#5B6147] to-[#3F452F] text-white font-bold text-xs shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 border border-white/20"
-          title={lang === 'en' ? 'Raise a Support Ticket / Grievance' : 'പരാതി സമർപ്പിക്കുക (Raise a Ticket)'}
+          title={lang === 'en' ? 'Raise a Support Ticket' : 'പരാതി സമർപ്പിക്കുക'}
         >
           <LifeBuoy className="w-4 h-4 text-white group-hover:rotate-45 transition-transform duration-300 flex-shrink-0" />
           <div className="flex flex-col items-start text-left leading-tight">
@@ -533,7 +657,6 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         </button>
       </div>
 
-      {/* RAISE TICKET MODAL */}
       <RaiseTicketModal
         isOpen={isRaiseTicketOpen}
         onClose={() => setIsRaiseTicketOpen(false)}

@@ -19,7 +19,10 @@ export class ListingsService {
     const limit = Math.min(50, Math.max(1, filters.limit || 20));
     const offset = (page - 1) * limit;
 
-    const conditions: string[] = ["l.status = 'approved'"];
+    const conditions: string[] = [
+      "l.status = 'approved'",
+      "(sp.approval_status = 'approved' OR sp.approval_status = 'APPROVED')",
+    ];
     const params: unknown[] = [];
     let paramIndex = 1;
 

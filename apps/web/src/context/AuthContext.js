@@ -1,21 +1,53 @@
 import { jsx as _jsx } from "react/jsx-runtime";
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 const AuthContext = createContext(undefined);
-const DEMO_USERS = {
-    seller: {
-        id: 'usr-seller-01',
-        name: 'Nilambur Wood Mart',
-        businessName: 'Nilambur Wood Mart & Timber Depot',
-        phone: '9847120001',
-        role: 'seller',
-        district: 'Malappuram (മലപ്പുറം)',
-    },
+export const DEMO_PROFILES = {
     buyer: {
         id: 'usr-buyer-01',
         name: 'Suresh Kumar',
         phone: '9847987654',
         role: 'buyer',
         district: 'Kottayam (കോട്ടയം)',
+        approvalStatus: 'APPROVED',
+    },
+    seller_individual: {
+        id: 'usr-seller-indiv',
+        name: 'K. R. Madhavan',
+        businessName: 'Madhavan Farmstead Timber',
+        phone: '9847120001',
+        role: 'seller',
+        sellerSubtype: 'individual',
+        district: 'Malappuram (മലപ്പുറം)',
+        approvalStatus: 'APPROVED',
+    },
+    seller_mill: {
+        id: 'usr-seller-mill',
+        name: 'George Varghese',
+        businessName: 'Perumbavoor Modern Sawmills',
+        millName: 'Perumbavoor Modern Sawmills & Timber Depot',
+        phone: '9847120002',
+        role: 'seller',
+        sellerSubtype: 'mill_owner',
+        district: 'Ernakulam (എറണാകുളം)',
+        approvalStatus: 'APPROVED',
+    },
+    carpenter: {
+        id: 'usr-carpenter-01',
+        name: 'Master Binu Achari',
+        businessName: 'Binu Traditional Timber Joinery & Carpentry',
+        phone: '9847330001',
+        role: 'carpenter',
+        district: 'Alappuzha (ആലപ്പുഴ)',
+        approvalStatus: 'APPROVED',
+    },
+    transport: {
+        id: 'usr-transport-01',
+        name: 'K. Sukumaran',
+        businessName: 'Malabar Timber Heavy Transit Haulage',
+        phone: '9847440001',
+        role: 'transport',
+        district: 'Kozhikode (കോഴിക്കോട്)',
+        approvalStatus: 'APPROVED',
     },
     admin: {
         id: 'usr-admin-01',
@@ -24,6 +56,7 @@ const DEMO_USERS = {
         phone: '9847000000',
         role: 'admin',
         district: 'Thiruvananthapuram (തിരുവനന്തപുരം)',
+        approvalStatus: 'APPROVED',
     },
 };
 const STORAGE_KEY = 'timora_auth_user';
@@ -95,41 +128,75 @@ export const AuthProvider = ({ children }) => {
             };
         }
     }, [user, resetSessionTimer]);
-    const loginAsDemo = (role) => {
+    const loginAsDemo = (role, subtype) => {
         setIsSessionTimedOut(false);
-        const demoUser = DEMO_USERS[role];
-        setUser(demoUser);
-        setToken(`demo-token-${role}-${Date.now()}`);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(demoUser));
-        localStorage.setItem(TOKEN_KEY, `demo-token-${role}`);
+        let key = role;
+        if (role === 'seller') {
+            key = subtype === 'mill_owner' ? 'seller_mill' : 'seller_individual';
+        }
+        const demoProfile = DEMO_PROFILES[key] ?? DEMO_PROFILES.buyer;
+        setUser(demoProfile);
+        const mockToken = `demo-token-${key}-${Date.now()}`;
+        setToken(mockToken);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(demoProfile));
+        localStorage.setItem(TOKEN_KEY, mockToken);
         localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
-        return role;
+        return demoProfile.role;
     };
-    const login = async (phone, pin, requestedRole) => {
+    const login = async (phone, pin, requestedRole, requestedSubtype) => {
         setIsSessionTimedOut(false);
         const cleanPhone = phone.replace(/\D/g, '');
-        let matchedRole = requestedRole || 'buyer';
-        if (cleanPhone === '9847120001' || cleanPhone.endsWith('0001')) {
-            matchedRole = 'seller';
+        // Check against pre-seeded demo phone numbers first
+        let matchedProfile = null;
+        if (cleanPhone === '9847120002')
+            matchedProfile = DEMO_PROFILES.seller_mill ?? null;
+        else if (cleanPhone === '9847120001')
+            matchedProfile = DEMO_PROFILES.seller_individual ?? null;
+        else if (cleanPhone === '9847330001')
+            matchedProfile = DEMO_PROFILES.carpenter ?? null;
+        else if (cleanPhone === '9847440001')
+            matchedProfile = DEMO_PROFILES.transport ?? null;
+        else if (cleanPhone === '9847000000')
+            matchedProfile = DEMO_PROFILES.admin ?? null;
+        else if (cleanPhone === '9847987654')
+            matchedProfile = DEMO_PROFILES.buyer ?? null;
+        // Check self-registered accounts in localStorage
+        if (!matchedProfile) {
+            try {
+                const storedCustomUsers = JSON.parse(localStorage.getItem('timora_registered_users') || '[]');
+                const found = storedCustomUsers.find((u) => u.phone.replace(/\D/g, '') === cleanPhone);
+                if (found) {
+                    matchedProfile = found;
+                }
+            }
+            catch {
+                // ignore
+            }
         }
-        else if (cleanPhone === '9847000000' || cleanPhone.endsWith('0000')) {
-            matchedRole = 'admin';
+        // Fallback based on requested role
+        if (!matchedProfile) {
+            const targetRole = requestedRole || 'buyer';
+            matchedProfile = {
+                id: `usr-${Date.now()}`,
+                name: 'Timora Member',
+                phone: cleanPhone,
+                role: targetRole,
+                sellerSubtype: targetRole === 'seller' ? (requestedSubtype || 'individual') : undefined,
+                district: 'Kerala (കേരളം)',
+                approvalStatus: targetRole === 'buyer' ? 'APPROVED' : 'PENDING_APPROVAL',
+            };
         }
-        else if (requestedRole) {
-            matchedRole = requestedRole;
-        }
-        const demoUser = DEMO_USERS[matchedRole];
-        const loggedUser = {
-            ...demoUser,
-            phone: cleanPhone || demoUser.phone,
-        };
-        setUser(loggedUser);
-        const mockJwt = `jwt-token-${matchedRole}-${Date.now()}`;
+        setUser(matchedProfile);
+        const mockJwt = `jwt-token-${matchedProfile.role}-${Date.now()}`;
         setToken(mockJwt);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedUser));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(matchedProfile));
         localStorage.setItem(TOKEN_KEY, mockJwt);
         localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
-        return { success: true, role: matchedRole };
+        return {
+            success: true,
+            role: matchedProfile.role,
+            subtype: matchedProfile.sellerSubtype,
+        };
     };
     const logout = () => {
         doLogout(false);
@@ -144,6 +211,7 @@ export const AuthProvider = ({ children }) => {
             loginAsDemo,
             logout,
             resetSessionTimer,
+            setUser,
         }, children: children }));
 };
 export function useAuth() {

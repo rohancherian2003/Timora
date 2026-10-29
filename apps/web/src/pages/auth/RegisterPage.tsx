@@ -1,38 +1,85 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle2, AlertCircle, ArrowRight, Loader2, Store, ShoppingBag, Hammer, User, Phone, KeyRound, Eye, EyeOff } from 'lucide-react';
-import { validateIndianPhone, validatePin } from '@timora/shared';
-import { useAuth, UserRole } from '../../context/AuthContext';
+import {
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+  Loader2,
+  Store,
+  ShoppingBag,
+  Hammer,
+  Truck,
+  Factory,
+  User,
+  Phone,
+  KeyRound,
+  Eye,
+  EyeOff,
+  MapPin,
+  Sparkles,
+} from 'lucide-react';
+import { validateIndianPhone, validatePin, validatePinConfirmation } from '@timora/shared';
+import { useAuth, UserRole, SellerSubtype, UserProfile } from '../../context/AuthContext';
 import { BrandLogo } from '../../components/BrandLogo';
+
+const KERALA_DISTRICTS = [
+  { id: 1, name: 'Thiruvananthapuram (തിരുവനന്തപുരം)' },
+  { id: 2, name: 'Kollam (കൊല്ലം)' },
+  { id: 3, name: 'Pathanamthitta (പത്തനംതിട്ട)' },
+  { id: 4, name: 'Alappuzha (ആലപ്പുഴ)' },
+  { id: 5, name: 'Kottayam (കോട്ടയം)' },
+  { id: 6, name: 'Idukki (ഇടുക്കി)' },
+  { id: 7, name: 'Ernakulam (എറണാകുളം)' },
+  { id: 8, name: 'Thrissur (തൃശ്ശൂർ)' },
+  { id: 9, name: 'Palakkad (പാലക്കാട്)' },
+  { id: 10, name: 'Malappuram (മലപ്പുറം)' },
+  { id: 11, name: 'Kozhikode (കോഴിക്കോട്)' },
+  { id: 12, name: 'Wayanad (വയനാട്)' },
+  { id: 13, name: 'Kannur (കണ്ണൂർ)' },
+  { id: 14, name: 'Kasaragod (കാസർഗോഡ്)' },
+];
 
 export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
 
-  const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Details, 2: OTP, 3: Role & PIN
+  const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Personal, 2: OTP, 3: Account Type & Security PIN
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [districtId, setDistrictId] = useState<number>(5); // Kottayam
   const [otp, setOtp] = useState('');
   const [pin, setPin] = useState('');
   const [pinConfirm, setPinConfirm] = useState('');
   const [showPin, setShowPin] = useState(false);
-  const [role, setRole] = useState<'buyer' | 'seller' | 'carpenter'>('buyer');
+
+  // 4 Primary Roles: 'buyer' | 'seller' | 'carpenter' | 'transport'
+  const [role, setRole] = useState<UserRole>('buyer');
+
+  // Seller Subtype: 'individual' | 'mill_owner'
+  const [sellerSubtype, setSellerSubtype] = useState<SellerSubtype>('individual');
+
+  // Separate identities for business vs owner
+  const [millName, setMillName] = useState('');
   const [businessName, setBusinessName] = useState('');
-  const [districtId, setDistrictId] = useState<number>(5);
+  const [vehicleTypes, setVehicleTypes] = useState('Timber Lorry');
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // If already authenticated, redirect immediately
+  // If already authenticated, redirect
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.role === 'seller') navigate('/dashboard/seller', { replace: true });
+      if (user.role === 'seller') {
+        navigate(user.sellerSubtype === 'mill_owner' ? '/dashboard/mill' : '/dashboard/seller', { replace: true });
+      } else if (user.role === 'carpenter') navigate('/dashboard/carpenter', { replace: true });
+      else if (user.role === 'transport') navigate('/dashboard/transport', { replace: true });
       else if (user.role === 'admin') navigate('/admin', { replace: true });
       else navigate('/dashboard/buyer', { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 
-  // Step 1 Validation
+  // Step 1: Personal Details
   const handleStep1 = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -71,10 +118,10 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setTimeout(() => {
       setLoading(false);
       setStep(2);
-    }, 250);
+    }, 200);
   };
 
-  // Step 2 Validation (OTP)
+  // Step 2: OTP Verification (Demo flow preserved)
   const handleStep2 = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -92,35 +139,49 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setTimeout(() => {
       setLoading(false);
       setStep(3);
-    }, 250);
+    }, 200);
   };
 
-  // Step 3 Validation (Role & PIN) -> Redirect to Login Page
+  // Step 3: Role, Subtype, Business Fields & 6-Digit PIN
   const handleStep3 = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (role === 'seller' && (!businessName.trim() || businessName.trim().length < 3)) {
-      setError(
-        lang === 'en'
-          ? 'Depot or Sawmill business name is required.'
-          : 'ഡിപ്പോ അല്ലെങ്കിൽ സ്ഥാപനത്തിന്റെ പേര് നൽകുക.'
-      );
-      return;
+    // Business Identity validation
+    if (role === 'seller' && sellerSubtype === 'mill_owner') {
+      if (!millName.trim() || millName.trim().length < 3) {
+        setError(
+          lang === 'en'
+            ? 'Timber Sawmill name is required and must be distinct from owner name.'
+            : 'തടി മില്ലിന്റെ പേര് നൽകേണ്ടതാണ്.'
+        );
+        return;
+      }
+    } else if (role === 'transport') {
+      if (!businessName.trim() || businessName.trim().length < 3) {
+        setError(
+          lang === 'en'
+            ? 'Transport / Logistics business name is required.'
+            : 'ട്രാൻസ്പോർട്ട് സർവീസിന്റെ പേര് നൽകേണ്ടതാണ്.'
+        );
+        return;
+      }
     }
 
-    const pinCheck = validatePin(pin);
+    // PIN validation
+    const pinCheck = validatePin(pin, true); // Allow demo pin
     if (!pinCheck.valid) {
       setError(
         pinCheck.message ||
           (lang === 'en'
-            ? 'Security PIN must be 6 numeric digits.'
+            ? 'Security PIN must be exactly 6 numeric digits.'
             : 'സുരക്ഷാ പിൻ 6 അക്കങ്ങൾ ആയിരിക്കണം.')
       );
       return;
     }
 
-    if (pin !== pinConfirm) {
+    const pinMatchCheck = validatePinConfirmation(pin, pinConfirm);
+    if (!pinMatchCheck.valid) {
       setError(
         lang === 'en'
           ? 'Security PIN and Confirmation PIN do not match.'
@@ -132,111 +193,149 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setLoading(true);
 
     try {
-      const authRole: UserRole = role === 'seller' ? 'seller' : 'buyer';
+      const selectedDistrict = KERALA_DISTRICTS.find((d) => d.id === districtId)?.name || 'Kottayam';
+      const cleanPhone = phone.replace(/\D/g, '');
+      const isBusinessRole = role !== 'buyer';
+
+      // Persist newly registered user to local storage for testing
+      const newUser: UserProfile = {
+        id: `usr-${role}-${Date.now()}`,
+        name: name.trim(),
+        phone: cleanPhone,
+        role,
+        sellerSubtype: role === 'seller' ? sellerSubtype : undefined,
+        businessName: role === 'seller' && sellerSubtype === 'mill_owner'
+          ? millName.trim()
+          : (businessName.trim() || `${name.trim()} Timber Enterprise`),
+        millName: role === 'seller' && sellerSubtype === 'mill_owner' ? millName.trim() : undefined,
+        district: selectedDistrict,
+        approvalStatus: isBusinessRole ? 'PENDING_APPROVAL' : 'APPROVED',
+      };
+
+      try {
+        const storedUsers = JSON.parse(localStorage.getItem('timora_registered_users') || '[]');
+        storedUsers.push(newUser);
+        localStorage.setItem('timora_registered_users', JSON.stringify(storedUsers));
+      } catch {
+        // ignore
+      }
+
       setSuccess(true);
 
-      // Clean redirect to Login Page as requested!
+      // Clean redirect to Login Page with Pending Approval state
       setTimeout(() => {
         navigate('/login', {
-          replace: true,
           state: {
             registered: true,
-            phone: phone.replace(/\D/g, ''),
-            role: authRole,
+            pendingApproval: isBusinessRole,
+            phone: cleanPhone,
+            role,
+            subtype: role === 'seller' ? sellerSubtype : undefined,
           },
         });
-      }, 1000);
-    } catch {
-      setError(lang === 'en' ? 'Registration failed.' : 'രജിസ്ട്രേഷൻ പരാജയപ്പെട്ടു.');
+      }, 700);
+    } catch (err: any) {
+      setError(err?.message || (lang === 'en' ? 'Registration failed.' : 'രജിസ്ട്രേഷൻ പരാജയപ്പെട്ടു.'));
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[82vh] flex items-center justify-center px-4 py-8 bg-[#E7E1D6]">
-      <div className="w-full max-w-md bg-white rounded-3xl border border-[#8E7F6B]/30 p-6 sm:p-8 shadow-md space-y-5">
-        
-        {/* Header */}
+    <div className="min-h-[82vh] flex items-center justify-center px-4 py-8 bg-[#FAF8F5]">
+      <div className="max-w-md w-full space-y-5 bg-white p-6 sm:p-8 rounded-3xl border border-[#8E7F6B]/30 shadow-xl">
+        {/* Header Branding */}
         <div className="text-center space-y-1">
-          <BrandLogo size="md" lang={lang} className="justify-center" />
-          <h1 className="text-xl font-extrabold font-serif text-[#4A3626] pt-1">
-            {lang === 'en' ? 'Create Timora Account' : 'ടിമോറയിൽ പുതിയ അക്കൗണ്ട്'}
+          <div className="inline-block transform hover:scale-105 transition-transform">
+            <BrandLogo size="md" />
+          </div>
+          <h1 className="text-xl sm:text-2xl font-extrabold font-serif text-[#4A3626] mt-2">
+            {lang === 'en' ? 'Create Your Account' : 'പുതിയ അക്കൗണ്ട് സൃഷ്ടിക്കുക'}
           </h1>
-          <p className="text-xs text-[#7A5A3A]">
-            {lang === 'en'
-              ? 'Connect directly with timber yards, buyers, and sawmills.'
-              : 'തടി വ്യാപാരികളുമായും മില്ലുകളുമായും നേരിട്ട് ബന്ധപ്പെടൂ.'}
+          <p className="text-xs text-[#7A5A3A] font-medium">
+            {lang === 'en' ? 'Direct timber trading across Kerala with Form IV compliance' : 'കേരളത്തിലെ വിശ്വസനീയമായ തടി വ്യാപാര ശൃംഖല'}
           </p>
         </div>
 
-        {/* Minimal Steps Indicator */}
-        <div className="flex items-center justify-center gap-2 text-[11px] font-bold">
-          <span className={`px-2.5 py-0.5 rounded-full ${step >= 1 ? 'bg-[#5B6147] text-white' : 'bg-stone-100 text-stone-500'}`}>
-            1. Details
-          </span>
-          <span className="text-[#8E7F6B]">›</span>
-          <span className={`px-2.5 py-0.5 rounded-full ${step >= 2 ? 'bg-[#5B6147] text-white' : 'bg-stone-100 text-stone-500'}`}>
-            2. OTP
-          </span>
-          <span className="text-[#8E7F6B]">›</span>
-          <span className={`px-2.5 py-0.5 rounded-full ${step >= 3 ? 'bg-[#5B6147] text-white' : 'bg-stone-100 text-stone-500'}`}>
-            3. PIN & Role
-          </span>
+        {/* Step Progress Indicators */}
+        <div className="flex items-center justify-between px-2 pt-1">
+          {[
+            { num: 1, label: lang === 'en' ? 'Details' : 'വിവരങ്ങൾ' },
+            { num: 2, label: lang === 'en' ? 'OTP' : 'ഒ.ടി.പി' },
+            { num: 3, label: lang === 'en' ? 'Role & PIN' : 'റോളും പിന്നും' },
+          ].map((s) => (
+            <div key={s.num} className="flex flex-col items-center">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                  step === s.num
+                    ? 'bg-[#5B6147] text-white shadow-xs'
+                    : step > s.num
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-stone-200 text-stone-500'
+                }`}
+              >
+                {step > s.num ? '✓' : s.num}
+              </div>
+              <span className="text-[10px] mt-1 font-semibold text-stone-600">{s.label}</span>
+            </div>
+          ))}
         </div>
 
+        {/* Error Notification */}
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs text-red-700 animate-fadeIn">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{error}</span>
+          <div className="p-3 bg-rose-50 border border-rose-300 rounded-2xl flex items-start gap-2.5 text-xs text-rose-800 animate-shake">
+            <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+            <span className="font-semibold leading-relaxed">{error}</span>
           </div>
         )}
 
+        {/* Success Banner */}
         {success ? (
           <div className="p-6 bg-emerald-50 border border-emerald-300 rounded-2xl text-center space-y-2 animate-fadeIn">
-            <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-            <h3 className="text-sm font-bold text-emerald-950">
-              {lang === 'en' ? 'Registration Successful!' : 'രജിസ്ട്രേഷൻ പൂർത്തിയായി!'}
+            <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+            <h3 className="text-sm font-bold text-emerald-950 font-serif">
+              {role === 'buyer'
+                ? (lang === 'en' ? 'Account Created Successfully!' : 'അക്കൗണ്ട് വിജയകരമായി സൃഷ്ടിച്ചു!')
+                : (lang === 'en' ? 'Registration Submitted for Review!' : 'അപേക്ഷ വിജയകരമായി സമർപ്പിച്ചു!')}
             </h3>
             <p className="text-xs text-emerald-800">
-              {lang === 'en'
-                ? 'Redirecting to Sign In page to verify credentials...'
-                : 'ലോഗിൻ പേജിലേക്ക് തിരിയുന്നു...'}
+              {role === 'buyer'
+                ? (lang === 'en' ? 'Redirecting to login...' : 'ലോഗിൻ പേജിലേക്ക് പോകുന്നു...')
+                : (lang === 'en' ? 'Status: Pending Admin Review. Redirecting to login...' : 'പരിശോധനയിലാണ്. ലോഗിൻ പേജിലേക്ക് പോകുന്നു...')}
             </p>
           </div>
         ) : (
           <>
-            {/* Step 1: Details */}
+            {/* STEP 1: Full Name, Phone & District */}
             {step === 1 && (
-              <form onSubmit={handleStep1} className="space-y-3.5">
+              <form onSubmit={handleStep1} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-[#4A3626] mb-1">
-                    {lang === 'en' ? 'Full Legal Name' : 'പൂർണ്ണ നാമം'}
+                    {lang === 'en' ? 'Full Name / പേര്' : 'പൂർണ്ണ നാമം (പേര്)'}
                   </label>
                   <div className="relative">
                     <User className="w-4 h-4 absolute left-3 top-2.5 text-[#8E7F6B]" />
                     <input
                       type="text"
-                      placeholder={lang === 'en' ? 'e.g. Suresh Kumar' : 'ഉദാ: സുരേഷ് കുമാർ'}
+                      placeholder="e.g. Suresh Kumar"
                       value={name}
                       onChange={(e) => {
                         setName(e.target.value);
                         if (error) setError(null);
                       }}
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#8E7F6B]/30 text-xs sm:text-sm font-semibold text-[#4A3626] focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
+                      className="w-full py-2.5 pl-10 pr-3 rounded-xl border border-[#8E7F6B]/30 text-xs sm:text-sm font-semibold text-[#4A3626] focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
                       required
                     />
                   </div>
-                  <span className="text-[10px] text-[#8E7F6B] mt-0.5 block">
-                    {lang === 'en' ? 'Minimum 3 characters' : 'കുറഞ്ഞത് 3 അക്ഷരങ്ങൾ'}
-                  </span>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-[#4A3626] mb-1">
-                    {lang === 'en' ? '10-Digit Mobile Number' : 'മൊബൈൽ നമ്പർ'}
+                    {lang === 'en' ? 'Mobile Number / ഫോൺ' : 'മൊബൈൽ നമ്പർ'}
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-2 text-xs font-bold text-[#8E7F6B]">+91</span>
+                    <span className="absolute left-3 top-2.5 text-xs font-bold text-[#8E7F6B] font-mono">
+                      +91
+                    </span>
                     <input
                       type="tel"
                       maxLength={10}
@@ -246,13 +345,30 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                         setPhone(e.target.value.replace(/\D/g, ''));
                         if (error) setError(null);
                       }}
-                      className="w-full pl-11 pr-3 py-2 rounded-xl border border-[#8E7F6B]/30 text-xs sm:text-sm font-semibold text-[#4A3626] focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
+                      className="w-full py-2.5 pl-12 pr-3 rounded-xl border border-[#8E7F6B]/30 text-xs sm:text-sm font-semibold text-[#4A3626] focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
                       required
                     />
                   </div>
-                  <span className="text-[10px] text-[#8E7F6B] mt-0.5 block">
-                    {lang === 'en' ? 'Standard 10-digit Indian phone number' : '10-അക്ക മൊബൈൽ നമ്പർ'}
-                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#4A3626] mb-1">
+                    {lang === 'en' ? 'District in Kerala' : 'ജില്ല'}
+                  </label>
+                  <div className="relative">
+                    <MapPin className="w-4 h-4 absolute left-3 top-2.5 text-[#8E7F6B]" />
+                    <select
+                      value={districtId}
+                      onChange={(e) => setDistrictId(Number(e.target.value))}
+                      className="w-full py-2.5 pl-10 pr-3 rounded-xl border border-[#8E7F6B]/30 text-xs sm:text-sm font-semibold text-[#4A3626] focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
+                    >
+                      {KERALA_DISTRICTS.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <button
@@ -264,7 +380,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <>
-                      <span>{lang === 'en' ? 'Next: OTP Verification' : 'അടുത്തത്: OTP'}</span>
+                      <span>{lang === 'en' ? 'Verify Mobile Number' : 'മൊബൈൽ സ്ഥിരീകരിക്കുക'}</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -272,16 +388,23 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               </form>
             )}
 
-            {/* Step 2: OTP */}
+            {/* STEP 2: Demo OTP */}
             {step === 2 && (
-              <form onSubmit={handleStep2} className="space-y-3.5">
-                <div className="p-2.5 bg-[#E7E1D6]/60 rounded-xl text-xs text-[#4A3626] text-center">
-                  <span>Demo Sandbox OTP: <b className="font-mono text-sm">123456</b></span>
+              <form onSubmit={handleStep2} className="space-y-4">
+                <div className="p-3 bg-[#E7E1D6]/80 rounded-2xl border border-[#8E7F6B]/30 text-center space-y-1">
+                  <span className="text-xs text-[#7A5A3A] block">
+                    {lang === 'en'
+                      ? `OTP sent to +91 ${phone} (Demo Mode)`
+                      : `+91 ${phone} എന്ന നമ്പറിലേക്ക് OTP അയച്ചിരിക്കുന്നു`}
+                  </span>
+                  <div className="text-sm font-mono font-black text-[#4A3626]">
+                    Demo OTP: <span className="underline tracking-widest text-[#5B6147]">123456</span>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-[#4A3626] mb-1 text-center">
-                    {lang === 'en' ? 'Enter 6-Digit OTP' : '6-അക്ക OTP നൽകുക'}
+                    {lang === 'en' ? 'Enter 6-Digit Code' : '6-അക്ക കോഡ് നൽകുക'}
                   </label>
                   <input
                     type="text"
@@ -292,92 +415,195 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       if (error) setError(null);
                     }}
                     placeholder="123456"
-                    className="w-full py-2 rounded-xl border border-[#8E7F6B]/30 text-base font-mono font-bold tracking-widest text-center text-[#4A3626] focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
+                    className="w-full py-2.5 text-center font-mono font-bold tracking-widest text-lg rounded-xl border border-[#8E7F6B]/30 text-[#4A3626] focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
                     required
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-xs"
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <span>{lang === 'en' ? 'Verify OTP Code' : 'OTP സ്ഥിരീകരിക്കുക'}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="w-1/3 py-2.5 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold text-xs transition"
+                  >
+                    {lang === 'en' ? 'Back' : 'തിരികെ'}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-2/3 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-xs"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <span>{lang === 'en' ? 'Confirm OTP' : 'സ്ഥിരീകരിക്കുക'}</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </div>
               </form>
             )}
 
-            {/* Step 3: Role and PIN */}
+            {/* STEP 3: Role, Subtype, Business Details & PIN */}
             {step === 3 && (
-              <form onSubmit={handleStep3} className="space-y-3.5">
+              <form onSubmit={handleStep3} className="space-y-4">
+                {/* 4 Account Types */}
                 <div>
-                  <label className="block text-xs font-bold text-[#4A3626] mb-1.5">
-                    {lang === 'en' ? 'Select Marketplace Account Role' : 'റോൾ തിരഞ്ഞെടുക്കുക'}
+                  <label className="block text-xs font-bold text-[#4A3626] mb-2">
+                    {lang === 'en' ? 'Choose Your Account Type' : 'അക്കൗണ്ട് വിഭാഗം തിരഞ്ഞെടുക്കുക'}
                   </label>
-                  <div className="grid grid-cols-3 gap-1.5 text-xs font-bold text-center">
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Buyer */}
                     <button
                       type="button"
                       onClick={() => setRole('buyer')}
-                      className={`p-2 rounded-xl border transition flex flex-col items-center justify-center gap-1 ${
+                      className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 ${
                         role === 'buyer'
-                          ? 'border-[#5B6147] bg-[#5B6147] text-white'
-                          : 'border-[#8E7F6B]/30 bg-stone-50 text-[#4A3626]'
+                          ? 'border-[#5B6147] bg-[#E7E1D6]/70 ring-2 ring-[#5B6147]/20 shadow-xs'
+                          : 'border-[#8E7F6B]/30 hover:bg-stone-50'
                       }`}
                     >
-                      <ShoppingBag className="w-3.5 h-3.5" />
-                      <span>{lang === 'en' ? 'Buyer' : 'ബയർ'}</span>
+                      <ShoppingBag className={`w-4 h-4 ${role === 'buyer' ? 'text-[#5B6147]' : 'text-stone-400'}`} />
+                      <div>
+                        <div className="text-xs font-bold text-[#4A3626]">{lang === 'en' ? 'Buyer' : 'വാങ്ങുന്നയാൾ'}</div>
+                        <div className="text-[10px] text-[#8E7F6B]">{lang === 'en' ? 'Instant Access' : 'ഉടനടി ലഭ്യമാണ്'}</div>
+                      </div>
                     </button>
+
+                    {/* Seller (Renamed from Seller Depot) */}
                     <button
                       type="button"
                       onClick={() => setRole('seller')}
-                      className={`p-2 rounded-xl border transition flex flex-col items-center justify-center gap-1 ${
+                      className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 ${
                         role === 'seller'
-                          ? 'border-[#5B6147] bg-[#5B6147] text-white'
-                          : 'border-[#8E7F6B]/30 bg-stone-50 text-[#4A3626]'
+                          ? 'border-[#5B6147] bg-[#E7E1D6]/70 ring-2 ring-[#5B6147]/20 shadow-xs'
+                          : 'border-[#8E7F6B]/30 hover:bg-stone-50'
                       }`}
                     >
-                      <Store className="w-3.5 h-3.5" />
-                      <span>{lang === 'en' ? 'Seller Depot' : 'സെല്ലർ'}</span>
+                      <Store className={`w-4 h-4 ${role === 'seller' ? 'text-[#5B6147]' : 'text-stone-400'}`} />
+                      <div>
+                        <div className="text-xs font-bold text-[#4A3626]">{lang === 'en' ? 'Seller' : 'തടി കച്ചവടം'}</div>
+                        <div className="text-[10px] text-[#8E7F6B]">{lang === 'en' ? 'Grower or Mill' : 'മരം / മില്ലുകൾ'}</div>
+                      </div>
                     </button>
+
+                    {/* Carpenter */}
                     <button
                       type="button"
                       onClick={() => setRole('carpenter')}
-                      className={`p-2 rounded-xl border transition flex flex-col items-center justify-center gap-1 ${
+                      className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 ${
                         role === 'carpenter'
-                          ? 'border-[#5B6147] bg-[#5B6147] text-white'
-                          : 'border-[#8E7F6B]/30 bg-stone-50 text-[#4A3626]'
+                          ? 'border-[#5B6147] bg-[#E7E1D6]/70 ring-2 ring-[#5B6147]/20 shadow-xs'
+                          : 'border-[#8E7F6B]/30 hover:bg-stone-50'
                       }`}
                     >
-                      <Hammer className="w-3.5 h-3.5" />
-                      <span>{lang === 'en' ? 'Carpenter' : 'ആശാരി'}</span>
+                      <Hammer className={`w-4 h-4 ${role === 'carpenter' ? 'text-[#5B6147]' : 'text-stone-400'}`} />
+                      <div>
+                        <div className="text-xs font-bold text-[#4A3626]">{lang === 'en' ? 'Carpenter' : 'ആശാരി'}</div>
+                        <div className="text-[10px] text-[#8E7F6B]">{lang === 'en' ? 'Wood Artisan' : 'വിദഗ്ദ്ധ തച്ചൻ'}</div>
+                      </div>
+                    </button>
+
+                    {/* Transport Owner */}
+                    <button
+                      type="button"
+                      onClick={() => setRole('transport')}
+                      className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 ${
+                        role === 'transport'
+                          ? 'border-[#5B6147] bg-[#E7E1D6]/70 ring-2 ring-[#5B6147]/20 shadow-xs'
+                          : 'border-[#8E7F6B]/30 hover:bg-stone-50'
+                      }`}
+                    >
+                      <Truck className={`w-4 h-4 ${role === 'transport' ? 'text-[#5B6147]' : 'text-stone-400'}`} />
+                      <div>
+                        <div className="text-xs font-bold text-[#4A3626]">{lang === 'en' ? 'Transport Owner' : 'വാഹന ഉടമ'}</div>
+                        <div className="text-[10px] text-[#8E7F6B]">{lang === 'en' ? 'Timber Lorries' : 'തടി ലോറികൾ'}</div>
+                      </div>
                     </button>
                   </div>
                 </div>
 
+                {/* Seller Subtype Selection */}
                 {role === 'seller' && (
-                  <div>
-                    <label className="block text-xs font-bold text-[#4A3626] mb-1">
-                      {lang === 'en' ? 'Timber Depot or Sawmill Name' : 'ഡിപ്പോ നാമം'}
+                  <div className="p-3 bg-[#E7E1D6]/50 rounded-2xl border border-[#8E7F6B]/30 space-y-3">
+                    <label className="block text-xs font-bold text-[#4A3626]">
+                      {lang === 'en' ? 'Seller Business Category' : 'കച്ചവട വിഭാഗം തിരഞ്ഞെടുക്കുക'}
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSellerSubtype('individual')}
+                        className={`p-2 rounded-xl text-left border text-xs font-bold transition flex items-center gap-1.5 ${
+                          sellerSubtype === 'individual'
+                            ? 'bg-[#5B6147] text-white border-[#5B6147]'
+                            : 'bg-white text-[#4A3626] border-stone-300 hover:bg-stone-100'
+                        }`}
+                      >
+                        <User className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="truncate">{lang === 'en' ? 'Individual Seller' : 'വ്യക്തിഗത കച്ചവടക്കാരൻ'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSellerSubtype('mill_owner')}
+                        className={`p-2 rounded-xl text-left border text-xs font-bold transition flex items-center gap-1.5 ${
+                          sellerSubtype === 'mill_owner'
+                            ? 'bg-[#5B6147] text-white border-[#5B6147]'
+                            : 'bg-white text-[#4A3626] border-stone-300 hover:bg-stone-100'
+                        }`}
+                      >
+                        <Factory className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="truncate">{lang === 'en' ? 'Timber Mill Owner' : 'തടി മിൽ ഉടമ'}</span>
+                      </button>
+                    </div>
+
+                    {/* Mill Details vs Owner Name */}
+                    {sellerSubtype === 'mill_owner' && (
+                      <div className="space-y-2 pt-1">
+                        <div>
+                          <label className="block text-[11px] font-bold text-[#4A3626] mb-1">
+                            {lang === 'en' ? 'Timber Mill / Sawmill Name' : 'തടി മില്ലിന്റെ പേര്'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Perumbavoor Modern Sawmills"
+                            value={millName}
+                            onChange={(e) => setMillName(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl border border-[#8E7F6B]/30 text-xs font-semibold text-[#4A3626] focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-white"
+                            required
+                          />
+                        </div>
+                        <p className="text-[10px] text-[#7A5A3A] italic">
+                          {lang === 'en'
+                            ? `Owner Personal Name: "${name}" is kept distinct from Mill Name.`
+                            : `ഉടമയുടെ പേര്: "${name}" മില്ലിന്റെ പേരിൽ നിന്ന് പ്രത്യേകം സൂക്ഷിക്കുന്നു.`}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Transport Owner Specific Fields */}
+                {role === 'transport' && (
+                  <div className="p-3 bg-[#E7E1D6]/50 rounded-2xl border border-[#8E7F6B]/30 space-y-2">
+                    <label className="block text-[11px] font-bold text-[#4A3626]">
+                      {lang === 'en' ? 'Transport Business / Fleet Name' : 'ട്രാൻസ്പോർട്ട് സർവീസിന്റെ പേര്'}
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Nilambur Wood Mart"
+                      placeholder="e.g. Malabar Timber Heavy Transit"
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-[#8E7F6B]/30 text-xs font-semibold text-[#4A3626] focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
+                      className="w-full px-3 py-2 rounded-xl border border-[#8E7F6B]/30 text-xs font-semibold text-[#4A3626] focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-white"
                       required
                     />
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-2">
+                {/* 6-Digit PIN & Confirmation */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-xs font-bold text-[#4A3626]">
@@ -386,11 +612,10 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       <button
                         type="button"
                         onClick={() => setShowPin(!showPin)}
-                        className="text-[11px] text-[#8E7F6B] hover:text-[#4A3626] flex items-center gap-1 font-semibold"
-                        title={showPin ? 'Hide PIN' : 'Show PIN'}
+                        className="text-[10px] text-[#8E7F6B] hover:text-[#4A3626] flex items-center gap-0.5 font-semibold"
                       >
                         {showPin ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                        <span>{showPin ? (lang === 'en' ? 'Hide' : 'മറയ്ക്കുക') : (lang === 'en' ? 'Show' : 'കാണിക്കുക')}</span>
+                        <span>{showPin ? 'Hide' : 'Show'}</span>
                       </button>
                     </div>
                     <div className="relative">
@@ -432,20 +657,29 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-xs"
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <span>{lang === 'en' ? 'Create Account & Continue to Login' : 'രജിസ്ട്രേഷൻ പൂർത്തിയാക്കുക'}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep(2)}
+                    className="w-1/3 py-2.5 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold text-xs transition"
+                  >
+                    {lang === 'en' ? 'Back' : 'തിരികെ'}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-2/3 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-xs"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <span>{lang === 'en' ? 'Create Account' : 'രജിസ്റ്റർ ചെയ്യുക'}</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </div>
               </form>
             )}
           </>

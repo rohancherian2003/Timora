@@ -30,21 +30,130 @@ export class AdminService {
   }
 
   /**
-   * Get pending seller registration approvals
+   * Get pending seller and business registration approvals
    */
   async getPendingSellers() {
     const res = await query(
-      `SELECT u.id, u.phone, u.created_at,
+      `SELECT u.id, u.phone, u.role, u.created_at,
               up.name, d.name_en as district_name,
-              sp.business_name, sp.locality, sp.approval_status
+              sp.business_name, sp.locality, sp.seller_subtype,
+              COALESCE(sp.approval_status, 'pending') as approval_status
        FROM users u
        JOIN user_profiles up ON up.user_id = u.id
        JOIN seller_profiles sp ON sp.user_id = u.id
        LEFT JOIN kerala_districts d ON d.id = sp.district_id
-       WHERE sp.approval_status = 'pending'
+       WHERE sp.approval_status IN ('pending', 'PENDING_APPROVAL')
        ORDER BY u.created_at ASC`
     );
     return res.rows;
+  }
+
+  /**
+   * Get all pending business applications (Sellers, Mills, Carpenters, Transport)
+   */
+  async getPendingBusinessApplications() {
+    const sellersRes = await query(
+      `SELECT u.id, u.phone, u.role, u.created_at,
+              up.name, d.name_en as district_name,
+              sp.business_name, sp.locality, sp.seller_subtype,
+              'seller' as entity_type,
+              COALESCE(sp.approval_status, 'PENDING_APPROVAL') as approval_status
+       FROM users u
+       JOIN user_profiles up ON up.user_id = u.id
+       JOIN seller_profiles sp ON sp.user_id = u.id
+       LEFT JOIN kerala_districts d ON d.id = sp.district_id
+       WHERE sp.approval_status IN ('pending', 'PENDING_APPROVAL')`
+    );
+
+    const carpentersRes = await query(
+      `SELECT u.id, u.phone, u.role, u.created_at,
+              up.name, d.name_en as district_name,
+              COALESCE(cp.business_name, up.name) as business_name, '' as locality,
+              'carpenter' as entity_type,
+              COALESCE(cp.approval_status, 'PENDING_APPROVAL') as approval_status
+       FROM users u
+       JOIN user_profiles up ON up.user_id = u.id
+       JOIN carpenter_profiles cp ON cp.user_id = u.id
+       LEFT JOIN kerala_districts d ON d.id = cp.district_id
+       WHERE cp.approval_status IN ('pending', 'PENDING_APPROVAL')`
+    );
+
+    const transportRes = await query(
+      `SELECT u.id, u.phone, u.role, u.created_at,
+              up.name, d.name_en as district_name,
+              tp.business_name, '' as locality,
+              'transport' as entity_type,
+              COALESCE(tp.approval_status, 'PENDING_APPROVAL') as approval_status
+       FROM users u
+       JOIN user_profiles up ON up.user_id = u.id
+       JOIN transport_owner_profiles tp ON tp.user_id = u.id
+       LEFT JOIN kerala_districts d ON d.id = tp.district_id
+       WHERE tp.approval_status IN ('pending', 'PENDING_APPROVAL')`
+    );
+
+    return [
+      ...sellersRes.rows,
+      ...carpentersRes.rows,
+      ...transportRes.rows,
+    ];
+  }
+
+  /**
+   * Universal business approval status action (Approve, Reject, Action Required, Suspend)
+   */
+  async updateBusinessStatus(
+    adminId: string,
+    params: {
+      entityType: 'seller' | 'mill' | 'carpenter' | 'transport';
+      entityId: string;
+      status: 'APPROVED' | 'REJECTED' | 'ACTION_REQUIRED' | 'SUSPENDED';
+      note?: string;
+      reason?: string;
+    }
+  ) {
+    const { entityType, entityId, status, note, reason } = params;
+
+    return await withTransaction(async (client) => {
+      let targetTable = 'seller_profiles';
+      let idColumn = 'user_id';
+
+      if (entityType === 'carpenter') targetTable = 'carpenter_profiles';
+      else if (entityType === 'transport') targetTable = 'transport_owner_profiles';
+      else if (entityType === 'mill') {
+        targetTable = 'timber_mills';
+        idColumn = 'id';
+      }
+
+      const prev = await client.query(
+        `SELECT approval_status FROM ${targetTable} WHERE ${idColumn} = $1`,
+        [entityId]
+      );
+      if (prev.rows.length === 0) {
+        throw new AppError(404, 'NOT_FOUND', `${entityType} record not found.`);
+      }
+
+      await client.query(
+        `UPDATE ${targetTable}
+         SET approval_status = $1, approved_by = $2, approval_note = $3, approved_at = NOW(), updated_at = NOW()
+         WHERE ${idColumn} = $4`,
+        [status, adminId, reason || note || null, entityId]
+      );
+
+      await this.logAudit(client, {
+        actorId: adminId,
+        action: `SET_STATUS_${status}_${entityType.toUpperCase()}`,
+        entityType: targetTable,
+        entityId,
+        prevState: prev.rows[0],
+        newState: { approval_status: status, note: reason || note },
+        reason,
+      });
+
+      return {
+        success: true,
+        message: `${entityType} account status updated to ${status}.`,
+      };
+    });
   }
 
   /**

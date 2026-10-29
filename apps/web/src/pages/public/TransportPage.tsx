@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Truck, MapPin, Phone, ShieldCheck, ArrowRight, CheckCircle2, Clock, Navigation } from 'lucide-react';
+import { Truck, MapPin, Phone, ShieldCheck, ArrowRight, CheckCircle2, Clock, Navigation, Lock } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { LoginAlertModal } from '../../components/LoginAlertModal';
 
 const DEMO_TRANSPORTERS = [
   {
@@ -45,12 +47,27 @@ const DEMO_TRANSPORTERS = [
 ];
 
 export function TransportPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
+  const { isAuthenticated } = useAuth();
   const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
+  const [alertModal, setAlertModal] = useState<{ isOpen: boolean; providerName?: string }>({
+    isOpen: false,
+  });
 
   const filtered = DEMO_TRANSPORTERS.filter((t) => {
     if (selectedDistrict === 'all') return true;
     return t.service_areas.some((area) => area.toLowerCase().includes(selectedDistrict.toLowerCase()));
   });
+
+  const handleContactClick = (providerName: string, phone: string) => {
+    if (!isAuthenticated) {
+      setAlertModal({
+        isOpen: true,
+        providerName,
+      });
+      return;
+    }
+    window.location.href = `tel:${phone}`;
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -157,19 +174,41 @@ export function TransportPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 <span className="block text-[10px] font-bold text-stone-400 uppercase">
                   {lang === 'en' ? 'Direct Contact' : 'നേരിട്ടുള്ള ഫോൺ'}
                 </span>
-                <span className="font-mono text-xs font-bold text-stone-900">{t.phone}</span>
+                <span className="font-mono text-xs font-bold text-stone-900">
+                  {isAuthenticated ? t.phone : '+91 9447••••••'}
+                </span>
               </div>
-              <a
-                href={`tel:${t.phone}`}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs font-bold shadow-sm transition"
+              <button
+                type="button"
+                onClick={() => handleContactClick(t.name, t.phone)}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs font-bold shadow-xs transition"
               >
-                <Phone className="w-3.5 h-3.5" />
-                <span>{lang === 'en' ? 'Call Carrier' : 'വിളിക്കുക'}</span>
-              </a>
+                {isAuthenticated ? (
+                  <>
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>{lang === 'en' ? 'Call Carrier' : 'വിളിക്കുക'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5 text-white/85" />
+                    <span>{lang === 'en' ? 'Sign in to Contact' : 'ബന്ധപ്പെടാൻ ലോഗിൻ'}</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Context-Aware Minimal Login Alert Modal */}
+      <LoginAlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ isOpen: false })}
+        lang={lang}
+        entityType="transport"
+        entityName={alertModal.providerName}
+        returnUrl="/transport"
+      />
     </div>
   );
 }
