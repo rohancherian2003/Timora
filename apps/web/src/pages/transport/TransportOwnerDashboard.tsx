@@ -14,11 +14,13 @@ import {
   FileCheck,
   MessageSquare,
   Navigation,
+  User,
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { VerificationStatusBanner } from '../../components/VerificationStatusBanner';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
+import { EditProfileModal } from '../../components/EditProfileModal';
 
 interface VehicleItem {
   id: string;
@@ -93,6 +95,7 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
   const [fleet, setFleet] = useState<VehicleItem[]>(INITIAL_FLEET);
   const [bookings, setBookings] = useState<TransitBooking[]>(INITIAL_BOOKINGS);
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [showAddVehicle, setShowAddVehicle] = useState(false);
 
   // Form states
@@ -166,6 +169,15 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setIsEditProfileOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-stone-300 text-[#4A3626] hover:bg-stone-100 text-xs sm:text-sm font-bold shadow-xs transition"
+          >
+            <User className="w-4 h-4 text-[#5B6147]" />
+            <span>{lang === 'en' ? 'Edit Profile' : 'പ്രൊഫൈൽ മാറ്റങ്ങൾ'}</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setIsRaiseModalOpen(true)}
@@ -434,6 +446,12 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
       <RaiseTicketModal
         isOpen={isRaiseModalOpen}
         onClose={() => setIsRaiseModalOpen(false)}
+        lang={lang}
+      />
+
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
         lang={lang}
       />
     </div>

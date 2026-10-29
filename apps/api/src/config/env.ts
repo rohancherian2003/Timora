@@ -59,6 +59,11 @@ const envSchema = z.object({
     .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
     .default('info'),
 
+  // Web Push (VAPID)
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().default('mailto:support@timora.kerala.gov.in'),
+
   // Listing expiry
   LISTING_EXPIRY_DAYS: z.coerce.number().default(90),
   LISTING_EXPIRY_GRACE_DAYS: z.coerce.number().default(7),

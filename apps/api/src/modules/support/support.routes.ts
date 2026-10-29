@@ -3,10 +3,72 @@ import { query } from '../../config/database.js';
 import { authenticate } from '../../middleware/auth.js';
 import { formatTicketRef } from '@timora/shared';
 import type { ApiSuccessResponse } from '@timora/shared';
+import { notificationsService } from '../notifications/notifications.service.js';
 
 export const supportRouter = Router();
 
 supportRouter.use(authenticate);
+
+// VAPID Public Key for Web Push Subscription
+supportRouter.get('/notifications/vapid-public-key', async (_req, res, next) => {
+  try {
+    const key = notificationsService.getVapidPublicKey();
+    const response: ApiSuccessResponse = { success: true, data: { publicKey: key } };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Register a push subscription
+supportRouter.post('/notifications/subscribe', async (req, res, next) => {
+  try {
+    const userId = req.user!.id;
+    const { endpoint, keys, userAgent } = req.body;
+    await notificationsService.subscribe(userId, { endpoint, keys, userAgent });
+    const response: ApiSuccessResponse = { success: true, data: { subscribed: true }, message: 'Push subscription registered.' };
+    res.status(201).json(response);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Unregister a push subscription
+supportRouter.delete('/notifications/unsubscribe', async (req, res, next) => {
+  try {
+    const userId = req.user!.id;
+    const { endpoint } = req.body;
+    await notificationsService.unsubscribe(userId, endpoint);
+    const response: ApiSuccessResponse = { success: true, data: { unsubscribed: true }, message: 'Push subscription removed.' };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Get user notification preferences
+supportRouter.get('/notifications/preferences', async (req, res, next) => {
+  try {
+    const userId = req.user!.id;
+    const data = await notificationsService.getPreferences(userId);
+    const response: ApiSuccessResponse = { success: true, data };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Update user notification preferences
+supportRouter.patch('/notifications/preferences', async (req, res, next) => {
+  try {
+    const userId = req.user!.id;
+    const data = await notificationsService.updatePreferences(userId, req.body);
+    const response: ApiSuccessResponse = { success: true, data, message: 'Preferences updated.' };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+});
 
 // List user notifications
 supportRouter.get('/notifications', async (req, res, next) => {

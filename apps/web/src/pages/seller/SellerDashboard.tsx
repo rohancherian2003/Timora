@@ -20,11 +20,13 @@ import { useAuth } from '../../context/AuthContext';
 import { VerificationStatusBanner } from '../../components/VerificationStatusBanner';
 import { getTicketsForUser, SupportTicket } from '../../utils/ticketService';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
+import { EditProfileModal } from '../../components/EditProfileModal';
 
 export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { user } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [tickets, setTickets] = useState<SupportTicket[]>(() =>
     getTicketsForUser(user?.phone, 'seller')
   );
@@ -96,11 +98,19 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
         <div className="flex items-center gap-2.5 flex-wrap">
           <button
+            onClick={() => setIsEditProfileOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-stone-300 text-[#4A3626] hover:bg-stone-100 text-xs sm:text-sm font-bold shadow-xs transition"
+          >
+            <User className="w-4 h-4 text-[#5B6147]" />
+            <span>{lang === 'en' ? 'Edit Profile' : 'പ്രൊഫൈൽ മാറ്റങ്ങൾ'}</span>
+          </button>
+
+          <button
             onClick={() => setIsRaiseModalOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-stone-300 text-[#4A3626] hover:bg-stone-100 text-xs sm:text-sm font-bold shadow-xs transition"
           >
             <LifeBuoy className="w-4 h-4 text-[#5B6147]" />
-            <span>{lang === 'en' ? 'Raise Ticket' : 'പരാതി നൽകുക'}</span>
+            <span>{lang === 'en' ? 'Support Desk' : 'സഹായം'}</span>
           </button>
 
           <button
@@ -374,6 +384,12 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       <RaiseTicketModal
         isOpen={isRaiseModalOpen}
         onClose={() => setIsRaiseModalOpen(false)}
+        lang={lang}
+      />
+
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
         lang={lang}
       />
     </div>

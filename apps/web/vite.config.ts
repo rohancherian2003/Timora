@@ -13,8 +13,8 @@ export default defineConfig({
         name: 'Timora — Smart Timber Marketplace',
         short_name: 'Timora',
         description: 'Kerala Digital Timber Marketplace',
-        theme_color: '#15803d',
-        background_color: '#f8fafc',
+        theme_color: '#4A3626',
+        background_color: '#FAF8F5',
         display: 'standalone',
         icons: [
           {
@@ -30,6 +30,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        importScripts: ['/sw-push.js'],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/api/v1/species') || url.pathname.startsWith('/api/v1/districts'),

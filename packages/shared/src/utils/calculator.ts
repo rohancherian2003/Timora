@@ -2,6 +2,7 @@ import type {
   TimberCalcInput,
   TimberCalcResult,
   RoundLogCalcInput,
+  KeralaHoppusGirthInput,
 } from '../types/index.js';
 
 /**
@@ -64,6 +65,37 @@ export function calcRoundLogCFT(input: RoundLogCalcInput): TimberCalcResult {
         ? round2(total_cft * input.price_per_cft)
         : null,
     formula_used: 'Hoppus CFT = (D_in² × L_ft) / 183.35',
+    is_approximate: true,
+  };
+}
+
+/**
+ * Kerala Forest Department & Timber Trade Standard Quarter-Girth Hoppus Formula:
+ * CFT = ((girth_in / 4)²) × (length_ft / 144) × pieces
+ *
+ * @param input KeralaHoppusGirthInput
+ * @returns TimberCalcResult
+ */
+export function calcKeralaHoppusGirthCFT(input: KeralaHoppusGirthInput): TimberCalcResult {
+  const pieces = input.pieces != null && input.pieces > 0 ? input.pieces : 1;
+  if (input.girth_in <= 0 || input.length_ft <= 0) {
+    throw new Error('Girth and length must be positive numbers.');
+  }
+
+  const quarter_girth = input.girth_in / 4;
+  const cft_per_piece = (quarter_girth * quarter_girth * input.length_ft) / 144;
+  const total_cft = cft_per_piece * pieces;
+  const total_cft_m3 = total_cft * CFT_TO_M3;
+
+  return {
+    cft_per_piece: round4(cft_per_piece),
+    total_cft: round4(total_cft),
+    total_cft_m3: round4(total_cft_m3),
+    estimated_cost:
+      input.price_per_cft != null && input.price_per_cft > 0
+        ? round2(total_cft * input.price_per_cft)
+        : null,
+    formula_used: 'CFT = ((Girth/4)²) × (Length/144)',
     is_approximate: true,
   };
 }

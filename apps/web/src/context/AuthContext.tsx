@@ -15,6 +15,10 @@ export interface UserProfile {
   district?: string;
   approvalStatus?: ApprovalStatus | string;
   approvalNote?: string;
+  skills?: string[];
+  experience?: number;
+  vehicleDetails?: string;
+  tonnageCapacity?: number;
 }
 
 interface AuthContextType {
@@ -28,6 +32,7 @@ interface AuthContextType {
   logout: () => void;
   resetSessionTimer: () => void;
   setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>;
+  updateProfile: (updatedData: Partial<UserProfile>) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -247,6 +252,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     doLogout(false);
   };
 
+  const updateProfile = async (updatedData: Partial<UserProfile>): Promise<boolean> => {
+    if (!user) return false;
+
+    // Security guard: protect role, approvalStatus, id from tampering
+    const safeData: Partial<UserProfile> = { ...updatedData };
+    delete (safeData as any).role;
+    delete (safeData as any).id;
+    delete (safeData as any).approvalStatus;
+
+    const mergedUser: UserProfile = {
+      ...user,
+      ...safeData,
+    };
+
+    setUser(mergedUser);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedUser));
+
+    // Also update in registered users cache if applicable
+    try {
+      const stored = JSON.parse(localStorage.getItem('timora_registered_users') || '[]');
+      const idx = stored.findIndex((u: UserProfile) => u.id === mergedUser.id || u.phone === mergedUser.phone);
+      if (idx !== -1) {
+        stored[idx] = mergedUser;
+        localStorage.setItem('timora_registered_users', JSON.stringify(stored));
+      }
+    } catch {}
+
+    // Attempt backend sync
+    try {
+      const { api } = await import('../lib/api');
+      await api.patch('/auth/profile', safeData);
+    } catch {
+      // Gracefully persist locally in offline / demo mode
+    }
+
+    return true;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -260,6 +303,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         resetSessionTimer,
         setUser,
+        updateProfile,
       }}
     >
       {children}

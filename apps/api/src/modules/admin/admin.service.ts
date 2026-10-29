@@ -1,5 +1,6 @@
 import { query, withTransaction } from '../../config/database.js';
 import { AppError } from '../../middleware/errorHandler.js';
+import { notificationsService } from '../notifications/notifications.service.js';
 
 export class AdminService {
   /**
@@ -148,6 +149,23 @@ export class AdminService {
         newState: { approval_status: status, note: reason || note },
         reason,
       });
+
+      // Dispatch in-dashboard and Web Push notification to user
+      const targetUserId = entityType === 'mill'
+        ? (await client.query('SELECT seller_id FROM timber_mills WHERE id = $1', [entityId])).rows[0]?.seller_id
+        : entityId;
+
+      if (targetUserId) {
+        notificationsService.dispatch({
+          userId: targetUserId,
+          category: 'verification',
+          title_en: `Business Verification: ${status}`,
+          title_ml: `അക്കൗണ്ട് പരിശോധനാ ഫലം: ${status === 'APPROVED' ? 'അംഗീകരിച്ചു' : 'പരിശോധനയിൽ'}`,
+          body_en: reason || note || `Your Timora account status is now ${status}.`,
+          body_ml: reason || note || `നിങ്ങളുടെ ടിമോറ അക്കൗണ്ട് സ്റ്റാറ്റസ് ${status} ആയി അപ്ഡേറ്റ് ചെയ്തിട്ടുണ്ട്.`,
+          action_url: `/dashboard/${entityType === 'mill' ? 'mill' : entityType}`,
+        }).catch(() => {});
+      }
 
       return {
         success: true,

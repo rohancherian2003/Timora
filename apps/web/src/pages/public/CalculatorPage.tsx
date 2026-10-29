@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Calculator, Info, RotateCcw } from 'lucide-react';
 import {
   calcRectangularCFT,
+  calcKeralaHoppusGirthCFT,
   calcRoundLogCFT,
   cftToM3,
   m3ToCft,
@@ -18,9 +19,10 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [pieces, setPieces] = useState<number>(1);
   const [ratePerCft, setRatePerCft] = useState<number>(2200);
 
-  // Round log inputs
-  const [logDiameterIn, setLogDiameterIn] = useState<number>(14);
+  // Round log inputs (Kerala Hoppus Standard Quarter-Girth)
+  const [logGirthIn, setLogGirthIn] = useState<number>(48);
   const [logLengthFt, setLogLengthFt] = useState<number>(12);
+  const [logPieces, setLogPieces] = useState<number>(1);
   const [logRatePerCft, setLogRatePerCft] = useState<number>(1800);
 
   // Rectangular calculation
@@ -39,13 +41,14 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     }
   })();
 
-  // Round log calculation
+  // Round log calculation (Quarter-Girth Hoppus)
   const roundResult = (() => {
     try {
-      if (logDiameterIn <= 0 || logLengthFt <= 0) return null;
-      return calcRoundLogCFT({
-        diameter_in: logDiameterIn,
+      if (logGirthIn <= 0 || logLengthFt <= 0 || logPieces <= 0) return null;
+      return calcKeralaHoppusGirthCFT({
+        girth_in: logGirthIn,
         length_ft: logLengthFt,
+        pieces: logPieces,
         price_per_cft: logRatePerCft > 0 ? logRatePerCft : undefined,
       });
     } catch {
@@ -59,8 +62,9 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setThicknessIn(2);
     setPieces(1);
     setRatePerCft(2200);
-    setLogDiameterIn(14);
+    setLogGirthIn(48);
     setLogLengthFt(12);
+    setLogPieces(1);
     setLogRatePerCft(1800);
   };
 
@@ -231,25 +235,27 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           <div className="p-3.5 bg-[#E7E1D6] border border-stone-300/80 rounded-2xl flex items-start gap-2.5 text-xs text-[#4A3626]">
             <Info className="w-4 h-4 text-[#5B6147] mt-0.5 flex-shrink-0" />
             <div>
-              <strong>{lang === 'en' ? 'Hoppus Volume Formula (Approximate): ' : 'ഹോപ്പസ് ലോഗ് ഫോർമുല (ഏകദേശം): '}</strong>
-              <code>CFT ≈ (Diameter_in² × Length_ft) ÷ 183.35</code>
-              <p className="mt-0.5 text-[11px] text-[#5B6147]">
+              <strong>{lang === 'en' ? 'Kerala Hoppus Standard Quarter-Girth Formula: ' : 'കേരള ഹോപ്പസ് ക്വാർട്ടർ-ഗിർത്ത് ഫോർമുല: '}</strong>
+              <code className="bg-white px-2 py-0.5 rounded-md font-mono text-emerald-800 font-bold ml-1">
+                CFT = ((Girth / 4)²) × (Length / 144)
+              </code>
+              <p className="mt-1 text-[11px] text-[#5B6147]">
                 {lang === 'en'
-                  ? 'Note: Round log measurements are approximate estimates due to natural taper and bark thickness.'
-                  : 'ശ്രദ്ധിക്കുക: ഉരുളൻ തടികളുടെ അളവ് തൊലിയുടെ കനവും സ്വാഭാവികമായ ചരിവും കാരണം ഏകദേശ അളവാണ്.'}
+                  ? 'Official formula used in Kerala forest depots and raw timber markets. Girth is measured at midpoint in inches.'
+                  : 'കേരളത്തിലെ ഫോറസ്റ്റ് ഡിപ്പോകളിലും തടി ചന്തകളിലും അംഗീകരിച്ച ഔദ്യോഗിക ഫോർമുല. മധ്യഭാഗത്തെ ചുറ്റളവാണ് (Girth) അളക്കുന്നത്.'}
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                {lang === 'en' ? 'Mid Diameter (Inches / ശരാശരി വണ്ണം)' : 'ശരാശരി വണ്ണം (ഇഞ്ച്)'}
+                {lang === 'en' ? 'Mid Girth (Inches / ചുറ്റളവ്)' : 'ചുറ്റളവ് / വണ്ണം (ഇഞ്ച്)'}
               </label>
               <input
                 type="number"
-                value={logDiameterIn || ''}
-                onChange={(e) => setLogDiameterIn(Number(e.target.value))}
+                value={logGirthIn || ''}
+                onChange={(e) => setLogGirthIn(Number(e.target.value))}
                 min={1}
                 className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
               />
@@ -263,6 +269,19 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 type="number"
                 value={logLengthFt || ''}
                 onChange={(e) => setLogLengthFt(Number(e.target.value))}
+                min={1}
+                className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-stone-700 mb-1.5">
+                {lang === 'en' ? 'Logs Count (എണ്ണം)' : 'തടികളുടെ എണ്ണം'}
+              </label>
+              <input
+                type="number"
+                value={logPieces || ''}
+                onChange={(e) => setLogPieces(Number(e.target.value))}
                 min={1}
                 className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5B6147] focus:outline-none bg-stone-50/50"
               />
@@ -287,13 +306,13 @@ export function CalculatorPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               <div className="bg-gradient-to-br from-[#E7E1D6] to-[#d5cfc4] p-6 rounded-3xl border border-stone-300/80 flex flex-wrap items-center justify-between gap-6 shadow-xs">
                 <div>
                   <span className="text-xs uppercase font-bold text-[#5B6147] tracking-wider">
-                    {lang === 'en' ? 'Approximate Log Volume' : 'ഏകദേശ വ്യാപ്തി'}
+                    {lang === 'en' ? 'Calculated Round Log Volume' : 'കണക്കാക്കിയ തടി വ്യാപ്തി'}
                   </span>
                   <div className="text-3xl sm:text-4xl font-extrabold font-serif text-[#4A3626] mt-1">
                     {roundResult.total_cft} <span className="text-base font-sans font-semibold">CFT</span>
                   </div>
                   <div className="text-xs text-[#7A5A3A] mt-1">
-                    {roundResult.total_cft_m3} m³ (ക്യുബിക് മീറ്റർ)
+                    {roundResult.cft_per_piece} CFT / log · {roundResult.total_cft_m3} m³ (ക്യുബിക് മീറ്റർ)
                   </div>
                 </div>
 

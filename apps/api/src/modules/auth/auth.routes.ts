@@ -43,3 +43,9 @@ authRouter.get(
   authenticate,
   authController.me.bind(authController)
 );
+
+authRouter.patch(
+  '/profile',
+  authenticate,
+  authController.updateProfile.bind(authController)
+);

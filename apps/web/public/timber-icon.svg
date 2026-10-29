@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <rect width="512" height="512" rx="108" fill="#4A3626"/>
+  <circle cx="256" cy="256" r="190" fill="#5B6147" stroke="#E7E1D6" stroke-width="12"/>
+  <circle cx="256" cy="256" r="140" fill="none" stroke="#E7E1D6" stroke-width="6" stroke-dasharray="16 8"/>
+  <circle cx="256" cy="256" r="90" fill="none" stroke="#E7E1D6" stroke-width="6" stroke-dasharray="12 6"/>
+  <circle cx="256" cy="256" r="40" fill="#E7E1D6"/>
+  <path d="M256 120 L275 220 L256 256 L237 220 Z" fill="#E7E1D6"/>
+  <text x="256" y="445" font-family="'Plus Jakarta Sans', sans-serif" font-weight="900" font-size="64" fill="#E7E1D6" text-anchor="middle" letter-spacing="4">TIMORA</text>
+</svg>

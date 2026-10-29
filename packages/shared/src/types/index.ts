@@ -276,6 +276,13 @@ export interface RoundLogCalcInput {
   price_per_cft?: number;
 }
 
+export interface KeralaHoppusGirthInput {
+  girth_in: number;        // Mid-point circumference (girth) in inches
+  length_ft: number;       // Length in feet
+  pieces?: number;         // Number of logs (default: 1)
+  price_per_cft?: number;  // Optional ₹/CFT
+}
+
 export interface TimberCalcResult {
   cft_per_piece: number;
   total_cft: number;

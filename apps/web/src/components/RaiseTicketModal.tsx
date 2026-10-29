@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   LifeBuoy,
@@ -9,7 +9,9 @@ import {
   Clock,
   Phone,
   User,
-  ShieldAlert
+  ShieldAlert,
+  ShieldCheck,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { createTicket, SupportTicket, TicketRole } from '../utils/ticketService';
@@ -51,11 +53,28 @@ const CATEGORIES = [
 export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketModalProps) {
   const { user } = useAuth();
 
-  const [role, setRole] = useState<TicketRole>(
-    (user?.role as TicketRole) || 'buyer'
-  );
+  const getInitialRole = (): TicketRole => {
+    if (!user) return 'buyer';
+    if (user.role === 'seller') {
+      return user.sellerSubtype === 'mill_owner' ? 'mill_owner' : 'seller';
+    }
+    if (user.role === 'carpenter') return 'carpenter';
+    if (user.role === 'transport') return 'transport';
+    return 'buyer';
+  };
+
+  const [role, setRole] = useState<TicketRole>(getInitialRole());
   const [name, setName] = useState<string>(user?.name || '');
   const [phone, setPhone] = useState<string>(user?.phone || '');
+
+  useEffect(() => {
+    if (user) {
+      setRole(getInitialRole());
+      if (user.name) setName(user.name);
+      if (user.phone) setPhone(user.phone);
+    }
+  }, [user]);
+
   const [categoryKey, setCategoryKey] = useState<string>('quality');
   const [description, setDescription] = useState<string>('');
   const [priority, setPriority] = useState<'normal' | 'urgent'>('normal');
@@ -218,33 +237,62 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
         ) : (
           /* Ticket Form */
           <form onSubmit={handleSubmit} className="space-y-4 text-xs" noValidate>
-            {/* Role Selection */}
-            <div>
-              <label className="block font-bold text-[#4A3626] mb-1.5">
-                {lang === 'en' ? 'I am a:' : 'ഞാൻ ഒരു:'}
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {[
-                  { key: 'buyer', en: 'Buyer', ml: 'ഉപഭോക്താവ്' },
-                  { key: 'seller', en: 'Merchant', ml: 'തടി വ്യാപാരി' },
-                  { key: 'carpenter', en: 'Carpenter', ml: 'ആശാരി' },
-                  { key: 'mill_owner', en: 'Sawmill', ml: 'മില്ല് ഉടമ' },
-                ].map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => setRole(item.key as TicketRole)}
-                    className={`py-2 px-2.5 rounded-xl text-center font-bold text-[11px] border transition ${
-                      role === item.key
-                        ? 'bg-[#5B6147] text-white border-[#5B6147] shadow-xs'
-                        : 'bg-white text-[#4A3626] border-[#8E7F6B]/30 hover:bg-[#E7E1D6]/40'
-                    }`}
-                  >
-                    {lang === 'en' ? item.en : item.ml}
-                  </button>
-                ))}
+            {/* Role Display / Selection */}
+            {user ? (
+              <div>
+                <label className="block font-bold text-[#4A3626] mb-1.5">
+                  {lang === 'en' ? 'Submitting As (Verified Role):' : 'അക്കൗണ്ട് റോൾ:'}
+                </label>
+                <div className="p-3 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+                    <span className="font-bold text-[#4A3626] text-xs capitalize">
+                      {role === 'mill_owner'
+                        ? (lang === 'en' ? 'Timber Mill Owner' : 'ടിംബർ മില്ല് ഉടമ')
+                        : role === 'seller'
+                        ? (lang === 'en' ? 'Individual Timber Seller' : 'വ്യക്തിഗത തടി വ്യാപാരി')
+                        : role === 'carpenter'
+                        ? (lang === 'en' ? 'Carpenter' : 'ആശാരി')
+                        : role === 'transport'
+                        ? (lang === 'en' ? 'Transport Owner' : 'തടി ലോറി ഉടമ')
+                        : (lang === 'en' ? 'Buyer' : 'ഉപഭോക്താവ്')}
+                    </span>
+                  </div>
+                  <span className="flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    <Lock className="w-3 h-3" />
+                    <span>{lang === 'en' ? 'Locked' : 'സ്ഥിരീകരിച്ചത്'}</span>
+                  </span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div>
+                <label className="block font-bold text-[#4A3626] mb-1.5">
+                  {lang === 'en' ? 'I am a (Select your role):' : 'ഞാൻ ഒരു:'}
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {[
+                    { key: 'buyer', en: 'Buyer', ml: 'ഉപഭോക്താവ്' },
+                    { key: 'seller', en: 'Indiv. Seller', ml: 'തടി വ്യാപാരി' },
+                    { key: 'mill_owner', en: 'Mill Owner', ml: 'മില്ല് ഉടമ' },
+                    { key: 'carpenter', en: 'Carpenter', ml: 'ആശാരി' },
+                    { key: 'transport', en: 'Transport', ml: 'ലോറി ഉടമ' },
+                  ].map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => setRole(item.key as TicketRole)}
+                      className={`py-2 px-1.5 rounded-xl text-center font-bold text-[11px] border transition ${
+                        role === item.key
+                          ? 'bg-[#5B6147] text-white border-[#5B6147] shadow-xs'
+                          : 'bg-white text-[#4A3626] border-[#8E7F6B]/30 hover:bg-[#E7E1D6]/40'
+                      }`}
+                    >
+                      {lang === 'en' ? item.en : item.ml}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Name and Phone */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

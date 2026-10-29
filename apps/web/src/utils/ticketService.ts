@@ -1,4 +1,4 @@
-export type TicketRole = 'buyer' | 'seller' | 'carpenter' | 'mill_owner';
+export type TicketRole = 'buyer' | 'seller' | 'carpenter' | 'mill_owner' | 'transport';
 export type TicketStatus = 'open' | 'in_progress' | 'resolved';
 
 export interface SupportTicket {

@@ -7,6 +7,7 @@ import {
   AlertCircle,
   MapPin,
   Phone,
+  User,
   LifeBuoy,
   ShieldCheck,
   Star,
@@ -19,6 +20,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { VerificationStatusBanner } from '../../components/VerificationStatusBanner';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
+import { EditProfileModal } from '../../components/EditProfileModal';
 
 interface CarpentryEnquiry {
   id: string;
@@ -58,6 +60,7 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { user } = useAuth();
   const [enquiries, setEnquiries] = useState<CarpentryEnquiry[]>(DEMO_CARPENTRY_ENQUIRIES);
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [specializations, setSpecializations] = useState([
     'Traditional Kerala Temple & Nalukettu Joinery',
     'Heavy Timber Roof Trusses (കഴുക്കോൽ പണി)',
@@ -121,6 +124,15 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setIsEditProfileOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-stone-300 text-[#4A3626] hover:bg-stone-100 text-xs sm:text-sm font-bold shadow-xs transition"
+          >
+            <User className="w-4 h-4 text-[#5B6147]" />
+            <span>{lang === 'en' ? 'Edit Profile' : 'പ്രൊഫൈൽ മാറ്റങ്ങൾ'}</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setIsRaiseModalOpen(true)}
@@ -279,6 +291,12 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       <RaiseTicketModal
         isOpen={isRaiseModalOpen}
         onClose={() => setIsRaiseModalOpen(false)}
+        lang={lang}
+      />
+
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
         lang={lang}
       />
     </div>

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   calcRectangularCFT,
   calcRoundLogCFT,
+  calcKeralaHoppusGirthCFT,
   cftToM3,
   m3ToCft,
   validateIndianPhone,
@@ -62,6 +63,23 @@ describe('Timber Calculator Unit Tests', () => {
     });
 
     expect(result.total_cft).toBe(7.8538);
+    expect(result.is_approximate).toBe(true);
+  });
+
+  it('calculates Kerala Quarter-Girth Hoppus CFT accurately according to standard ((G/4)²) * L / 144', () => {
+    // Girth = 48 inches (Quarter girth = 12 inches), Length = 12 feet, 1 log
+    // ((48 / 4)^2 * 12) / 144 = (144 * 12) / 144 = 12.0 CFT
+    const result = calcKeralaHoppusGirthCFT({
+      girth_in: 48,
+      length_ft: 12,
+      pieces: 1,
+      price_per_cft: 2500,
+    });
+
+    expect(result.cft_per_piece).toBe(12);
+    expect(result.total_cft).toBe(12);
+    expect(result.estimated_cost).toBe(30000);
+    expect(result.formula_used).toBe('CFT = ((Girth/4)²) × (Length/144)');
     expect(result.is_approximate).toBe(true);
   });
 

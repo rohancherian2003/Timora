@@ -326,6 +326,58 @@ export class AuthService {
       refreshToken,
     };
   }
+
+  /**
+   * Update authenticated user profile fields
+   * Strictly prevents modifying role, id, or approval_status
+   */
+  async updateProfile(userId: string, role: string, data: any) {
+    const { name, businessName, millName, skills, experience, vehicleDetails, tonnageCapacity } = data;
+
+    if (name && typeof name === 'string') {
+      await query(
+        `UPDATE user_profiles SET name = $1, updated_at = NOW() WHERE user_id = $2`,
+        [name.trim(), userId]
+      );
+    }
+
+    if (role === 'seller') {
+      if (businessName && typeof businessName === 'string') {
+        await query(
+          `UPDATE seller_profiles SET business_name = $1 WHERE user_id = $2`,
+          [businessName.trim(), userId]
+        );
+      }
+      if (millName && typeof millName === 'string') {
+        await query(
+          `UPDATE timber_mills SET mill_name = $1 WHERE seller_id = $2`,
+          [millName.trim(), userId]
+        );
+      }
+    } else if (role === 'carpenter') {
+      if (skills || experience != null) {
+        await query(
+          `UPDATE carpenter_profiles 
+           SET specializations = COALESCE($1, specializations),
+               experience_years = COALESCE($2, experience_years)
+           WHERE user_id = $3`,
+          [skills ? (Array.isArray(skills) ? skills : [skills]) : null, experience ? parseInt(String(experience), 10) : null, userId]
+        );
+      }
+    } else if (role === 'transport') {
+      if (vehicleDetails || tonnageCapacity != null) {
+        await query(
+          `UPDATE transport_owner_profiles
+           SET vehicle_type = COALESCE($1, vehicle_type),
+               tonnage_capacity = COALESCE($2, tonnage_capacity)
+           WHERE user_id = $3`,
+          [vehicleDetails || null, tonnageCapacity ? parseFloat(String(tonnageCapacity)) : null, userId]
+        );
+      }
+    }
+
+    return { success: true, message: 'Profile updated successfully.' };
+  }
 }
 
 export const authService = new AuthService();

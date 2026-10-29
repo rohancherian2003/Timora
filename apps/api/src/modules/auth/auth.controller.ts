@@ -74,6 +74,22 @@ export class AuthController {
       next(err);
     }
   }
+
+  async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const role = req.user!.role;
+      const result = await authService.updateProfile(userId, role, req.body);
+      const response: ApiSuccessResponse = {
+        success: true,
+        data: result,
+        message: 'Profile updated successfully.',
+      };
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const authController = new AuthController();

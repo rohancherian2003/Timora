@@ -201,6 +201,40 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         doLogout(false);
     };
+    const updateProfile = async (updatedData) => {
+        if (!user)
+            return false;
+        // Security guard: protect role, approvalStatus, id from tampering
+        const safeData = { ...updatedData };
+        delete safeData.role;
+        delete safeData.id;
+        delete safeData.approvalStatus;
+        const mergedUser = {
+            ...user,
+            ...safeData,
+        };
+        setUser(mergedUser);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedUser));
+        // Also update in registered users cache if applicable
+        try {
+            const stored = JSON.parse(localStorage.getItem('timora_registered_users') || '[]');
+            const idx = stored.findIndex((u) => u.id === mergedUser.id || u.phone === mergedUser.phone);
+            if (idx !== -1) {
+                stored[idx] = mergedUser;
+                localStorage.setItem('timora_registered_users', JSON.stringify(stored));
+            }
+        }
+        catch { }
+        // Attempt backend sync
+        try {
+            const { api } = await import('../lib/api');
+            await api.patch('/auth/profile', safeData);
+        }
+        catch {
+            // Gracefully persist locally in offline / demo mode
+        }
+        return true;
+    };
     return (_jsx(AuthContext.Provider, { value: {
             user,
             token,
@@ -212,6 +246,7 @@ export const AuthProvider = ({ children }) => {
             logout,
             resetSessionTimer,
             setUser,
+            updateProfile,
         }, children: children }));
 };
 export function useAuth() {

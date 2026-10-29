@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import {
   Calculator,
@@ -15,10 +15,13 @@ import {
   Sparkles,
   Layers,
   ArrowRight,
-  Factory
+  Factory,
+  Menu,
+  X
 } from 'lucide-react';
 import { AuthProvider, useAuth, UserRole } from './context/AuthContext';
 import { BrandLogo } from './components/BrandLogo';
+import { OfflineBanner } from './components/OfflineBanner';
 import { MarketplacePage } from './pages/public/MarketplacePage';
 import { ListingDetailPage } from './pages/public/ListingDetailPage';
 import { CalculatorPage } from './pages/public/CalculatorPage';
@@ -138,7 +141,7 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
         }`}
       >
         <Hammer className="w-5 h-5" />
-        <span className="text-[10px] mt-0.5">{lang === 'en' ? 'Carpenters' : 'തച്ചൻ'}</span>
+        <span className="text-[10px] mt-0.5">{lang === 'en' ? 'Carpenters' : 'ആശാരിമാർ'}</span>
       </Link>
 
       <Link
@@ -442,6 +445,11 @@ function AppHeader({
 }) {
   const { user, isAuthenticated } = useAuth();
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const isCurrent = (path: string) => {
     if (path === '/marketplace' && (location.pathname === '/' || location.pathname === '/marketplace')) {
@@ -618,8 +626,94 @@ function AppHeader({
               </Link>
             </div>
           )}
+          {/* Mobile Hamburger Menu Button */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-xl text-stone-700 hover:text-stone-900 hover:bg-stone-100 transition"
+            aria-label="Toggle navigation menu"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Slide-down Navigation Drawer */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white/98 backdrop-blur-md border-b border-stone-200 px-4 py-4 space-y-2 animate-fadeIn shadow-lg">
+          <div className="space-y-1">
+            <Link
+              to="/marketplace"
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
+                isCurrent('/marketplace') ? 'bg-[#5B6147] text-white' : 'text-[#4A3626] hover:bg-stone-100'
+              }`}
+            >
+              <Store className="w-4 h-4" />
+              <span>{lang === 'en' ? 'Marketplace' : 'മാർക്കറ്റ്'}</span>
+            </Link>
+
+            <Link
+              to="/calculator"
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
+                isCurrent('/calculator') ? 'bg-[#5B6147] text-white' : 'text-[#4A3626] hover:bg-stone-100'
+              }`}
+            >
+              <Calculator className="w-4 h-4" />
+              <span>{lang === 'en' ? 'CFT Timber Calculator' : 'തടി കാൽക്കുലേറ്റർ'}</span>
+            </Link>
+
+            <Link
+              to="/carpenters"
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
+                isCurrent('/carpenters') ? 'bg-[#5B6147] text-white' : 'text-[#4A3626] hover:bg-stone-100'
+              }`}
+            >
+              <Hammer className="w-4 h-4" />
+              <span>{lang === 'en' ? 'Carpenters Directory' : 'ആശാരിമാർ'}</span>
+            </Link>
+
+            <Link
+              to="/transport"
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
+                isCurrent('/transport') ? 'bg-[#5B6147] text-white' : 'text-[#4A3626] hover:bg-stone-100'
+              }`}
+            >
+              <Truck className="w-4 h-4" />
+              <span>{lang === 'en' ? 'Timber Lorries & Transport' : 'ലോറികൾ'}</span>
+            </Link>
+
+            <Link
+              to="/mills"
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
+                isCurrent('/mills') || isCurrent('/timber-mills') ? 'bg-[#5B6147] text-white' : 'text-[#4A3626] hover:bg-stone-100'
+              }`}
+            >
+              <Factory className="w-4 h-4" />
+              <span>{lang === 'en' ? 'Sawmills & Depots' : 'തടി മില്ലുകൾ'}</span>
+            </Link>
+
+            {isAuthenticated && (
+              <Link
+                to={
+                  user?.role === 'seller'
+                    ? (user?.sellerSubtype === 'mill_owner' ? '/dashboard/mill' : '/dashboard/seller')
+                    : user?.role === 'carpenter'
+                    ? '/dashboard/carpenter'
+                    : user?.role === 'transport'
+                    ? '/dashboard/transport'
+                    : user?.role === 'admin'
+                    ? '/admin'
+                    : '/dashboard/buyer'
+                }
+                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-[#E7E1D6]/80 text-[#4A3626] mt-2 border border-[#8E7F6B]/30"
+              >
+                <LayoutDashboard className="w-4 h-4 text-[#5B6147]" />
+                <span>{lang === 'en' ? 'Open Dashboard' : 'ഡാഷ്‌ബോർഡ്'}</span>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }
@@ -640,6 +734,9 @@ export function App() {
           className="min-h-screen flex flex-col font-sans pb-16 md:pb-0 bg-stone-50/50 text-stone-900"
           lang={lang}
         >
+          {/* Offline Banner for Network Recovery */}
+          <OfflineBanner lang={lang} />
+
           {/* Header */}
           <AppHeader
             lang={lang}

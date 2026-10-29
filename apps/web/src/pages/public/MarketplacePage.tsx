@@ -180,13 +180,13 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-extrabold font-serif text-[#4A3626] tracking-tight leading-tight">
-              {lang === 'en' ? "Kerala's Smart Timber Marketplace" : 'കേരള സ്മാർട്ട് തടി വിപണി'}
+              {lang === 'en' ? "Kerala’s Timber Marketplace" : 'കേരളത്തിന്റെ തടി വിതരണ കേന്ദ്രം'}
             </h1>
 
             <p className="text-xs sm:text-sm text-[#7A5A3A] font-medium leading-relaxed max-w-xl mx-auto">
               {lang === 'en'
-                ? 'Direct mill-to-buyer raw logs, rough-sawn planks, and squared beams with Kerala Form IV transit verification.'
-                : 'ഇടനിലക്കാരില്ലാതെ മില്ലുകളിൽ നിന്നും കർഷകരിൽ നിന്നും നേരിട്ട് തടികളും പലകകളും വാങ്ങാം.'}
+                ? 'Discover quality timber. Connect with sellers and mills across Kerala.'
+                : 'ഗുണമേന്മയുള്ള തടികൾ കണ്ടെത്തൂ. കേരളത്തിലുടനീളമുള്ള വ്യാപാരികളുമായും മില്ലുകളുമായും നേരിട്ട് ബന്ധപ്പെടൂ.'}
             </p>
           </div>
 
@@ -229,8 +229,8 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             )}
           </div>
 
-          {/* 5 ESSENTIAL MARKETPLACE SHORTCUT TILES */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 max-w-4xl mx-auto pt-1">
+          {/* 5 ESSENTIAL MARKETPLACE SHORTCUT TILES (Compact mobile navigation, desktop duplicates header) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:hidden gap-2.5 max-w-4xl mx-auto pt-1">
             {/* 1. Browse Timber */}
             <button
               type="button"
@@ -281,7 +281,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   {lang === 'en' ? 'Carpenters' : 'ആശാരിമാർ'}
                 </div>
                 <div className="text-[10px] text-[#8E7F6B] truncate">
-                  {lang === 'en' ? 'Master Artisans' : 'വിദഗ്ദ്ധ തച്ചർ'}
+                  {lang === 'en' ? 'Master Artisans' : 'വിദഗ്ദ്ധ ആശാരിമാർ'}
                 </div>
               </div>
             </Link>

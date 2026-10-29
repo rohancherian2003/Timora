@@ -18,6 +18,7 @@ import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { getTicketsForUser, SupportTicket } from '../../utils/ticketService';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
+import { EditProfileModal } from '../../components/EditProfileModal';
 
 const DEMO_BUYER_ORDERS = [
   {
@@ -61,6 +62,7 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     getTicketsForUser(user?.phone, 'buyer')
   );
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [dismissedResolvedId, setDismissedResolvedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -97,13 +99,23 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsRaiseModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-stone-300 text-[#4A3626] hover:bg-stone-100 text-xs font-bold shadow-xs transition flex-shrink-0"
-        >
-          <LifeBuoy className="w-4 h-4 text-[#5B6147]" />
-          <span>{lang === 'en' ? 'Raise a Ticket' : 'പരാതി നൽകുക (Support)'}</span>
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => setIsEditProfileOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-stone-300 text-[#4A3626] hover:bg-stone-100 text-xs font-bold shadow-xs transition flex-shrink-0"
+          >
+            <User className="w-4 h-4 text-[#5B6147]" />
+            <span>{lang === 'en' ? 'Edit Profile' : 'പ്രൊഫൈൽ മാറ്റങ്ങൾ'}</span>
+          </button>
+
+          <button
+            onClick={() => setIsRaiseModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-stone-300 text-[#4A3626] hover:bg-stone-100 text-xs font-bold shadow-xs transition flex-shrink-0"
+          >
+            <LifeBuoy className="w-4 h-4 text-[#5B6147]" />
+            <span>{lang === 'en' ? 'Raise a Ticket' : 'പരാതി നൽകുക (Support)'}</span>
+          </button>
+        </div>
       </div>
 
       {/* RESOLVED TICKET NOTIFICATION POP-UP BANNER */}
@@ -378,6 +390,12 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       <RaiseTicketModal
         isOpen={isRaiseModalOpen}
         onClose={() => setIsRaiseModalOpen(false)}
+        lang={lang}
+      />
+
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
         lang={lang}
       />
     </div>

@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { LifeBuoy, X, Send, CheckCircle2, AlertCircle, Clock, Phone, User } from 'lucide-react';
+import { LifeBuoy, X, Send, CheckCircle2, AlertCircle, Clock, Phone, User, ShieldCheck, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { createTicket } from '../utils/ticketService';
 const CATEGORIES = [
@@ -33,9 +33,30 @@ const CATEGORIES = [
 ];
 export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }) {
     const { user } = useAuth();
-    const [role, setRole] = useState(user?.role || 'buyer');
+    const getInitialRole = () => {
+        if (!user)
+            return 'buyer';
+        if (user.role === 'seller') {
+            return user.sellerSubtype === 'mill_owner' ? 'mill_owner' : 'seller';
+        }
+        if (user.role === 'carpenter')
+            return 'carpenter';
+        if (user.role === 'transport')
+            return 'transport';
+        return 'buyer';
+    };
+    const [role, setRole] = useState(getInitialRole());
     const [name, setName] = useState(user?.name || '');
     const [phone, setPhone] = useState(user?.phone || '');
+    useEffect(() => {
+        if (user) {
+            setRole(getInitialRole());
+            if (user.name)
+                setName(user.name);
+            if (user.phone)
+                setPhone(user.phone);
+        }
+    }, [user]);
     const [categoryKey, setCategoryKey] = useState('quality');
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState('normal');
@@ -109,14 +130,23 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }) {
                                         ? 'Our Super Admin cell will review your issue, inspect the timber depot/mill logs, and post a resolution reply directly to your Dashboard notifications.'
                                         : 'അഡ്മിൻ ഈ പരാതി പരിശോധിച്ച്, ബന്ധപ്പെട്ട തടി വ്യാപാരിയുമായോ മില്ലുമായോ സംസാരിച്ച് 2 ദിവസത്തിനുള്ളിൽ ഇതിനുള്ള പരിഹാരം (Resolution Reply) താങ്കളുടെ ഡാഷ്‌ബോർഡിൽ അറിയിക്കുന്നതായിരിക്കും!' }), _jsxs("div", { className: "text-[11px] text-[#7A5A3A] pt-1.5 border-t border-[#8E7F6B]/20 flex items-center justify-between font-semibold", children: [_jsxs("span", { children: ["Contact: +91 ", submittedTicket.phone] }), _jsx("span", { children: submittedTicket.createdAt })] })] }), _jsx("div", { className: "pt-2", children: _jsx("button", { onClick: handleResetAndClose, className: "w-full py-3 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm shadow-md transition", children: lang === 'en' ? 'Close & Track Status' : 'ശരി, ട്രാക്ക് ചെയ്യുക' }) })] })) : (
                 /* Ticket Form */
-                _jsxs("form", { onSubmit: handleSubmit, className: "space-y-4 text-xs", noValidate: true, children: [_jsxs("div", { children: [_jsx("label", { className: "block font-bold text-[#4A3626] mb-1.5", children: lang === 'en' ? 'I am a:' : 'ഞാൻ ഒരു:' }), _jsx("div", { className: "grid grid-cols-2 sm:grid-cols-4 gap-2", children: [
+                _jsxs("form", { onSubmit: handleSubmit, className: "space-y-4 text-xs", noValidate: true, children: [user ? (_jsxs("div", { children: [_jsx("label", { className: "block font-bold text-[#4A3626] mb-1.5", children: lang === 'en' ? 'Submitting As (Verified Role):' : 'അക്കൗണ്ട് റോൾ:' }), _jsxs("div", { className: "p-3 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-between", children: [_jsxs("div", { className: "flex items-center gap-2", children: [_jsx(ShieldCheck, { className: "w-4 h-4 text-emerald-700 flex-shrink-0" }), _jsx("span", { className: "font-bold text-[#4A3626] text-xs capitalize", children: role === 'mill_owner'
+                                                        ? (lang === 'en' ? 'Timber Mill Owner' : 'ടിംബർ മില്ല് ഉടമ')
+                                                        : role === 'seller'
+                                                            ? (lang === 'en' ? 'Individual Timber Seller' : 'വ്യക്തിഗത തടി വ്യാപാരി')
+                                                            : role === 'carpenter'
+                                                                ? (lang === 'en' ? 'Carpenter' : 'ആശാരി')
+                                                                : role === 'transport'
+                                                                    ? (lang === 'en' ? 'Transport Owner' : 'തടി ലോറി ഉടമ')
+                                                                    : (lang === 'en' ? 'Buyer' : 'ഉപഭോക്താവ്') })] }), _jsxs("span", { className: "flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800", children: [_jsx(Lock, { className: "w-3 h-3" }), _jsx("span", { children: lang === 'en' ? 'Locked' : 'സ്ഥിരീകരിച്ചത്' })] })] })] })) : (_jsxs("div", { children: [_jsx("label", { className: "block font-bold text-[#4A3626] mb-1.5", children: lang === 'en' ? 'I am a (Select your role):' : 'ഞാൻ ഒരു:' }), _jsx("div", { className: "grid grid-cols-2 sm:grid-cols-5 gap-2", children: [
                                         { key: 'buyer', en: 'Buyer', ml: 'ഉപഭോക്താവ്' },
-                                        { key: 'seller', en: 'Merchant', ml: 'തടി വ്യാപാരി' },
+                                        { key: 'seller', en: 'Indiv. Seller', ml: 'തടി വ്യാപാരി' },
+                                        { key: 'mill_owner', en: 'Mill Owner', ml: 'മില്ല് ഉടമ' },
                                         { key: 'carpenter', en: 'Carpenter', ml: 'ആശാരി' },
-                                        { key: 'mill_owner', en: 'Sawmill', ml: 'മില്ല് ഉടമ' },
-                                    ].map((item) => (_jsx("button", { type: "button", onClick: () => setRole(item.key), className: `py-2 px-2.5 rounded-xl text-center font-bold text-[11px] border transition ${role === item.key
+                                        { key: 'transport', en: 'Transport', ml: 'ലോറി ഉടമ' },
+                                    ].map((item) => (_jsx("button", { type: "button", onClick: () => setRole(item.key), className: `py-2 px-1.5 rounded-xl text-center font-bold text-[11px] border transition ${role === item.key
                                             ? 'bg-[#5B6147] text-white border-[#5B6147] shadow-xs'
-                                            : 'bg-white text-[#4A3626] border-[#8E7F6B]/30 hover:bg-[#E7E1D6]/40'}`, children: lang === 'en' ? item.en : item.ml }, item.key))) })] }), _jsxs("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-3", children: [_jsxs("div", { children: [_jsxs("label", { className: "block font-bold text-[#4A3626] mb-1", children: [lang === 'en' ? 'Your Full Name' : 'താങ്കളുടെ പേര്', " ", _jsx("span", { className: "text-red-500", children: "*" })] }), _jsxs("div", { className: "relative", children: [_jsx(User, { className: "w-3.5 h-3.5 text-[#8E7F6B] absolute left-3 top-3" }), _jsx("input", { type: "text", placeholder: "e.g. Suresh Kumar", value: name, onChange: (e) => {
+                                            : 'bg-white text-[#4A3626] border-[#8E7F6B]/30 hover:bg-[#E7E1D6]/40'}`, children: lang === 'en' ? item.en : item.ml }, item.key))) })] })), _jsxs("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-3", children: [_jsxs("div", { children: [_jsxs("label", { className: "block font-bold text-[#4A3626] mb-1", children: [lang === 'en' ? 'Your Full Name' : 'താങ്കളുടെ പേര്', " ", _jsx("span", { className: "text-red-500", children: "*" })] }), _jsxs("div", { className: "relative", children: [_jsx(User, { className: "w-3.5 h-3.5 text-[#8E7F6B] absolute left-3 top-3" }), _jsx("input", { type: "text", placeholder: "e.g. Suresh Kumar", value: name, onChange: (e) => {
                                                         setName(e.target.value);
                                                         if (errors.name)
                                                             setErrors((prev) => ({ ...prev, name: undefined }));
