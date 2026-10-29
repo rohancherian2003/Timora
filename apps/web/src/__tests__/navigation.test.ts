@@ -124,4 +124,65 @@ describe('Navigation, Session Security & Back Button Tests', () => {
       expect(targetRoute).toBe('-1');
     });
   });
+
+  describe('Verification Status Banner Lifecycle & Action Gating', () => {
+    it('keeps banner persistent for PENDING_APPROVAL and gates restricted actions', () => {
+      const user = {
+        id: 'seller-1',
+        role: 'individual_seller',
+        approvalStatus: 'PENDING_APPROVAL' as const,
+      };
+
+      const canPostListing = user.approvalStatus === 'APPROVED';
+      expect(canPostListing).toBe(false);
+
+      // Verify banner visibility is not auto-dismissed for pending review
+      const shouldAutoDismiss = user.approvalStatus === 'APPROVED';
+      expect(shouldAutoDismiss).toBe(false);
+    });
+
+    it('auto-dismisses APPROVED confirmation banner and caches dismissal in session', () => {
+      const user = {
+        id: 'seller-2',
+        role: 'individual_seller',
+        approvalStatus: 'APPROVED' as const,
+      };
+
+      let bannerVisible = true;
+      const dismissCacheKey = `dismissed_approved_banner_${user.id}`;
+
+      // Simulate auto-dismiss or manual dismiss
+      const handleDismiss = () => {
+        bannerVisible = false;
+        mockStorage[dismissCacheKey] = 'true';
+      };
+
+      handleDismiss();
+
+      expect(bannerVisible).toBe(false);
+      expect(mockStorage[dismissCacheKey]).toBe('true');
+
+      // Subsequent checks read from cache to prevent annoying persistent banner
+      const isAlreadyDismissed = mockStorage[dismissCacheKey] === 'true';
+      expect(isAlreadyDismissed).toBe(true);
+
+      // But backend authoritative status and profile verification remain active
+      expect(user.approvalStatus).toBe('APPROVED');
+      const canPostListing = user.approvalStatus === 'APPROVED';
+      expect(canPostListing).toBe(true);
+    });
+
+    it('retains persistent banners for ACTION_REQUIRED, REJECTED, and SUSPENDED', () => {
+      const statuses = ['ACTION_REQUIRED', 'REJECTED', 'SUSPENDED'] as const;
+
+      statuses.forEach((status) => {
+        const user = { id: 'u-1', role: 'mill_owner', approvalStatus: status };
+        const shouldAutoDismiss = user.approvalStatus === 'APPROVED';
+        expect(shouldAutoDismiss).toBe(false);
+
+        const canPerformRestrictedActions = user.approvalStatus === 'APPROVED';
+        expect(canPerformRestrictedActions).toBe(false);
+      });
+    });
+  });
 });

@@ -21,15 +21,20 @@ import { VerificationStatusBanner } from '../../components/VerificationStatusBan
 import { getTicketsForUser, SupportTicket } from '../../utils/ticketService';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
+import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
 
 export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [tickets, setTickets] = useState<SupportTicket[]>(() =>
     getTicketsForUser(user?.phone, 'seller')
   );
+
+  useEffect(() => {
+    if (refreshUser) refreshUser();
+  }, [refreshUser]);
   const [title, setTitle] = useState('');
   const [speciesId, setSpeciesId] = useState(1); // Teak
   const [typeId, setTypeId] = useState(2); // Planks
@@ -114,14 +119,32 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </button>
 
           <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs sm:text-sm font-bold shadow-md transition"
+            onClick={() => {
+              if (user?.approvalStatus !== 'APPROVED') {
+                alert(
+                  lang === 'en'
+                    ? 'Listing creation is restricted while your business verification is pending admin review.'
+                    : 'അക്കൗണ്ട് അഡ്മിൻ പരിശോധന പൂർത്തിയായി അംഗീകരിച്ച ശേഷം മാത്രമേ തടി ലോഗുകൾ ചേർക്കാൻ സാധിക്കൂ.'
+                );
+                return;
+              }
+              setShowAddForm(!showAddForm);
+            }}
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold shadow-md transition ${
+              user?.approvalStatus === 'APPROVED'
+                ? 'bg-[#5B6147] hover:bg-[#3F452F] text-white'
+                : 'bg-stone-300 text-stone-600 cursor-not-allowed opacity-90'
+            }`}
+            title={user?.approvalStatus !== 'APPROVED' ? (lang === 'en' ? 'Approval Required' : 'അംഗീകാരം ആവശ്യമാണ്') : undefined}
           >
             <Plus className="w-4 h-4" />
             <span>{lang === 'en' ? 'Post Timber Logs' : 'തടി ലോഗുകൾ ചേർക്കുക'}</span>
           </button>
         </div>
       </div>
+
+      {/* IN-DASHBOARD NOTIFICATION FEED */}
+      <DashboardNotificationsFeed lang={lang} />
 
       {/* RESOLVED TICKET NOTIFICATION POP-UP BANNER */}
       {latestResolvedTicket && (

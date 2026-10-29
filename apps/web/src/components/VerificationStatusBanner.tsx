@@ -34,9 +34,38 @@ export function VerificationStatusBanner({
   // Normalize status key
   const normalizedStatus = (status || 'PENDING_APPROVAL').toUpperCase();
 
+  // Temporary success notice state for APPROVED status
+  const dismissalKey = `timora_approval_notice_dismissed_${entityName || role}`;
+  const [showApprovedNotice, setShowApprovedNotice] = useState<boolean>(() => {
+    return !sessionStorage.getItem(dismissalKey);
+  });
+
+  // Auto-dismiss temporary approval success after 7 seconds
+  React.useEffect(() => {
+    if (normalizedStatus === 'APPROVED' && showApprovedNotice) {
+      const timer = setTimeout(() => {
+        setShowApprovedNotice(false);
+        try {
+          sessionStorage.setItem(dismissalKey, 'true');
+        } catch {}
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [normalizedStatus, showApprovedNotice, dismissalKey]);
+
+  const handleDismissApproved = () => {
+    setShowApprovedNotice(false);
+    try {
+      sessionStorage.setItem(dismissalKey, 'true');
+    } catch {}
+  };
+
   if (normalizedStatus === 'APPROVED') {
+    // If user already dismissed or timeout passed, return null so dashboard remains clean
+    if (!showApprovedNotice) return null;
+
     return (
-      <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/90 border border-emerald-300 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+      <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/95 border-2 border-emerald-400 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md animate-fadeIn">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-emerald-600 text-white flex-shrink-0 shadow-xs">
             <ShieldCheck className="w-5 h-5" />
@@ -44,7 +73,7 @@ export function VerificationStatusBanner({
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-sm text-emerald-900">
-                {lang === 'en' ? 'Verified & Approved Account' : 'അംഗീകൃത ബിസിനസ്സ് അക്കൗണ്ട്'}
+                {lang === 'en' ? 'Account Verified & Approved!' : 'അക്കൗണ്ട് അംഗീകരിച്ചു!'}
               </span>
               <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 uppercase tracking-wider">
                 {lang === 'en' ? 'Active' : 'സജീവം'}
@@ -52,11 +81,18 @@ export function VerificationStatusBanner({
             </div>
             <p className="text-xs text-emerald-800 mt-0.5">
               {lang === 'en'
-                ? 'Your business profile and listings are publicly visible across Kerala.'
-                : 'നിങ്ങളുടെ വിവരങ്ങളും തടി ലിസ്റ്റിംഗുകളും കേരളത്തിലുടനീളം കാണാൻ സാധിക്കും.'}
+                ? 'Your business registration has been approved. Your timber listings and services are now live across Kerala.'
+                : 'നിങ്ങളുടെ ബിസിനസ്സ് അക്കൗണ്ട് അഡ്മിൻ അംഗീകരിച്ചു. തടി വിവരങ്ങളും സേവനങ്ങളും ഇപ്പോൾ ലൈവാണ്.'}
             </p>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={handleDismissApproved}
+          className="self-end sm:self-center px-3.5 py-1.5 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-xs transition border border-emerald-300"
+        >
+          {lang === 'en' ? 'Dismiss' : 'ശരി'}
+        </button>
       </div>
     );
   }

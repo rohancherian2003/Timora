@@ -241,6 +241,39 @@ export const AuthProvider = ({ children }) => {
         }
         return true;
     };
+    const refreshUser = useCallback(async () => {
+        try {
+            const { api } = await import('../lib/api');
+            const res = await api.get('/auth/me');
+            if (res.data?.success && res.data?.data?.user) {
+                const backendUser = res.data.data.user;
+                let nextUser = null;
+                setUser((prev) => {
+                    if (!prev)
+                        return null;
+                    nextUser = {
+                        ...prev,
+                        approvalStatus: backendUser.approvalStatus || prev.approvalStatus,
+                        approvalNote: backendUser.approvalNote !== undefined ? backendUser.approvalNote : prev.approvalNote,
+                        name: backendUser.name || prev.name,
+                        businessName: backendUser.businessName || prev.businessName,
+                        millName: backendUser.millName || prev.millName,
+                        sellerSubtype: backendUser.sellerSubtype || prev.sellerSubtype,
+                    };
+                    try {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));
+                    }
+                    catch { }
+                    return nextUser;
+                });
+                return nextUser;
+            }
+        }
+        catch {
+            // Backend not running or token invalid
+        }
+        return null;
+    }, []);
     return (_jsx(AuthContext.Provider, { value: {
             user,
             token,
@@ -253,6 +286,7 @@ export const AuthProvider = ({ children }) => {
             resetSessionTimer,
             setUser,
             updateProfile,
+            refreshUser,
         }, children: children }));
 };
 export function useAuth() {

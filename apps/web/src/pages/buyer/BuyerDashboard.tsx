@@ -19,6 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getTicketsForUser, SupportTicket } from '../../utils/ticketService';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
+import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
 
 const DEMO_BUYER_ORDERS = [
   {
@@ -56,7 +57,7 @@ const DEMO_SAVED_LISTINGS = [
 ];
 
 export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'orders' | 'enquiries' | 'wishlist' | 'tickets'>('orders');
   const [tickets, setTickets] = useState<SupportTicket[]>(() =>
     getTicketsForUser(user?.phone, 'buyer')
@@ -64,6 +65,10 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [dismissedResolvedId, setDismissedResolvedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (refreshUser) refreshUser();
+  }, [refreshUser]);
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -117,6 +122,9 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </button>
         </div>
       </div>
+
+      {/* IN-DASHBOARD NOTIFICATION FEED */}
+      <DashboardNotificationsFeed lang={lang} />
 
       {/* RESOLVED TICKET NOTIFICATION POP-UP BANNER */}
       {latestResolvedTicket && (

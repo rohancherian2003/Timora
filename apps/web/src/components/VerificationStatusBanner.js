@@ -1,14 +1,42 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ShieldCheck, Clock, AlertTriangle, XCircle, Ban, ChevronDown, ChevronUp, LifeBuoy } from 'lucide-react';
 export function VerificationStatusBanner({ status = 'PENDING_APPROVAL', role = 'seller', entityName, note, lang = 'en', onRaiseTicket, }) {
     const [isExpanded, setIsExpanded] = useState(false);
     // Normalize status key
     const normalizedStatus = (status || 'PENDING_APPROVAL').toUpperCase();
+    // Temporary success notice state for APPROVED status
+    const dismissalKey = `timora_approval_notice_dismissed_${entityName || role}`;
+    const [showApprovedNotice, setShowApprovedNotice] = useState(() => {
+        return !sessionStorage.getItem(dismissalKey);
+    });
+    // Auto-dismiss temporary approval success after 7 seconds
+    React.useEffect(() => {
+        if (normalizedStatus === 'APPROVED' && showApprovedNotice) {
+            const timer = setTimeout(() => {
+                setShowApprovedNotice(false);
+                try {
+                    sessionStorage.setItem(dismissalKey, 'true');
+                }
+                catch { }
+            }, 7000);
+            return () => clearTimeout(timer);
+        }
+    }, [normalizedStatus, showApprovedNotice, dismissalKey]);
+    const handleDismissApproved = () => {
+        setShowApprovedNotice(false);
+        try {
+            sessionStorage.setItem(dismissalKey, 'true');
+        }
+        catch { }
+    };
     if (normalizedStatus === 'APPROVED') {
-        return (_jsx("div", { className: "p-4 sm:p-5 rounded-2xl bg-emerald-50/90 border border-emerald-300 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs", children: _jsxs("div", { className: "flex items-center gap-3", children: [_jsx("div", { className: "p-2 rounded-xl bg-emerald-600 text-white flex-shrink-0 shadow-xs", children: _jsx(ShieldCheck, { className: "w-5 h-5" }) }), _jsxs("div", { children: [_jsxs("div", { className: "flex items-center gap-2", children: [_jsx("span", { className: "font-bold text-sm text-emerald-900", children: lang === 'en' ? 'Verified & Approved Account' : 'അംഗീകൃത ബിസിനസ്സ് അക്കൗണ്ട്' }), _jsx("span", { className: "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 uppercase tracking-wider", children: lang === 'en' ? 'Active' : 'സജീവം' })] }), _jsx("p", { className: "text-xs text-emerald-800 mt-0.5", children: lang === 'en'
-                                    ? 'Your business profile and listings are publicly visible across Kerala.'
-                                    : 'നിങ്ങളുടെ വിവരങ്ങളും തടി ലിസ്റ്റിംഗുകളും കേരളത്തിലുടനീളം കാണാൻ സാധിക്കും.' })] })] }) }));
+        // If user already dismissed or timeout passed, return null so dashboard remains clean
+        if (!showApprovedNotice)
+            return null;
+        return (_jsxs("div", { className: "p-4 sm:p-5 rounded-2xl bg-emerald-50/95 border-2 border-emerald-400 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md animate-fadeIn", children: [_jsxs("div", { className: "flex items-center gap-3", children: [_jsx("div", { className: "p-2 rounded-xl bg-emerald-600 text-white flex-shrink-0 shadow-xs", children: _jsx(ShieldCheck, { className: "w-5 h-5" }) }), _jsxs("div", { children: [_jsxs("div", { className: "flex items-center gap-2", children: [_jsx("span", { className: "font-bold text-sm text-emerald-900", children: lang === 'en' ? 'Account Verified & Approved!' : 'അക്കൗണ്ട് അംഗീകരിച്ചു!' }), _jsx("span", { className: "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 uppercase tracking-wider", children: lang === 'en' ? 'Active' : 'സജീവം' })] }), _jsx("p", { className: "text-xs text-emerald-800 mt-0.5", children: lang === 'en'
+                                        ? 'Your business registration has been approved. Your timber listings and services are now live across Kerala.'
+                                        : 'നിങ്ങളുടെ ബിസിനസ്സ് അക്കൗണ്ട് അഡ്മിൻ അംഗീകരിച്ചു. തടി വിവരങ്ങളും സേവനങ്ങളും ഇപ്പോൾ ലൈവാണ്.' })] })] }), _jsx("button", { type: "button", onClick: handleDismissApproved, className: "self-end sm:self-center px-3.5 py-1.5 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-xs transition border border-emerald-300", children: lang === 'en' ? 'Dismiss' : 'ശരി' })] }));
     }
     if (normalizedStatus === 'ACTION_REQUIRED') {
         return (_jsxs("div", { className: "p-4 sm:p-5 rounded-2xl bg-amber-50/95 border border-amber-300 text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs", children: [_jsxs("div", { className: "flex items-start sm:items-center gap-3", children: [_jsx("div", { className: "p-2 rounded-xl bg-amber-600 text-white flex-shrink-0 shadow-xs", children: _jsx(AlertTriangle, { className: "w-5 h-5" }) }), _jsxs("div", { children: [_jsxs("div", { className: "flex items-center gap-2", children: [_jsx("span", { className: "font-bold text-sm text-amber-950", children: lang === 'en' ? 'Action Required: Additional Details Needed' : 'ശ്രദ്ധിക്കുക: കൂടുതൽ വിവരങ്ങൾ ആവശ്യമാണ്' }), _jsx("span", { className: "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wider", children: lang === 'en' ? 'Action Required' : 'പരിശോധനയിൽ' })] }), _jsx("p", { className: "text-xs text-amber-800 mt-0.5", children: note ||

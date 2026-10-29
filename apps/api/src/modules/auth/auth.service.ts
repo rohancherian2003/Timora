@@ -378,6 +378,62 @@ export class AuthService {
 
     return { success: true, message: 'Profile updated successfully.' };
   }
+
+  /**
+   * Get live authoritative profile including approval status
+   */
+  async getMe(userId: string) {
+    const res = await query(
+      `SELECT u.id, u.phone, u.role, u.is_active, p.name, p.language_pref, p.account_tier,
+              sp.seller_subtype, sp.approval_status as seller_approval_status, sp.business_name as seller_business, sp.approval_note as seller_approval_note,
+              tm.mill_name, tm.approval_status as mill_approval_status, tm.approval_note as mill_approval_note,
+              cp.approval_status as carpenter_approval_status, cp.approval_note as carpenter_approval_note,
+              tp.approval_status as transport_approval_status, tp.approval_note as transport_approval_note
+       FROM users u
+       LEFT JOIN user_profiles p ON p.user_id = u.id
+       LEFT JOIN seller_profiles sp ON sp.user_id = u.id
+       LEFT JOIN timber_mills tm ON tm.seller_id = u.id
+       LEFT JOIN carpenter_profiles cp ON cp.user_id = u.id
+       LEFT JOIN transport_owner_profiles tp ON tp.user_id = u.id
+       WHERE u.id = $1`,
+      [userId]
+    );
+
+    const user = res.rows[0];
+    if (!user) throw new AppError(404, 'NOT_FOUND', 'User not found.');
+
+    let approvalStatus = 'APPROVED';
+    let approvalNote: string | undefined = undefined;
+
+    if (user.role === 'seller') {
+      if (user.seller_subtype === 'mill_owner') {
+        approvalStatus = user.mill_approval_status || user.seller_approval_status || 'PENDING_APPROVAL';
+        approvalNote = user.mill_approval_note || user.seller_approval_note || undefined;
+      } else {
+        approvalStatus = user.seller_approval_status || 'PENDING_APPROVAL';
+        approvalNote = user.seller_approval_note || undefined;
+      }
+    } else if (user.role === 'carpenter') {
+      approvalStatus = user.carpenter_approval_status || 'PENDING_APPROVAL';
+      approvalNote = user.carpenter_approval_note || undefined;
+    } else if (user.role === 'transport') {
+      approvalStatus = user.transport_approval_status || 'PENDING_APPROVAL';
+      approvalNote = user.transport_approval_note || undefined;
+    }
+
+    return {
+      id: user.id,
+      phone: user.phone,
+      role: user.role,
+      name: user.name,
+      businessName: user.seller_business || user.mill_name,
+      millName: user.mill_name,
+      sellerSubtype: user.seller_subtype,
+      approvalStatus,
+      approvalNote,
+      isActive: user.is_active,
+    };
+  }
 }
 
 export const authService = new AuthService();

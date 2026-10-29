@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Hammer,
   Plus,
@@ -21,6 +21,7 @@ import { useAuth } from '../../context/AuthContext';
 import { VerificationStatusBanner } from '../../components/VerificationStatusBanner';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
+import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
 
 interface CarpentryEnquiry {
   id: string;
@@ -57,10 +58,14 @@ const DEMO_CARPENTRY_ENQUIRIES: CarpentryEnquiry[] = [
 ];
 
 export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [enquiries, setEnquiries] = useState<CarpentryEnquiry[]>(DEMO_CARPENTRY_ENQUIRIES);
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+
+  useEffect(() => {
+    if (refreshUser) refreshUser();
+  }, [refreshUser]);
   const [specializations, setSpecializations] = useState([
     'Traditional Kerala Temple & Nalukettu Joinery',
     'Heavy Timber Roof Trusses (കഴുക്കോൽ പണി)',
@@ -143,6 +148,9 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </button>
         </div>
       </div>
+
+      {/* IN-DASHBOARD NOTIFICATION FEED */}
+      <DashboardNotificationsFeed lang={lang} />
 
       {/* METRICS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

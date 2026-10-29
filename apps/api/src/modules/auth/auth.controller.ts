@@ -65,9 +65,10 @@ export class AuthController {
 
   async me(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      const user = await authService.getMe(req.user!.id);
       const response: ApiSuccessResponse = {
         success: true,
-        data: { user: req.user },
+        data: { user },
       };
       res.status(200).json(response);
     } catch (err) {

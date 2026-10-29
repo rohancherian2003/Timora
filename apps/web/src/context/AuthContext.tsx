@@ -33,6 +33,7 @@ interface AuthContextType {
   resetSessionTimer: () => void;
   setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>;
   updateProfile: (updatedData: Partial<UserProfile>) => Promise<boolean>;
+  refreshUser: () => Promise<UserProfile | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -295,6 +296,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   };
 
+  const refreshUser = useCallback(async (): Promise<UserProfile | null> => {
+    try {
+      const { api } = await import('../lib/api');
+      const res = await api.get('/auth/me');
+      if (res.data?.success && res.data?.data?.user) {
+        const backendUser = res.data.data.user;
+        let nextUser: UserProfile | null = null;
+        setUser((prev) => {
+          if (!prev) return null;
+          nextUser = {
+            ...prev,
+            approvalStatus: backendUser.approvalStatus || prev.approvalStatus,
+            approvalNote: backendUser.approvalNote !== undefined ? backendUser.approvalNote : prev.approvalNote,
+            name: backendUser.name || prev.name,
+            businessName: backendUser.businessName || prev.businessName,
+            millName: backendUser.millName || prev.millName,
+            sellerSubtype: backendUser.sellerSubtype || prev.sellerSubtype,
+          };
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));
+          } catch {}
+          return nextUser;
+        });
+        return nextUser;
+      }
+    } catch {
+      // Backend not running or token invalid
+    }
+    return null;
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -309,6 +341,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         resetSessionTimer,
         setUser,
         updateProfile,
+        refreshUser,
       }}
     >
       {children}

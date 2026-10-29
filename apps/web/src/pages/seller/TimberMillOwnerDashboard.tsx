@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Factory,
   Plus,
@@ -22,6 +22,7 @@ import { useAuth } from '../../context/AuthContext';
 import { VerificationStatusBanner } from '../../components/VerificationStatusBanner';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
+import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
 
 interface SawnBatch {
   id: string;
@@ -68,11 +69,15 @@ const INITIAL_MILL_BATCHES: SawnBatch[] = [
 ];
 
 export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [batches, setBatches] = useState<SawnBatch[]>(INITIAL_MILL_BATCHES);
   const [showAddBatch, setShowAddBatch] = useState(false);
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+
+  useEffect(() => {
+    if (refreshUser) refreshUser();
+  }, [refreshUser]);
 
   // Form fields
   const [title, setTitle] = useState('');
@@ -169,14 +174,32 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
 
           <button
             type="button"
-            onClick={() => setShowAddBatch(!showAddBatch)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs sm:text-sm font-bold shadow-md transition"
+            onClick={() => {
+              if (user?.approvalStatus !== 'APPROVED') {
+                alert(
+                  lang === 'en'
+                    ? 'Batch posting is restricted while sawmill verification is pending admin review.'
+                    : 'സോമിൽ അഡ്മിൻ പരിശോധന പൂർത്തിയായി അംഗീകരിച്ച ശേഷം മാത്രമേ പുതിയ ബാച്ചുകൾ ചേർക്കാൻ സാധിക്കൂ.'
+                );
+                return;
+              }
+              setShowAddBatch(!showAddBatch);
+            }}
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold shadow-md transition ${
+              user?.approvalStatus === 'APPROVED'
+                ? 'bg-[#5B6147] hover:bg-[#3F452F] text-white'
+                : 'bg-stone-300 text-stone-600 cursor-not-allowed opacity-90'
+            }`}
+            title={user?.approvalStatus !== 'APPROVED' ? (lang === 'en' ? 'Approval Required' : 'അംഗീകാരം ആവശ്യമാണ്') : undefined}
           >
             <Plus className="w-4 h-4" />
             <span>{lang === 'en' ? 'Post Sawn Timber Batch' : 'പുതിയ തടി ബാച്ച് ചേർക്കുക'}</span>
           </button>
         </div>
       </div>
+
+      {/* IN-DASHBOARD NOTIFICATION FEED */}
+      <DashboardNotificationsFeed lang={lang} />
 
       {/* MILL OPERATIONAL METRICS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

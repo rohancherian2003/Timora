@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Truck,
   Plus,
@@ -21,6 +21,7 @@ import { useAuth } from '../../context/AuthContext';
 import { VerificationStatusBanner } from '../../components/VerificationStatusBanner';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
+import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
 
 interface VehicleItem {
   id: string;
@@ -91,12 +92,16 @@ const INITIAL_BOOKINGS: TransitBooking[] = [
 ];
 
 export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [fleet, setFleet] = useState<VehicleItem[]>(INITIAL_FLEET);
   const [bookings, setBookings] = useState<TransitBooking[]>(INITIAL_BOOKINGS);
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [showAddVehicle, setShowAddVehicle] = useState(false);
+
+  useEffect(() => {
+    if (refreshUser) refreshUser();
+  }, [refreshUser]);
 
   // Form states
   const [regNumber, setRegNumber] = useState('');
@@ -189,14 +194,32 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
 
           <button
             type="button"
-            onClick={() => setShowAddVehicle(!showAddVehicle)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs sm:text-sm font-bold shadow-md transition"
+            onClick={() => {
+              if (user?.approvalStatus !== 'APPROVED') {
+                alert(
+                  lang === 'en'
+                    ? 'Fleet expansion is restricted while transport registration is pending admin review.'
+                    : 'ട്രാൻസ്പോർട്ട് അഡ്മിൻ പരിശോധന പൂർത്തിയായി അംഗീകരിച്ച ശേഷം മാത്രമേ വാഹനം ചേർക്കാൻ സാധിക്കൂ.'
+                );
+                return;
+              }
+              setShowAddVehicle(!showAddVehicle);
+            }}
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold shadow-md transition ${
+              user?.approvalStatus === 'APPROVED'
+                ? 'bg-[#5B6147] hover:bg-[#3F452F] text-white'
+                : 'bg-stone-300 text-stone-600 cursor-not-allowed opacity-90'
+            }`}
+            title={user?.approvalStatus !== 'APPROVED' ? (lang === 'en' ? 'Approval Required' : 'അംഗീകാരം ആവശ്യമാണ്') : undefined}
           >
             <Plus className="w-4 h-4" />
             <span>{lang === 'en' ? 'Add Lorry to Fleet' : 'വാഹനം ചേർക്കുക'}</span>
           </button>
         </div>
       </div>
+
+      {/* IN-DASHBOARD NOTIFICATION FEED */}
+      <DashboardNotificationsFeed lang={lang} />
 
       {/* FLEET METRICS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

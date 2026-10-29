@@ -161,29 +161,38 @@ export function NotificationBell({ lang = 'en' }: NotificationBellProps) {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-x-3 top-20 sm:top-auto sm:inset-x-auto sm:absolute sm:right-0 sm:mt-2 w-auto sm:w-96 max-w-[calc(100vw-1.5rem)] bg-white rounded-2xl shadow-2xl border border-stone-200 z-50 overflow-hidden animate-fadeIn text-left">
-          {/* Header */}
-          <div className="p-3.5 bg-[#FAF8F5] border-b border-stone-200 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="font-serif font-bold text-sm text-[#4A3626]">
-                {lang === 'en' ? 'Notifications' : 'അറിയിപ്പുകൾ'}
-              </span>
-              {unreadCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px]">
-                  {unreadCount} {lang === 'en' ? 'new' : 'പുതിയത്'}
-                </span>
-              )}
-            </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/50 transition"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+        <>
+          {/* Mobile Backdrop to prevent clipping and handle outside touch */}
+          <div
+            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-2xs sm:hidden"
+            onClick={() => setIsOpen(false)}
+          />
 
-          {/* List */}
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-stone-100">
+          {/* Notification Dialog Panel: Full-width responsive fit on mobile, clean anchor on desktop */}
+          <div className="fixed top-16 left-3 right-3 sm:absolute sm:top-auto sm:left-auto sm:right-0 sm:mt-2 sm:w-96 max-w-full sm:max-w-md bg-white rounded-2xl shadow-2xl border border-stone-200 z-50 overflow-hidden animate-fadeIn text-left">
+            {/* Header */}
+            <div className="p-3.5 bg-[#FAF8F5] border-b border-stone-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-serif font-bold text-sm text-[#4A3626]">
+                  {lang === 'en' ? 'Notifications' : 'അറിയിപ്പുകൾ'}
+                </span>
+                {unreadCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px]">
+                    {unreadCount} {lang === 'en' ? 'new' : 'പുതിയത്'}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/50 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* List */}
+            <div className="max-h-[60vh] sm:max-h-[380px] overflow-y-auto divide-y divide-stone-100">
             {notifications.length === 0 ? (
               <div className="p-6 text-center text-stone-400 space-y-1">
                 <Bell className="w-8 h-8 mx-auto text-stone-300 stroke-[1.5]" />
@@ -245,7 +254,8 @@ export function NotificationBell({ lang = 'en' }: NotificationBellProps) {
             )}
           </div>
         </div>
-      )}
-    </div>
-  );
+      </>
+    )}
+  </div>
+);
 }
