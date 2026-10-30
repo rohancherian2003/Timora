@@ -1,10 +1,37 @@
 import React, { useState } from 'react';
-import { Hammer, MapPin, Award, Phone, Star, CheckCircle, ShieldCheck, Lock } from 'lucide-react';
+import { Hammer, MapPin, Award, Phone, Star, CheckCircle, ShieldCheck, Lock, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { LoginAlertModal } from '../../components/LoginAlertModal';
 import { BackButton } from '../../components/BackButton';
+import { SubmitReviewModal } from '../../components/SubmitReviewModal';
 
-const DEMO_CARPENTERS = [
+export interface CarpenterReview {
+  id: string;
+  author: string;
+  role: string;
+  rating: number;
+  date: string;
+  comment: string;
+  commentMl?: string;
+  isVerified: boolean;
+}
+
+export interface CarpenterItem {
+  id: string;
+  name: string;
+  district: string;
+  locality: string;
+  experience_yrs: number;
+  specializations: string[];
+  rating: number;
+  rating_count: number;
+  is_verified: boolean;
+  phone: string;
+  timber_pref: string;
+  reviews: CarpenterReview[];
+}
+
+const INITIAL_CARPENTERS: CarpenterItem[] = [
   {
     id: 'c1',
     name: 'K. R. Mohanan Achari',
@@ -17,6 +44,28 @@ const DEMO_CARPENTERS = [
     is_verified: true,
     phone: '+919447300101',
     timber_pref: 'Nilambur Teak & Anjili',
+    reviews: [
+      {
+        id: 'rev-c1-1',
+        author: 'Dr. Joseph Kurian',
+        role: 'Verified Homeowner',
+        rating: 5,
+        date: '2 weeks ago',
+        comment: 'Mohanan Achari did our complete house roof trusses using Anjili wood. Zero joint gaps and flawless alignment.',
+        commentMl: 'ഞങ്ങളുടെ വീടിന്റെ മേൽക്കൂര തട്ടിടൽ വളരെ കൃത്യതയോടെ ചെയ്തു തന്നു. നല്ല ആത്മാർത്ഥതയുള്ള പണി.',
+        isVerified: true,
+      },
+      {
+        id: 'rev-c1-2',
+        author: 'Mathew Varghese',
+        role: 'Verified Buyer',
+        rating: 4.8,
+        date: '1 month ago',
+        comment: 'Traditional teak front door carving was done with authentic Kerala temple motifs. Highly recommended master craftsman.',
+        commentMl: 'പരമ്പരാഗത ശൈലിയിലുള്ള തേക്ക് വാതിലുകൾ വളരെ ഭംഗിയായി പണിതു നൽകി.',
+        isVerified: true,
+      },
+    ],
   },
   {
     id: 'c2',
@@ -30,6 +79,18 @@ const DEMO_CARPENTERS = [
     is_verified: true,
     phone: '+919447300102',
     timber_pref: 'African Mahogany & Teak',
+    reviews: [
+      {
+        id: 'rev-c2-1',
+        author: 'Harikrishnan Namboodiri',
+        role: 'Verified Client',
+        rating: 5,
+        date: '3 weeks ago',
+        comment: 'High precision mortise and tenon joinery. Sturdy beams and fair labor charges.',
+        commentMl: 'കട്ടിളകളും ബീമുകളും നല്ല ഉറപ്പോടെ കൃത്യമായ അളവിൽ പണിതു.',
+        isVerified: true,
+      },
+    ],
   },
   {
     id: 'c3',
@@ -43,6 +104,18 @@ const DEMO_CARPENTERS = [
     is_verified: true,
     phone: '+919447300103',
     timber_pref: 'Rubberwood & Anjili',
+    reviews: [
+      {
+        id: 'rev-c3-1',
+        author: 'Saji George',
+        role: 'Verified Client',
+        rating: 4.7,
+        date: '1 month ago',
+        comment: 'Neat ceiling paneling with seasoned Anjili planks. Prompt completion.',
+        commentMl: 'തട്ടിടൽ പണി കൃത്യസമയത്ത് വൃത്തിയായി പൂർത്തിയാക്കി തന്നു.',
+        isVerified: true,
+      },
+    ],
   },
   {
     id: 'c4',
@@ -56,22 +129,48 @@ const DEMO_CARPENTERS = [
     is_verified: true,
     phone: '+919447300104',
     timber_pref: 'Heritage Teak & Rosewood',
+    reviews: [
+      {
+        id: 'rev-c4-1',
+        author: 'Gopalan Nair',
+        role: 'Verified Client',
+        rating: 5,
+        date: '5 days ago',
+        comment: 'Master craftsman with deep knowledge of traditional Kerala Thachu Shasthra. Unmatched wood carving quality.',
+        commentMl: 'പരമ്പരാഗത തച്ചുശാസ്ത്ര വിധിപ്രകാരം ക്ഷേത്ര മാതൃകയിൽ പണിതു നൽകി. അതിശയകരമായ കൊത്തുപണി.',
+        isVerified: true,
+      },
+    ],
   },
 ];
 
 export function CarpenterDirectoryPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { isAuthenticated } = useAuth();
+  const [carpenters, setCarpenters] = useState<CarpenterItem[]>(INITIAL_CARPENTERS);
   const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
+  const [expandedReviews, setExpandedReviews] = useState<Record<string, boolean>>({});
   const [alertModal, setAlertModal] = useState<{ isOpen: boolean; carpenterName?: string }>({
     isOpen: false,
   });
 
-  const filtered = DEMO_CARPENTERS.filter((c) => {
+  const [reviewModal, setReviewModal] = useState<{
+    isOpen: boolean;
+    carpenterId?: string;
+    carpenterName?: string;
+  }>({
+    isOpen: false,
+  });
+
+  const filtered = carpenters.filter((c) => {
     if (selectedDistrict !== 'all' && !c.district.toLowerCase().includes(selectedDistrict.toLowerCase())) {
       return false;
     }
     return true;
   });
+
+  const toggleReviews = (id: string) => {
+    setExpandedReviews((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const handleContactClick = (carpenterName: string, phone: string) => {
     if (!isAuthenticated) {
@@ -82,6 +181,25 @@ export function CarpenterDirectoryPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) 
       return;
     }
     window.location.href = `tel:${phone}`;
+  };
+
+  const handleReviewSubmitted = (carpenterId: string, newReview: CarpenterReview) => {
+    setCarpenters((prev) =>
+      prev.map((c) => {
+        if (c.id === carpenterId) {
+          const updatedReviews = [newReview, ...c.reviews];
+          const totalRating = updatedReviews.reduce((sum, r) => sum + r.rating, 0);
+          const newAvg = parseFloat((totalRating / updatedReviews.length).toFixed(1));
+          return {
+            ...c,
+            rating: newAvg,
+            rating_count: c.rating_count + 1,
+            reviews: updatedReviews,
+          };
+        }
+        return c;
+      })
+    );
   };
 
   return (
@@ -191,6 +309,75 @@ export function CarpenterDirectoryPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) 
                 <span className="font-semibold text-stone-700">{lang === 'en' ? 'Timber Worked: ' : 'ഉപയോഗിക്കുന്ന തടി: '}</span>
                 <span>{c.timber_pref}</span>
               </div>
+
+              {/* Verified Client Reviews Section */}
+              <div className="mt-4 pt-3 border-t border-stone-200">
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => toggleReviews(c.id)}
+                    className="text-xs font-bold text-[#5B6147] hover:underline flex items-center gap-1.5"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>
+                      {expandedReviews[c.id]
+                        ? (lang === 'en' ? 'Hide Verified Reviews' : 'റിവ്യൂകൾ മറയ്ക്കുക')
+                        : (lang === 'en' ? `View ${c.reviews.length} Verified Reviews` : `റിവ്യൂകൾ കാണുക (${c.reviews.length})`)}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setReviewModal({
+                        isOpen: true,
+                        carpenterId: c.id,
+                        carpenterName: c.name,
+                      })
+                    }
+                    className="text-[11px] font-bold text-[#4A3626] hover:text-[#5B6147] transition flex items-center gap-1"
+                  >
+                    <Star className="w-3 h-3 text-amber-500 fill-amber-400" />
+                    <span>{lang === 'en' ? 'Rate & Review' : 'റേറ്റിംഗ് നൽകുക'}</span>
+                  </button>
+                </div>
+
+                {/* Expanded Reviews Accordion */}
+                {expandedReviews[c.id] && (
+                  <div className="mt-3 space-y-2.5 animate-fadeIn">
+                    {c.reviews.map((rev) => (
+                      <div
+                        key={rev.id}
+                        className="p-3 rounded-2xl bg-[#FAF8F5] border border-stone-200 text-xs space-y-1"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-[#4A3626]">{rev.author}</span>
+                            <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[9px] font-bold flex items-center gap-0.5">
+                              <ShieldCheck className="w-2.5 h-2.5" />
+                              <span>{rev.role}</span>
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-stone-400 font-medium">{rev.date}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              className={`w-3 h-3 ${
+                                s <= rev.rating ? 'fill-amber-400 text-amber-500' : 'fill-stone-100 text-stone-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-stone-600 leading-relaxed text-[11px] font-normal">
+                          {lang === 'en' ? rev.comment : (rev.commentMl || rev.comment)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="pt-4 border-t border-stone-200 flex items-center justify-between">
@@ -232,6 +419,21 @@ export function CarpenterDirectoryPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) 
         entityType="carpenter"
         entityName={alertModal.carpenterName}
         returnUrl="/carpenters"
+      />
+
+      {/* Verified Review Submission Modal */}
+      <SubmitReviewModal
+        isOpen={reviewModal.isOpen}
+        onClose={() => setReviewModal({ isOpen: false })}
+        targetType="carpenter"
+        targetId={reviewModal.carpenterId || ''}
+        targetName={reviewModal.carpenterName || ''}
+        onReviewSubmitted={(newRev) => {
+          if (reviewModal.carpenterId) {
+            handleReviewSubmitted(reviewModal.carpenterId, newRev);
+          }
+        }}
+        lang={lang}
       />
     </div>
   );

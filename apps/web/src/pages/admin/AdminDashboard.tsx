@@ -25,6 +25,7 @@ import {
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { getStoredTickets, resolveTicket, SupportTicket } from '../../utils/ticketService';
+import { EditProfileModal } from '../../components/EditProfileModal';
 
 interface PendingBusiness {
   id: string;
@@ -118,6 +119,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [tickets, setTickets] = useState<SupportTicket[]>(getStoredTickets());
   const [ticketFilter, setTicketFilter] = useState<'all' | 'open' | 'resolved'>('all');
   const [message, setMessage] = useState<string | null>(null);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
   const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([
     {
@@ -247,6 +249,14 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setIsEditProfileOpen(true)}
+            className="p-3 bg-white/90 hover:bg-white text-[#4A3626] font-bold text-xs rounded-2xl border border-stone-300 shadow-xs flex items-center gap-2 transition"
+          >
+            <User className="w-4 h-4 text-[#5B6147]" />
+            <span>{lang === 'en' ? 'Edit Profile & Settings' : 'പ്രൊഫൈൽ എഡിറ്റ്'}</span>
+          </button>
           <div className="p-3 bg-white/80 rounded-2xl border border-stone-300 text-xs text-[#4A3626] font-semibold flex items-center gap-2 shadow-xs">
             <Clock className="w-4 h-4 text-amber-600" />
             <span>
@@ -695,6 +705,13 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </div>
         </div>
       )}
+
+      {/* Admin Edit Profile & Settings Modal */}
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+        lang={lang}
+      />
     </div>
   );
 }

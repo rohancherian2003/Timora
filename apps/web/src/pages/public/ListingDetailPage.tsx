@@ -15,12 +15,26 @@ import {
   Lock,
   Calendar,
   Truck,
+  Star,
+  MessageSquare,
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { getTimberListingById } from '../../utils/timberListings';
 import { LoginAlertModal, AlertEntityType } from '../../components/LoginAlertModal';
 import { BackButton } from '../../components/BackButton';
+import { SubmitReviewModal } from '../../components/SubmitReviewModal';
+
+export interface SellerReviewItem {
+  id: string;
+  author: string;
+  role: string;
+  rating: number;
+  date: string;
+  comment: string;
+  commentMl?: string;
+  isVerified: boolean;
+}
 
 export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { id } = useParams<{ id: string }>();
@@ -45,6 +59,43 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [proposedPrice, setProposedPrice] = useState(listing.price_per_cft);
   const [message, setMessage] = useState('');
   const [sent, setSent] = useState(false);
+
+  // Verified Seller Reviews State
+  const [sellerRating, setSellerRating] = useState<number>(4.9);
+  const [sellerReviewCount, setSellerReviewCount] = useState<number>(36);
+  const [sellerReviews, setSellerReviews] = useState<SellerReviewItem[]>([
+    {
+      id: 's-rev-1',
+      author: 'George Varghese (Sawmill Owner)',
+      role: 'Verified Buyer',
+      rating: 5,
+      date: '2 weeks ago',
+      comment: 'First-grade round logs with accurate Hoppus girth measurements. Full forest transit pass was provided with no inspection hurdles.',
+      commentMl: 'കൃത്യമായ അളവിലുള്ള തടികൾ. ഫോറസ്റ്റ് പാസ്സ് സഹിതം യാതൊരു തടസ്സവുമില്ലാതെ ലഭ്യമാക്കി.',
+      isVerified: true,
+    },
+    {
+      id: 's-rev-2',
+      author: 'Binu Achari (Master Carpenter)',
+      role: 'Verified Buyer',
+      rating: 4.8,
+      date: '1 month ago',
+      comment: 'Straight grain wood without hollow heart rot. Excellent timber for structural door framing.',
+      commentMl: 'ഉള്ളിൽ പൊള്ളയില്ലാത്ത നല്ല കാതലായ തടി. വാതിലുകൾ പണിയാൻ വളരെ ഉത്തമം.',
+      isVerified: true,
+    },
+  ]);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showAllReviews, setShowAllReviews] = useState(false);
+
+  const handleReviewSubmitted = (newRev: any) => {
+    const updated = [newRev, ...sellerReviews];
+    const total = updated.reduce((sum, r) => sum + r.rating, 0);
+    const avg = parseFloat((total / updated.length).toFixed(1));
+    setSellerReviews(updated);
+    setSellerRating(avg);
+    setSellerReviewCount((prev) => prev + 1);
+  };
 
   // Synchronize when listing ID changes
   React.useEffect(() => {
@@ -270,6 +321,79 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 </button>
               )}
             </div>
+
+            {/* Seller Ratings & Verified Customer Reviews */}
+            <div className="pt-3 border-t border-stone-200 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1 text-xs font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                    <span>{sellerRating.toFixed(1)}</span>
+                  </div>
+                  <span className="text-[11px] text-stone-500 font-medium">
+                    ({sellerReviewCount} {lang === 'en' ? 'Verified Reviews' : 'റിവ്യൂകൾ'})
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowReviewModal(true)}
+                  className="text-[11px] font-bold text-[#5B6147] hover:underline flex items-center gap-1"
+                >
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+                  <span>{lang === 'en' ? 'Rate Seller' : 'റേറ്റിംഗ് നൽകുക'}</span>
+                </button>
+              </div>
+
+              {/* Verified Reviews Toggle & Feed */}
+              <button
+                type="button"
+                onClick={() => setShowAllReviews(!showAllReviews)}
+                className="text-[11px] font-bold text-stone-600 hover:text-stone-900 flex items-center gap-1"
+              >
+                <MessageSquare className="w-3 h-3 text-stone-400" />
+                <span>
+                  {showAllReviews
+                    ? (lang === 'en' ? 'Hide Feedback' : 'മറയ്ക്കുക')
+                    : (lang === 'en' ? `Read Customer Feedback (${sellerReviews.length})` : `ഉപഭോക്തൃ അഭിപ്രായങ്ങൾ (${sellerReviews.length})`)}
+                </span>
+              </button>
+
+              {showAllReviews && (
+                <div className="space-y-2 pt-1 animate-fadeIn">
+                  {sellerReviews.map((rev) => (
+                    <div
+                      key={rev.id}
+                      className="p-3 rounded-xl bg-white border border-stone-200 text-xs space-y-1 shadow-2xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-[#4A3626]">{rev.author}</span>
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[9px] font-bold flex items-center gap-0.5">
+                            <ShieldCheck className="w-2.5 h-2.5" />
+                            <span>{rev.role}</span>
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-stone-400">{rev.date}</span>
+                      </div>
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`w-3 h-3 ${
+                              s <= rev.rating ? 'fill-amber-400 text-amber-500' : 'fill-stone-100 text-stone-300'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-stone-600 leading-relaxed text-[11px]">
+                        {lang === 'en' ? rev.comment : (rev.commentMl || rev.comment)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -379,6 +503,17 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         entityType={loginAlert.entityType}
         entityName={loginAlert.entityName}
         returnUrl={location.pathname}
+      />
+
+      {/* Verified Review Submission Modal */}
+      <SubmitReviewModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        targetType="seller"
+        targetId={listing.seller_id || listing.id}
+        targetName={listing.seller_name || listing.title}
+        onReviewSubmitted={handleReviewSubmitted}
+        lang={lang}
       />
     </div>
   );

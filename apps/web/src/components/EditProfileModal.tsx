@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   User,
@@ -11,9 +11,13 @@ import {
   Truck,
   Phone,
   MapPin,
-  Award
+  Award,
+  KeyRound,
+  ShieldCheck,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth, UserProfile } from '../context/AuthContext';
+import { validateIndianPhone } from '@timora/shared';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -39,7 +43,7 @@ const KERALA_DISTRICTS = [
 ];
 
 export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileModalProps) {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, refreshUser, setUser } = useAuth();
 
   const [name, setName] = useState(user?.name || '');
   const [businessName, setBusinessName] = useState(user?.businessName || '');
@@ -53,6 +57,79 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Phone Change State
+  const [showPhoneChange, setShowPhoneChange] = useState(false);
+  const [newPhone, setNewPhone] = useState('');
+  const [phoneOtp, setPhoneOtp] = useState('');
+  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
+  const [phoneUpdating, setPhoneUpdating] = useState(false);
+  const [phoneNotice, setPhoneNotice] = useState<{ type: 'error' | 'info' | 'success'; message: string } | null>(null);
+
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // ─────────────────────────────────────────────────────────────
+  // 1. ROCK-SOLID BACKGROUND SCROLL LOCK (DESKTOP & MOBILE SWIPE)
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Save exact scroll position
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+    // Cache original body styles
+    const originalStyles = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+      paddingRight: document.body.style.paddingRight,
+    };
+
+    // Lock background scrolling completely without page jump
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    // Touch gesture lock for mobile devices: prevent swipe outside modal
+    const handleTouchMove = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-modal-scrollable="true"]')) {
+        e.preventDefault();
+      }
+    };
+
+    // Wheel event lock: prevent background wheel scrolling
+    const handleWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-modal-scrollable="true"]')) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('wheel', handleWheel);
+
+      // Restore original body styles
+      document.body.style.overflow = originalStyles.overflow;
+      document.body.style.position = originalStyles.position;
+      document.body.style.top = originalStyles.top;
+      document.body.style.width = originalStyles.width;
+      document.body.style.paddingRight = originalStyles.paddingRight;
+
+      // Restore exact previous scroll position
+      window.scrollTo(0, scrollY);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (user) {
@@ -77,6 +154,93 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
   }, [isOpen, onClose]);
 
   if (!isOpen || !user) return null;
+
+  // ─────────────────────────────────────────────────────────────
+  // SELF-SERVICE PHONE NUMBER UPDATE HANDLERS
+  // ─────────────────────────────────────────────────────────────
+  const handleInitiatePhoneChange = async () => {
+    setPhoneNotice(null);
+    const { valid, normalized, message } = validateIndianPhone(newPhone);
+    if (!valid || !normalized) {
+      setPhoneNotice({
+        type: 'error',
+        message: message || (lang === 'en' ? 'Please enter a valid 10-digit mobile number.' : 'ശരിയായ 10-അക്ക മൊബൈൽ നമ്പർ നൽകുക.'),
+      });
+      return;
+    }
+
+    if (normalized === user.phone) {
+      setPhoneNotice({
+        type: 'error',
+        message: lang === 'en' ? 'New number cannot be the same as your current number.' : 'പുതിയ നമ്പർ നിലവിലുള്ള നമ്പറിൽ നിന്ന് വ്യത്യസ്തമായിരിക്കണം.',
+      });
+      return;
+    }
+
+    setPhoneUpdating(true);
+    try {
+      const { api } = await import('../lib/api');
+      const res = await api.post('/auth/phone/initiate-change', { newPhone: normalized });
+      if (res.data?.data?.configured) {
+        setPhoneOtpSent(true);
+        setPhoneNotice({
+          type: 'info',
+          message: lang === 'en' ? 'Verification OTP dispatched via SMS to your new number.' : 'നിങ്ങളുടെ പുതിയ നമ്പറിലേക്ക് ഒ.ടി.പി അയച്ചിട്ടുണ്ട്.',
+        });
+      } else {
+        // Genuine SMS infrastructure not configured in server environment
+        setPhoneNotice({
+          type: 'info',
+          message: lang === 'en'
+            ? 'Live SMS gateway is not configured on this server. To protect your account from takeover, phone number migration requires active SMS delivery credentials. Please contact Timora Administration.'
+            : 'ലൈവ് എസ്.എം.എസ് ഗേറ്റ്‌വേ ക്രമീകരിച്ചിട്ടില്ല. അക്കൗണ്ട് സുരക്ഷിതമായി നിലനിർത്താൻ അഡ്മിനുമായി ബന്ധപ്പെടുക.',
+        });
+      }
+    } catch (err: any) {
+      setPhoneNotice({
+        type: 'error',
+        message: err?.response?.data?.error?.message || err?.message || (lang === 'en' ? 'Failed to initiate phone update.' : 'നമ്പർ മാറ്റാൻ സാധിച്ചില്ല.'),
+      });
+    } finally {
+      setPhoneUpdating(false);
+    }
+  };
+
+  const handleVerifyPhoneChange = async () => {
+    if (!phoneOtp || phoneOtp.length < 4) {
+      setPhoneNotice({
+        type: 'error',
+        message: lang === 'en' ? 'Please enter the verification code.' : 'വെരിഫിക്കേഷൻ കോഡ് നൽകുക.',
+      });
+      return;
+    }
+
+    setPhoneUpdating(true);
+    try {
+      const { api } = await import('../lib/api');
+      const res = await api.post('/auth/phone/verify-change', { newPhone: newPhone.trim(), otp: phoneOtp.trim() });
+      if (res.data?.success) {
+        const updatedUser: UserProfile = { ...user, phone: res.data.data.newPhone };
+        setUser(updatedUser);
+        localStorage.setItem('timora_auth_user', JSON.stringify(updatedUser));
+        setPhoneNotice({
+          type: 'success',
+          message: lang === 'en' ? 'Mobile number updated successfully!' : 'മൊബൈൽ നമ്പർ വിജയകരമായി മാറ്റി!',
+        });
+        setShowPhoneChange(false);
+        setNewPhone('');
+        setPhoneOtp('');
+        setPhoneOtpSent(false);
+      }
+    } catch (err: any) {
+      setPhoneNotice({
+        type: 'error',
+        message: err?.response?.data?.error?.message || err?.message || (lang === 'en' ? 'Verification failed.' : 'വെരിഫിക്കേഷൻ പരാജയപ്പെട്ടു.'),
+      });
+    } finally {
+      setPhoneUpdating(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,12 +269,16 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
       } else if (user.role === 'carpenter') {
         updatedFields.skills = skills.split(',').map((s) => s.trim()).filter(Boolean);
         updatedFields.experience = Number(experience) || 1;
+        updatedFields.businessName = businessName.trim();
       } else if (user.role === 'transport') {
         updatedFields.vehicleDetails = vehicleDetails.trim();
         updatedFields.tonnageCapacity = Number(tonnageCapacity) || 1;
+        updatedFields.businessName = businessName.trim();
       }
 
       await updateProfile(updatedFields);
+      await refreshUser();
+
       setSuccessMsg(lang === 'en' ? 'Profile updated successfully!' : 'വിവരങ്ങൾ വിജയകരമായി സേവ് ചെയ്തു!');
       setIsSaving(false);
 
@@ -124,8 +292,15 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs animate-fadeIn"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-profile-title"
+    >
       <div
+        ref={modalRef}
+        data-modal-scrollable="true"
         className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-stone-300 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -136,7 +311,7 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
               <User className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold font-serif text-[#4A3626] text-lg">
+              <h3 id="modal-profile-title" className="font-extrabold font-serif text-[#4A3626] text-lg">
                 {lang === 'en' ? 'Edit Profile & Settings' : 'പ്രൊഫൈൽ മാറ്റങ്ങൾ വരുത്തുക'}
               </h3>
               <p className="text-[11px] text-[#7A5A3A]">
@@ -145,8 +320,10 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-xl hover:bg-stone-100 text-stone-500 hover:text-stone-800 transition"
+            aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
@@ -199,24 +376,98 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
             />
           </div>
 
-          {/* Phone Number (Verified, non-tamperable) */}
-          <div>
-            <label className="block font-bold text-[#4A3626] mb-1">
-              {lang === 'en' ? 'Registered Mobile Number (PIN-Protected)' : 'രജിസ്റ്റർ ചെയ്ത മൊബൈൽ നമ്പർ'}
-            </label>
+          {/* Phone Number & Self-Service Change */}
+          <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block font-bold text-[#4A3626]">
+                {lang === 'en' ? 'Registered Login Mobile Number' : 'രജിസ്റ്റർ ചെയ്ത മൊബൈൽ നമ്പർ'}
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPhoneChange(!showPhoneChange);
+                  setPhoneNotice(null);
+                }}
+                className="text-[11px] font-bold text-[#5B6147] hover:underline flex items-center gap-1"
+              >
+                <RefreshCw className="w-3 h-3" />
+                <span>{showPhoneChange ? (lang === 'en' ? 'Cancel Update' : 'റദ്ദാക്കുക') : (lang === 'en' ? 'Change Number' : 'നമ്പർ മാറ്റുക')}</span>
+              </button>
+            </div>
+
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={`+91 ${user.phone}`}
                 disabled
-                className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 bg-stone-100 text-stone-600 text-xs font-mono font-semibold cursor-not-allowed"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 bg-white text-stone-700 text-xs font-mono font-bold cursor-not-allowed"
               />
+              <span className="p-2 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                <ShieldCheck className="w-4 h-4" />
+              </span>
             </div>
-            <span className="text-[10px] text-stone-400 mt-0.5 block">
-              {lang === 'en'
-                ? 'Phone numbers are verified via PIN. Contact admin cell to transfer numbers.'
-                : 'സുരക്ഷാ കാരണങ്ങളാൽ ഫോൺ നമ്പർ മാറ്റാൻ അഡ്മിനുമായി ബന്ധപ്പെടുക.'}
-            </span>
+
+            {/* Sub-form: Self-Service Phone Number Update */}
+            {showPhoneChange && (
+              <div className="p-3 mt-2 rounded-xl bg-white border border-stone-300 space-y-2.5 animate-fadeIn">
+                <span className="text-[11px] font-bold text-[#4A3626] block">
+                  {lang === 'en' ? 'Enter New 10-Digit Mobile Number' : 'പുതിയ 10-അക്ക മൊബൈൽ നമ്പർ നൽകുക'}
+                </span>
+                <div className="flex gap-2">
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    placeholder="e.g. 9847123456"
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, ''))}
+                    className="flex-1 px-3 py-2 rounded-xl border border-stone-300 text-xs font-mono font-bold focus:ring-2 focus:ring-[#5B6147] focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleInitiatePhoneChange}
+                    disabled={phoneUpdating || newPhone.length !== 10}
+                    className="px-3 py-2 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-[11px] transition disabled:opacity-50"
+                  >
+                    {phoneUpdating ? '...' : (lang === 'en' ? 'Send OTP' : 'കോഡ് അയക്കുക')}
+                  </button>
+                </div>
+
+                {phoneOtpSent && (
+                  <div className="flex gap-2 pt-1">
+                    <input
+                      type="text"
+                      maxLength={6}
+                      placeholder="6-digit OTP"
+                      value={phoneOtp}
+                      onChange={(e) => setPhoneOtp(e.target.value)}
+                      className="flex-1 px-3 py-2 rounded-xl border border-stone-300 text-xs font-mono font-bold focus:ring-2 focus:ring-[#5B6147] focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleVerifyPhoneChange}
+                      disabled={phoneUpdating || phoneOtp.length < 4}
+                      className="px-3 py-2 rounded-xl bg-[#4A3626] hover:bg-[#36271c] text-white font-bold text-[11px] transition disabled:opacity-50"
+                    >
+                      {lang === 'en' ? 'Verify & Save' : 'സ്ഥിരീകരിക്കുക'}
+                    </button>
+                  </div>
+                )}
+
+                {phoneNotice && (
+                  <div
+                    className={`p-2.5 rounded-xl text-[11px] font-medium leading-relaxed ${
+                      phoneNotice.type === 'error'
+                        ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                        : phoneNotice.type === 'success'
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        : 'bg-amber-50 text-amber-900 border border-amber-200'
+                    }`}
+                  >
+                    {phoneNotice.message}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* District Selection */}
@@ -272,6 +523,18 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
             <>
               <div>
                 <label className="block font-bold text-[#4A3626] mb-1">
+                  {lang === 'en' ? 'Carpentry Business / Workshop Name' : 'വർക്ക്‌ഷോപ്പ് / ബിസിനസ്സ് പേര്'}
+                </label>
+                <input
+                  type="text"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  placeholder="e.g. Binu Traditional Timber Joinery"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-semibold focus:ring-2 focus:ring-[#5B6147] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-[#4A3626] mb-1">
                   {lang === 'en' ? 'Woodworking Specializations (comma separated)' : 'പ്രത്യേക മേഖലകൾ (കോമ നൽകി വേർതിരിക്കുക)'}
                 </label>
                 <input
@@ -300,6 +563,18 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
 
           {user.role === 'transport' && (
             <>
+              <div>
+                <label className="block font-bold text-[#4A3626] mb-1">
+                  {lang === 'en' ? 'Transport Agency / Fleet Business Name' : 'ട്രാൻസ്പോർട്ട് ഏജൻസി പേര്'}
+                </label>
+                <input
+                  type="text"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  placeholder="e.g. Malabar Timber Heavy Transit Haulage"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-semibold focus:ring-2 focus:ring-[#5B6147] focus:outline-none"
+                />
+              </div>
               <div>
                 <label className="block font-bold text-[#4A3626] mb-1">
                   {lang === 'en' ? 'Timber Vehicle Type & Model' : 'വാഹനത്തിന്റെ തരം'}

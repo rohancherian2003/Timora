@@ -332,46 +332,102 @@ export class AuthService {
    * Strictly prevents modifying role, id, or approval_status
    */
   async updateProfile(userId: string, role: string, data: any) {
-    const { name, businessName, millName, skills, experience, vehicleDetails, tonnageCapacity } = data;
+    const { name, businessName, millName, skills, experience, vehicleDetails, tonnageCapacity, district } = data;
+
+    let districtId: number | null = null;
+    if (district && typeof district === 'string') {
+      const distMatch = district.split(' ')[0]?.replace(/[^a-zA-Z]/g, '');
+      if (distMatch) {
+        const distRes = await query(
+          `SELECT id FROM kerala_districts WHERE name_en ILIKE $1 OR name_ml ILIKE $2 LIMIT 1`,
+          [`%${distMatch}%`, `%${district}%`]
+        );
+        if (distRes.rows.length > 0 && distRes.rows[0]) {
+          districtId = distRes.rows[0].id;
+        }
+      }
+    }
 
     if (name && typeof name === 'string') {
       await query(
-        `UPDATE user_profiles SET name = $1, updated_at = NOW() WHERE user_id = $2`,
-        [name.trim(), userId]
+        `UPDATE user_profiles 
+         SET name = $1, 
+             district_id = COALESCE($2, district_id),
+             updated_at = NOW() 
+         WHERE user_id = $3`,
+        [name.trim(), districtId, userId]
+      );
+    } else if (districtId) {
+      await query(
+        `UPDATE user_profiles SET district_id = $1, updated_at = NOW() WHERE user_id = $2`,
+        [districtId, userId]
       );
     }
 
     if (role === 'seller') {
       if (businessName && typeof businessName === 'string') {
         await query(
-          `UPDATE seller_profiles SET business_name = $1 WHERE user_id = $2`,
-          [businessName.trim(), userId]
+          `UPDATE seller_profiles 
+           SET business_name = $1,
+               district_id = COALESCE($2, district_id),
+               updated_at = NOW()
+           WHERE user_id = $3`,
+          [businessName.trim(), districtId, userId]
         );
       }
       if (millName && typeof millName === 'string') {
         await query(
-          `UPDATE timber_mills SET mill_name = $1 WHERE seller_id = $2`,
-          [millName.trim(), userId]
+          `UPDATE timber_mills 
+           SET mill_name = $1,
+               district_id = COALESCE($2, district_id),
+               updated_at = NOW()
+           WHERE seller_id = $3 OR owner_id = $3`,
+          [millName.trim(), districtId, userId]
         );
       }
     } else if (role === 'carpenter') {
-      if (skills || experience != null) {
+      if (skills || experience != null || businessName || districtId) {
+        const specializationsArr = skills
+          ? (Array.isArray(skills) ? skills : String(skills).split(',').map((s) => s.trim()).filter(Boolean))
+          : null;
         await query(
           `UPDATE carpenter_profiles 
            SET specializations = COALESCE($1, specializations),
-               experience_years = COALESCE($2, experience_years)
-           WHERE user_id = $3`,
-          [skills ? (Array.isArray(skills) ? skills : [skills]) : null, experience ? parseInt(String(experience), 10) : null, userId]
+               specialization = COALESCE($1, specialization),
+               experience_yrs = COALESCE($2, experience_yrs),
+               business_name = COALESCE($3, business_name),
+               district_id = COALESCE($4, district_id),
+               updated_at = NOW()
+           WHERE user_id = $5`,
+          [
+            specializationsArr,
+            experience ? parseInt(String(experience), 10) : null,
+            businessName ? String(businessName).trim() : null,
+            districtId,
+            userId,
+          ]
         );
       }
     } else if (role === 'transport') {
-      if (vehicleDetails || tonnageCapacity != null) {
+      if (vehicleDetails || tonnageCapacity != null || businessName || districtId) {
+        const vehicleArr = vehicleDetails
+          ? (Array.isArray(vehicleDetails) ? vehicleDetails : [String(vehicleDetails).trim()])
+          : null;
         await query(
           `UPDATE transport_owner_profiles
-           SET vehicle_type = COALESCE($1, vehicle_type),
-               tonnage_capacity = COALESCE($2, tonnage_capacity)
-           WHERE user_id = $3`,
-          [vehicleDetails || null, tonnageCapacity ? parseFloat(String(tonnageCapacity)) : null, userId]
+           SET vehicle_types = COALESCE($1, vehicle_types),
+               max_tonnage = COALESCE($2, max_tonnage),
+               business_name = COALESCE($3, business_name),
+               district_id = COALESCE($4, district_id),
+               updated_at = NOW()
+           WHERE user_id = $5`,
+          [
+            vehicleArr,
+            tonnageCapacity ? parseFloat(String(tonnageCapacity)) : null,
+            businessName ? String(businessName).trim() : null,
+            districtId,
+            userId,
+          ]
         );
       }
     }
@@ -380,19 +436,136 @@ export class AuthService {
   }
 
   /**
+   * Initiate self-service phone change
+   */
+  async initiatePhoneChange(userId: string, newPhone: string) {
+    const { valid, normalized, message } = validateIndianPhone(newPhone);
+    if (!valid || !normalized) {
+      throw new AppError(400, 'INVALID_PHONE', message || 'Please enter a valid 10-digit mobile number.');
+    }
+
+    const currentRes = await query('SELECT phone FROM users WHERE id = $1', [userId]);
+    if (currentRes.rows[0]?.phone === normalized) {
+      throw new AppError(400, 'SAME_PHONE', 'The new phone number cannot be the same as your current phone number.');
+    }
+
+    const existing = await query('SELECT id FROM users WHERE phone = $1 AND id != $2', [normalized, userId]);
+    if (existing.rows.length > 0) {
+      throw new AppError(409, 'PHONE_ALREADY_EXISTS', 'This mobile number is already registered to another Timora account.');
+    }
+
+    const hasLiveSms = !env.OTP_DEMO_MODE && !!env.TWILIO_ACCOUNT_SID;
+    if (!hasLiveSms) {
+      return {
+        configured: false,
+        message: 'Live SMS gateway is not configured on this server. Contact Timora support or configure a verified SMS provider (Twilio / Indian DLT Gateway) to proceed.',
+      };
+    }
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+    const expiresAt = new Date(Date.now() + env.OTP_EXPIRY_SECONDS * 1000);
+
+    await query(
+      `UPDATE otp_challenges SET is_used = true WHERE phone = $1 AND purpose = 'phone_change' AND is_used = false`,
+      [normalized]
+    );
+
+    await query(
+      `INSERT INTO otp_challenges (phone, otp_hash, purpose, expires_at)
+       VALUES ($1, $2, 'phone_change', $3)`,
+      [normalized, otpHash, expiresAt]
+    );
+
+    logger.info({ phone: normalized, purpose: 'phone_change' }, 'SMS OTP dispatched for phone change');
+    return {
+      configured: true,
+      message: 'OTP has been dispatched via SMS to your new mobile number.',
+    };
+  }
+
+  /**
+   * Verify and execute phone change
+   */
+  async verifyPhoneChange(userId: string, newPhone: string, otp: string) {
+    const { valid, normalized } = validateIndianPhone(newPhone);
+    if (!valid || !normalized) {
+      throw new AppError(400, 'INVALID_PHONE', 'Please enter a valid 10-digit mobile number.');
+    }
+
+    const hasLiveSms = !env.OTP_DEMO_MODE && !!env.TWILIO_ACCOUNT_SID;
+    if (!hasLiveSms) {
+      throw new AppError(
+        422,
+        'SMS_GATEWAY_NOT_CONFIGURED',
+        'Cannot verify phone number without active SMS gateway infrastructure.'
+      );
+    }
+
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+
+    const res = await query(
+      `SELECT id, attempts, expires_at
+       FROM otp_challenges
+       WHERE phone = $1 AND purpose = 'phone_change' AND is_used = false
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [normalized]
+    );
+
+    const challenge = res.rows[0];
+    if (!challenge) {
+      throw new AppError(400, 'INVALID_OTP', 'No active OTP request found for this number.');
+    }
+
+    if (new Date() > new Date(challenge.expires_at)) {
+      throw new AppError(400, 'OTP_EXPIRED', 'Verification code has expired. Please request a new code.');
+    }
+
+    if (challenge.attempts >= env.OTP_MAX_ATTEMPTS) {
+      await query(`UPDATE otp_challenges SET is_used = true WHERE id = $1`, [challenge.id]);
+      throw new AppError(429, 'OTP_MAX_ATTEMPTS', 'Maximum verification attempts exceeded.');
+    }
+
+    const matchRes = await query(
+      `SELECT id FROM otp_challenges WHERE id = $1 AND otp_hash = $2`,
+      [challenge.id, otpHash]
+    );
+
+    if (matchRes.rows.length === 0) {
+      await query(`UPDATE otp_challenges SET attempts = attempts + 1 WHERE id = $1`, [challenge.id]);
+      throw new AppError(400, 'INVALID_OTP', 'Invalid verification code. Please check and try again.');
+    }
+
+    await query(`UPDATE otp_challenges SET is_used = true WHERE id = $1`, [challenge.id]);
+    await query(`UPDATE users SET phone = $1, updated_at = NOW() WHERE id = $2`, [normalized, userId]);
+
+    logger.info({ userId, newPhone: normalized }, 'User phone number updated successfully');
+    return {
+      success: true,
+      newPhone: normalized,
+      message: 'Mobile number updated successfully. You can now log in using this number.',
+    };
+  }
+
+  /**
    * Get live authoritative profile including approval status
    */
   async getMe(userId: string) {
     const res = await query(
       `SELECT u.id, u.phone, u.role, u.is_active, p.name, p.language_pref, p.account_tier,
+              kd.name_en as district_en, kd.name_ml as district_ml,
               sp.seller_subtype, sp.approval_status as seller_approval_status, sp.business_name as seller_business, sp.approval_note as seller_approval_note,
               tm.mill_name, tm.approval_status as mill_approval_status, tm.approval_note as mill_approval_note,
               cp.approval_status as carpenter_approval_status, cp.approval_note as carpenter_approval_note,
-              tp.approval_status as transport_approval_status, tp.approval_note as transport_approval_note
+              cp.specialization as carpenter_skills, cp.experience_yrs as carpenter_exp,
+              tp.approval_status as transport_approval_status, tp.approval_note as transport_approval_note,
+              tp.vehicle_types as transport_vehicles, tp.max_tonnage as transport_tonnage
        FROM users u
        LEFT JOIN user_profiles p ON p.user_id = u.id
+       LEFT JOIN kerala_districts kd ON kd.id = p.district_id
        LEFT JOIN seller_profiles sp ON sp.user_id = u.id
-       LEFT JOIN timber_mills tm ON tm.seller_id = u.id
+       LEFT JOIN timber_mills tm ON tm.seller_id = u.id OR tm.owner_id = u.id
        LEFT JOIN carpenter_profiles cp ON cp.user_id = u.id
        LEFT JOIN transport_owner_profiles tp ON tp.user_id = u.id
        WHERE u.id = $1`,
@@ -428,6 +601,11 @@ export class AuthService {
       name: user.name,
       businessName: user.seller_business || user.mill_name,
       millName: user.mill_name,
+      district: user.district_en ? `${user.district_en} (${user.district_ml})` : undefined,
+      skills: user.carpenter_skills,
+      experience: user.carpenter_exp,
+      vehicleDetails: user.transport_vehicles ? (Array.isArray(user.transport_vehicles) ? user.transport_vehicles.join(', ') : user.transport_vehicles) : undefined,
+      tonnageCapacity: user.transport_tonnage,
       sellerSubtype: user.seller_subtype,
       approvalStatus,
       approvalNote,

@@ -49,3 +49,15 @@ authRouter.patch(
   authenticate,
   authController.updateProfile.bind(authController)
 );
+
+authRouter.post(
+  '/phone/initiate-change',
+  authenticate,
+  authController.initiatePhoneChange.bind(authController)
+);
+
+authRouter.post(
+  '/phone/verify-change',
+  authenticate,
+  authController.verifyPhoneChange.bind(authController)
+);

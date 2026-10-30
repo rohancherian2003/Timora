@@ -280,12 +280,13 @@ export function TimberMillsPage({ lang = 'en' }) {
     const [quoteNote, setQuoteNote] = useState('');
     const [quoteSubmitted, setQuoteSubmitted] = useState(false);
     // Review Modal State
+    const [mills, setMills] = useState(DEMO_TIMBER_MILLS);
     const [reviewModalMill, setReviewModalMill] = useState(null);
     const [reviewStars, setReviewStars] = useState(5);
     const [reviewText, setReviewText] = useState('');
     const [reviewSubmitted, setReviewSubmitted] = useState(false);
     // Filter logic
-    const filteredMills = DEMO_TIMBER_MILLS.filter((mill) => {
+    const filteredMills = mills.filter((mill) => {
         if (selectedDistrict !== 'all' && !mill.district.toLowerCase().includes(selectedDistrict.toLowerCase())) {
             return false;
         }
@@ -330,12 +331,37 @@ export function TimberMillsPage({ lang = 'en' }) {
     };
     const handleSendReview = (e) => {
         e.preventDefault();
+        if (!reviewModalMill || !reviewText.trim())
+            return;
+        const newRev = {
+            id: `rev-mill-${Date.now()}`,
+            author: user?.name || (lang === 'en' ? 'Verified Client' : 'ഉപഭോക്താവ്'),
+            role: lang === 'en' ? 'Verified Client' : 'ഉപഭോക്താവ്',
+            rating: reviewStars,
+            date: lang === 'en' ? 'Just now' : 'ഇപ്പോൾ',
+            comment: reviewText.trim(),
+            commentMl: reviewText.trim(),
+        };
+        setMills((prev) => prev.map((m) => {
+            if (m.id === reviewModalMill.id) {
+                const updatedReviews = [newRev, ...m.reviews];
+                const totalStars = updatedReviews.reduce((sum, r) => sum + r.rating, 0);
+                const newAvg = parseFloat((totalStars / updatedReviews.length).toFixed(1));
+                return {
+                    ...m,
+                    rating: newAvg,
+                    ratingCount: m.ratingCount + 1,
+                    reviews: updatedReviews,
+                };
+            }
+            return m;
+        }));
         setReviewSubmitted(true);
         setTimeout(() => {
             setReviewSubmitted(false);
             setReviewModalMill(null);
             setReviewText('');
-        }, 2000);
+        }, 1800);
     };
     return (_jsxs("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6", children: [_jsx("div", { className: "flex items-center", children: _jsx(BackButton, { fallbackPath: "/marketplace", lang: lang }) }), _jsxs("section", { className: "relative p-6 sm:p-10 bg-gradient-to-br from-[#E7E1D6] via-[#d5cfc4] to-[#c4bdb0] text-[#4A3626] rounded-3xl shadow-md border border-[#c4bdb0] overflow-hidden", children: [_jsx("div", { className: "absolute top-0 right-0 w-80 h-80 bg-stone-400/15 rounded-full blur-3xl pointer-events-none" }), _jsxs("div", { className: "relative z-10 max-w-3xl space-y-3", children: [_jsxs("div", { className: "inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 text-[#5B6147] text-xs font-semibold backdrop-blur-sm border border-[#5B6147]/30", children: [_jsx(Factory, { className: "w-3.5 h-3.5 text-[#5B6147]" }), _jsx("span", { children: lang === 'en'
                                             ? 'Kerala Licensed Timber Sawmills & Sizing Yards'

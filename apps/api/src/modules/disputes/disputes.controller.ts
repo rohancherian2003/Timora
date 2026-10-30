@@ -45,6 +45,20 @@ export class DisputesController {
     }
   }
 
+  async getReviewsForEntity(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const entityId = req.params.entityId as string;
+      const result = await disputesService.getReviewsForEntity(entityId);
+      const response: ApiSuccessResponse = {
+        success: true,
+        data: result,
+      };
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async submitReport(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user!.id;

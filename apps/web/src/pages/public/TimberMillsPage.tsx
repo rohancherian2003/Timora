@@ -335,13 +335,14 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [quoteSubmitted, setQuoteSubmitted] = useState<boolean>(false);
 
   // Review Modal State
+  const [mills, setMills] = useState<TimberMill[]>(DEMO_TIMBER_MILLS);
   const [reviewModalMill, setReviewModalMill] = useState<TimberMill | null>(null);
   const [reviewStars, setReviewStars] = useState<number>(5);
   const [reviewText, setReviewText] = useState<string>('');
   const [reviewSubmitted, setReviewSubmitted] = useState<boolean>(false);
 
   // Filter logic
-  const filteredMills = DEMO_TIMBER_MILLS.filter((mill) => {
+  const filteredMills = mills.filter((mill) => {
     if (selectedDistrict !== 'all' && !mill.district.toLowerCase().includes(selectedDistrict.toLowerCase())) {
       return false;
     }
@@ -392,12 +393,41 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
   const handleSendReview = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!reviewModalMill || !reviewText.trim()) return;
+
+    const newRev: TimberMillReview = {
+      id: `rev-mill-${Date.now()}`,
+      author: user?.name || (lang === 'en' ? 'Verified Client' : 'ഉപഭോക്താവ്'),
+      role: lang === 'en' ? 'Verified Client' : 'ഉപഭോക്താവ്',
+      rating: reviewStars,
+      date: lang === 'en' ? 'Just now' : 'ഇപ്പോൾ',
+      comment: reviewText.trim(),
+      commentMl: reviewText.trim(),
+    };
+
+    setMills((prev) =>
+      prev.map((m) => {
+        if (m.id === reviewModalMill.id) {
+          const updatedReviews = [newRev, ...m.reviews];
+          const totalStars = updatedReviews.reduce((sum, r) => sum + r.rating, 0);
+          const newAvg = parseFloat((totalStars / updatedReviews.length).toFixed(1));
+          return {
+            ...m,
+            rating: newAvg,
+            ratingCount: m.ratingCount + 1,
+            reviews: updatedReviews,
+          };
+        }
+        return m;
+      })
+    );
+
     setReviewSubmitted(true);
     setTimeout(() => {
       setReviewSubmitted(false);
       setReviewModalMill(null);
       setReviewText('');
-    }, 2000);
+    }, 1800);
   };
 
   return (

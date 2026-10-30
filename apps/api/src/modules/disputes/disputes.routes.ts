@@ -12,6 +12,12 @@ import {
 
 export const disputesRouter = Router();
 
+// Public: View verified reviews & calculated ratings for an entity
+disputesRouter.get(
+  '/reviews/:entityId',
+  disputesController.getReviewsForEntity.bind(disputesController)
+);
+
 disputesRouter.use(authenticate);
 
 // Disputes

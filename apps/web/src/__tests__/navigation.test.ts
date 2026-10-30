@@ -127,10 +127,10 @@ describe('Navigation, Session Security & Back Button Tests', () => {
 
   describe('Verification Status Banner Lifecycle & Action Gating', () => {
     it('keeps banner persistent for PENDING_APPROVAL and gates restricted actions', () => {
-      const user = {
+      const user: { id: string; role: string; approvalStatus: string } = {
         id: 'seller-1',
         role: 'individual_seller',
-        approvalStatus: 'PENDING_APPROVAL' as const,
+        approvalStatus: 'PENDING_APPROVAL',
       };
 
       const canPostListing = user.approvalStatus === 'APPROVED';
@@ -142,10 +142,10 @@ describe('Navigation, Session Security & Back Button Tests', () => {
     });
 
     it('auto-dismisses APPROVED confirmation banner and caches dismissal in session', () => {
-      const user = {
+      const user: { id: string; role: string; approvalStatus: string } = {
         id: 'seller-2',
         role: 'individual_seller',
-        approvalStatus: 'APPROVED' as const,
+        approvalStatus: 'APPROVED',
       };
 
       let bannerVisible = true;
@@ -173,10 +173,10 @@ describe('Navigation, Session Security & Back Button Tests', () => {
     });
 
     it('retains persistent banners for ACTION_REQUIRED, REJECTED, and SUSPENDED', () => {
-      const statuses = ['ACTION_REQUIRED', 'REJECTED', 'SUSPENDED'] as const;
+      const statuses: string[] = ['ACTION_REQUIRED', 'REJECTED', 'SUSPENDED'];
 
       statuses.forEach((status) => {
-        const user = { id: 'u-1', role: 'mill_owner', approvalStatus: status };
+        const user: { id: string; role: string; approvalStatus: string } = { id: 'u-1', role: 'mill_owner', approvalStatus: status };
         const shouldAutoDismiss = user.approvalStatus === 'APPROVED';
         expect(shouldAutoDismiss).toBe(false);
 

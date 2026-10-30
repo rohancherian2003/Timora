@@ -124,7 +124,76 @@ export class DisputesService {
       [data.order_id, reviewerId, revieweeId, data.rating, data.body || null]
     );
 
-    return res.rows[0];
+    const insertedReview = res.rows[0];
+
+    // Recalculate average rating and count for reviewee
+    const statsRes = await query(
+      `SELECT AVG(rating)::numeric(3,2) as avg_rating, COUNT(*)::int as total_count
+       FROM reviews
+       WHERE reviewee_id = $1`,
+      [revieweeId]
+    );
+
+    const stats = statsRes.rows[0];
+    if (stats) {
+      const avgRating = parseFloat(stats.avg_rating) || data.rating;
+      const count = parseInt(stats.total_count, 10) || 1;
+
+      // Update carpenter_profiles if reviewee is a carpenter
+      await query(
+        `UPDATE carpenter_profiles 
+         SET rating = $1, rating_count = $2, updated_at = NOW() 
+         WHERE user_id = $3`,
+        [avgRating, count, revieweeId]
+      );
+    }
+
+    return insertedReview;
+  }
+
+  /**
+   * Get verified public reviews and calculated ratings for an entity / user
+   */
+  async getReviewsForEntity(entityId: string) {
+    const reviewsRes = await query(
+      `SELECT r.id, r.rating, r.body, r.created_at,
+              u.role as reviewer_role,
+              COALESCE(up.name, 'Verified Buyer') as author_name
+       FROM reviews r
+       JOIN users u ON u.id = r.reviewer_id
+       LEFT JOIN user_profiles up ON up.user_id = r.reviewer_id
+       WHERE (r.reviewee_id = $1 OR r.order_id::text = $1)
+         AND r.is_moderated = false
+       ORDER BY r.created_at DESC`,
+      [entityId]
+    );
+
+    const statsRes = await query(
+      `SELECT COALESCE(AVG(rating)::numeric(3,2), 0.00) as avg_rating, COUNT(*)::int as total_count
+       FROM reviews
+       WHERE (reviewee_id = $1 OR order_id::text = $1)
+         AND is_moderated = false`,
+      [entityId]
+    );
+
+    const stats = statsRes.rows[0];
+    return {
+      reviews: reviewsRes.rows.map((r) => ({
+        id: r.id,
+        author: r.author_name,
+        role: r.reviewer_role === 'buyer' ? 'Verified Buyer' : 'Verified Trade Partner',
+        rating: Number(r.rating),
+        date: new Date(r.created_at).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        }),
+        comment: r.body || 'Verified quality timber transaction.',
+        isVerified: true,
+      })),
+      averageRating: stats ? Number(stats.avg_rating) : 0,
+      totalCount: stats ? Number(stats.total_count) : 0,
+    };
   }
 
   /**

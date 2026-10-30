@@ -91,6 +91,36 @@ export class AuthController {
       next(err);
     }
   }
+
+  async initiatePhoneChange(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const { newPhone } = req.body;
+      const result = await authService.initiatePhoneChange(userId, newPhone);
+      const response: ApiSuccessResponse = {
+        success: true,
+        data: result,
+      };
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async verifyPhoneChange(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const { newPhone, otp } = req.body;
+      const result = await authService.verifyPhoneChange(userId, newPhone, otp);
+      const response: ApiSuccessResponse = {
+        success: true,
+        data: result,
+      };
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const authController = new AuthController();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import {
   Calculator,
@@ -42,6 +42,7 @@ import { SessionTimeoutModal } from './components/SessionTimeoutModal';
 import { SignOutConfirmModal } from './components/SignOutConfirmModal';
 import { SignOutRequiredModal } from './components/SignOutRequiredModal';
 import { PageTransitionLoader } from './components/PageTransitionLoader';
+import { EditProfileModal } from './components/EditProfileModal';
 
 // Protected Route Guard with Browser Back-Button Confirmation Alert
 function ProtectedRoute({
@@ -298,11 +299,106 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
   );
 }
 
+// Directories Dropdown for Medium & Unmaximized Desktop Screens
+function DirectoriesNavDropdown({
+  lang,
+  isCurrent,
+}: {
+  lang: 'en' | 'ml';
+  isCurrent: (path: string) => boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+
+  const isDirectoryActive =
+    isCurrent('/carpenters') || isCurrent('/mills') || isCurrent('/timber-mills') || isCurrent('/transport');
+
+  // Close dropdown on route change
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  // Click outside to close
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  return (
+    <div ref={dropdownRef} className="relative flex-shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`whitespace-nowrap flex-shrink-0 transition px-2 py-1 text-xs font-semibold rounded-lg flex items-center gap-1 border ${
+          isDirectoryActive
+            ? 'text-[#4A3626] bg-[#E7E1D6]/70 border-[#5B6147] font-bold'
+            : 'border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-[#5B6147]'
+        }`}
+      >
+        <span>{lang === 'en' ? 'Directories' : 'സേവനങ്ങൾ'}</span>
+        <ChevronDown className={`w-3 h-3 text-stone-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-stone-200 p-2 z-50 animate-fadeIn space-y-1">
+          <Link
+            to="/carpenters"
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition ${
+              isCurrent('/carpenters') ? 'bg-[#E7E1D6]/60 text-[#4A3626] font-bold' : 'text-stone-700 hover:bg-stone-50'
+            }`}
+          >
+            <Hammer className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
+            <div>
+              <span className="block">{lang === 'en' ? 'Carpenters' : 'ആശാരിമാർ'}</span>
+              <span className="text-[10px] text-stone-400 block">{lang === 'en' ? 'Master Joiners & Craftsmen' : 'പരമ്പരാഗത ആശാരിമാർ'}</span>
+            </div>
+          </Link>
+
+          <Link
+            to="/mills"
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition ${
+              isCurrent('/mills') || isCurrent('/timber-mills') ? 'bg-[#E7E1D6]/60 text-[#4A3626] font-bold' : 'text-stone-700 hover:bg-stone-50'
+            }`}
+          >
+            <Factory className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
+            <div>
+              <span className="block">{lang === 'en' ? 'Timber Mills' : 'തടി മില്ലുകൾ'}</span>
+              <span className="text-[10px] text-stone-400 block">{lang === 'en' ? 'Sawmills & Sawn Timber' : 'അറുക്കൽ & പലകകൾ'}</span>
+            </div>
+          </Link>
+
+          <Link
+            to="/transport"
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition ${
+              isCurrent('/transport') ? 'bg-[#E7E1D6]/60 text-[#4A3626] font-bold' : 'text-stone-700 hover:bg-stone-50'
+            }`}
+          >
+            <Truck className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
+            <div>
+              <span className="block">{lang === 'en' ? 'Timber Transit' : 'ലോറികൾ'}</span>
+              <span className="text-[10px] text-stone-400 block">{lang === 'en' ? 'Crane Carriers & Haulage' : 'തടി കൊണ്ടുപോകുന്ന വാഹനങ്ങൾ'}</span>
+            </div>
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // User Menu Component for Top Header
 function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const navigate = useNavigate();
 
   if (!user) return null;
@@ -443,6 +539,18 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
                   <span>{lang === 'en' ? 'Admin Moderation Console' : 'അഡ്മിൻ കൺസോൾ'}</span>
                 </Link>
               )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setShowEditProfile(true);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-stone-700 hover:text-[#4A3626] hover:bg-stone-50 rounded-xl transition text-left"
+              >
+                <User className="w-4 h-4 text-[#5B6147]" />
+                <span>{lang === 'en' ? 'Edit Profile & Settings' : 'പ്രൊഫൈൽ ക്രമീകരണങ്ങൾ'}</span>
+              </button>
             </div>
 
             <div className="pt-1 border-t border-stone-100">
@@ -466,6 +574,13 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
         isOpen={showSignOutConfirm}
         onClose={() => setShowSignOutConfirm(false)}
         onConfirm={handleConfirmLogout}
+        lang={lang}
+      />
+
+      {/* Edit Profile Modal accessible from User Menu for all roles */}
+      <EditProfileModal
+        isOpen={showEditProfile}
+        onClose={() => setShowEditProfile(false)}
         lang={lang}
       />
     </div>
@@ -499,7 +614,7 @@ function AppHeader({
         </Link>
 
         {/* Desktop Navigation Links - Compact, elegant, never wraps or overflows */}
-        <nav className="hidden md:flex items-center gap-1.5 md:gap-2 lg:gap-3 xl:gap-4 text-xs lg:text-[13px] font-semibold text-stone-600 whitespace-nowrap flex-shrink min-w-0">
+        <nav className="hidden md:flex items-center gap-1.5 lg:gap-2.5 xl:gap-3.5 text-xs lg:text-[13px] font-semibold text-stone-600 whitespace-nowrap flex-shrink min-w-0">
           <Link
             to="/marketplace"
             className={`whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 ${
@@ -523,9 +638,15 @@ function AppHeader({
             <span className="whitespace-nowrap">{lang === 'en' ? 'CFT Calculator' : 'തടി കാൽക്കുലേറ്റർ'}</span>
           </Link>
 
+          {/* Medium & Unmaximized Desktop Screens: Compact Directories Dropdown */}
+          <div className="block xl:hidden">
+            <DirectoriesNavDropdown lang={lang} isCurrent={isCurrent} />
+          </div>
+
+          {/* Full Large Desktop Screens (>= 1280px): Expanded Direct Links */}
           <Link
             to="/carpenters"
-            className={`whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 flex items-center gap-1.5 ${
+            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 items-center gap-1.5 ${
               isCurrent('/carpenters')
                 ? 'text-[#5B6147] border-[#5B6147] font-bold'
                 : 'border-transparent hover:text-[#5B6147]'
@@ -537,7 +658,7 @@ function AppHeader({
 
           <Link
             to="/transport"
-            className={`whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 flex items-center gap-1.5 ${
+            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 items-center gap-1.5 ${
               isCurrent('/transport')
                 ? 'text-[#5B6147] border-[#5B6147] font-bold'
                 : 'border-transparent hover:text-[#5B6147]'
@@ -549,7 +670,7 @@ function AppHeader({
 
           <Link
             to="/mills"
-            className={`whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 flex items-center gap-1.5 ${
+            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 items-center gap-1.5 ${
               isCurrent('/mills') || isCurrent('/timber-mills')
                 ? 'text-[#5B6147] border-[#5B6147] font-bold'
                 : 'border-transparent hover:text-[#5B6147]'
