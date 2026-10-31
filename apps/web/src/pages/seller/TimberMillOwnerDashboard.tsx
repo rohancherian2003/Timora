@@ -87,7 +87,7 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
   const [quantityCft, setQuantityCft] = useState(50);
   const [ratePerCft, setRatePerCft] = useState(2500);
 
-  const handleCreateBatch = (e: React.FormEvent) => {
+  const handleCreateBatch = async (e: React.FormEvent) => {
     e.preventDefault();
     const newBatch: SawnBatch = {
       id: `mill-b-${Date.now()}`,
@@ -100,6 +100,21 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
       status: 'available',
     };
     setBatches([newBatch, ...batches]);
+    try {
+      const { api } = await import('../../lib/api');
+      await api.post('/listings', {
+        title: title.trim(),
+        species_id: 1,
+        timber_type_id: 2,
+        district_id: 7,
+        quantity: quantityCft,
+        price_per_cft: ratePerCft,
+        pricing_mode: 'fixed',
+        unit: 'cft',
+      });
+    } catch {
+      // Graceful offline fallback
+    }
     setTitle('');
     setShowAddBatch(false);
   };

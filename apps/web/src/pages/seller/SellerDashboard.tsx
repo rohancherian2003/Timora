@@ -42,6 +42,26 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [quantity, setQuantity] = useState(25);
   const [pricePerCft, setPricePerCft] = useState(2400);
   const [submitted, setSubmitted] = useState(false);
+  const [sellerListings, setSellerListings] = useState<any[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchMyListings() {
+      try {
+        const { api } = await import('../../lib/api');
+        const res = await api.get('/listings/seller/me');
+        if (isMounted && res.data?.success && Array.isArray(res.data?.data) && res.data.data.length > 0) {
+          setSellerListings(res.data.data);
+        }
+      } catch {
+        // Fall back gracefully to demo stock
+      }
+    }
+    fetchMyListings();
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, submitted]);
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -53,9 +73,24 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
   const latestResolvedTicket = tickets.find((t) => t.status === 'resolved' && t.resolutionReply);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
+    try {
+      const { api } = await import('../../lib/api');
+      await api.post('/listings', {
+        title: title.trim(),
+        species_id: speciesId,
+        timber_type_id: typeId,
+        district_id: districtId,
+        quantity,
+        price_per_cft: pricePerCft,
+        pricing_mode: 'fixed',
+        unit: 'cft',
+      });
+    } catch {
+      // Graceful completion for demo accounts or offline preview
+    }
     setTimeout(() => {
       setShowAddForm(false);
       setSubmitted(false);
@@ -376,31 +411,58 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         </div>
 
         <div className="divide-y divide-stone-200 text-xs sm:text-sm">
-          <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#E7E1D6]/50">
-            <div>
-              <div className="font-bold text-[#4A3626]">First-Grade Nilambur Teak Planks</div>
-              <div className="text-xs text-stone-500 mt-0.5">Teak · Rough-sawn Planks · Kottayam</div>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="font-mono font-bold text-[#4A3626]">45 CFT @ ₹2,800/CFT</span>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
-                Approved (ലൈവ്)
-              </span>
-            </div>
-          </div>
+          {sellerListings.length > 0 ? (
+            sellerListings.map((item) => (
+              <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#E7E1D6]/50">
+                <div>
+                  <div className="font-bold text-[#4A3626]">{item.title}</div>
+                  <div className="text-xs text-stone-500 mt-0.5">
+                    {item.species_name_en || 'Timber'} · {item.type_name_en || 'Planks'} · {item.district_name_en || 'Kerala'}
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="font-mono font-bold text-[#4A3626]">
+                    {item.quantity} CFT @ ₹{Number(item.price_per_cft).toLocaleString('en-IN')}/CFT
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    item.status === 'approved'
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                      : 'bg-stone-100 text-[#4A3626] border border-stone-300'
+                  }`}>
+                    {item.status === 'approved' ? (lang === 'en' ? 'Approved (Live)' : 'ലൈവ്') : (lang === 'en' ? 'Pending Review' : 'പരിശോധനയിൽ')}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <>
+              <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#E7E1D6]/50">
+                <div>
+                  <div className="font-bold text-[#4A3626]">First-Grade Nilambur Teak Planks</div>
+                  <div className="text-xs text-stone-500 mt-0.5">Teak · Rough-sawn Planks · Kottayam</div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="font-mono font-bold text-[#4A3626]">45 CFT @ ₹2,800/CFT</span>
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
+                    Approved (ലൈവ്)
+                  </span>
+                </div>
+              </div>
 
-          <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#E7E1D6]/50">
-            <div>
-              <div className="font-bold text-[#4A3626]">Aanjili Wild Jack Beams</div>
-              <div className="text-xs text-stone-500 mt-0.5">Anjili · Squared Beams · Kottayam</div>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="font-mono font-bold text-stone-700">80 CFT @ ₹1,400/CFT</span>
-              <span className="px-2.5 py-1 rounded-full bg-stone-100 text-[#4A3626] border border-stone-300 text-xs font-semibold">
-                Pending Review (പരിശോധനയിൽ)
-              </span>
-            </div>
-          </div>
+              <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#E7E1D6]/50">
+                <div>
+                  <div className="font-bold text-[#4A3626]">Aanjili Wild Jack Beams</div>
+                  <div className="text-xs text-stone-500 mt-0.5">Anjili · Squared Beams · Kottayam</div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="font-mono font-bold text-stone-700">80 CFT @ ₹1,400/CFT</span>
+                  <span className="px-2.5 py-1 rounded-full bg-stone-100 text-[#4A3626] border border-stone-300 text-xs font-semibold">
+                    Pending Review (പരിശോധനയിൽ)
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
