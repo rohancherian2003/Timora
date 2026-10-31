@@ -12,6 +12,14 @@ export const resolveDisputeSchema = z.object({
     decision: z.string().min(5, 'Decision statement is required.'),
     admin_notes: z.string().optional(),
     status: z.enum(['resolved', 'closed']).default('resolved'),
+    inventory_action: z.enum([
+      'none',                      // Dispute dismissed or resolved with buyer keeping timber
+      'monetary_refund_no_return', // Buyer keeps wood, financial adjustment only -> No stock restore
+      'price_concession',          // Partial price concession -> No stock restore
+      'full_cancellation',         // Pre-dispatch or complete cancellation -> Restore full stock
+      'physical_return',           // Wood physically returned to seller's yard -> Restore returned quantity
+    ]).default('none'),
+    returned_quantity: z.number().positive('Returned quantity must be positive.').optional(),
   }),
 });
 

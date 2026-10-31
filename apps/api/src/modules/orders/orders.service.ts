@@ -2,16 +2,29 @@ import type pg from 'pg';
 import { query, withTransaction } from '../../config/database.js';
 import { AppError } from '../../middleware/errorHandler.js';
 
+/**
+ * Calculates total order price in Rupees using integer-paise arithmetic.
+ * Eliminates IEEE-754 binary floating-point representation drift.
+ * Standard Kerala timber accounting rule: Half-up rounding to nearest paise (₹0.01).
+ */
+export function calculateAuthoritativePrice(unitRatePerCft: number, quantityCft: number): number {
+  const rateInPaise = Math.round(Number(unitRatePerCft) * 100);
+  const totalPaise = Math.round(rateInPaise * Number(quantityCft));
+  return totalPaise / 100;
+}
+
 export class OrdersService {
   /**
    * Idempotently restores stock for a cancelled or disputed order.
    * Guarantees stock is restored AT MOST ONCE.
+   * Supports partial quantity restoration for verified physical returns.
    */
   async restoreOrderStock(
     clientOrPool: { query: typeof query },
     orderId: string,
     restoredByUserId: string,
-    reason: string
+    reason: string,
+    overrideQty?: number
   ): Promise<{ restored: boolean; quantity: number; listingId?: string }> {
     // 1. Atomically mark stock_restored = true ONLY IF currently false
     const orderRes = await clientOrPool.query(
@@ -29,7 +42,10 @@ export class OrdersService {
       return { restored: false, quantity: 0 };
     }
 
-    const qtyToRestore = Number(order.agreed_qty);
+    const maxQty = Number(order.agreed_qty);
+    const qtyToRestore = overrideQty !== undefined && overrideQty > 0
+      ? Math.min(Number(overrideQty), maxQty)
+      : maxQty;
 
     // 2. Restore inventory to timber_listings
     await clientOrPool.query(
@@ -57,10 +73,10 @@ export class OrdersService {
   }
 
   /**
-   * Atomic Order Creation with Authoritative Price & Concurrency Protection
+   * Atomic Order Creation with Authoritative Price, Offer Reuse Prevention & Concurrency Protection
    * Never trusts client-supplied agreed_price:
-   * - Fixed price: Validates exact match with listing.price_per_cft * quantity
-   * - Negotiated: Validates against an accepted offer in the database
+   * - Fixed price: Validates exact integer-paise calculation with listing.price_per_cft * quantity
+   * - Negotiated: Validates against an accepted, unconsumed offer in the database
    */
   async createOrder(buyerId: string, data: {
     listing_id: string;
@@ -109,9 +125,10 @@ export class OrdersService {
 
       // 2. Authoritative Server-Side Price Calculation & Validation
       let finalPrice: number;
+      let consumedOfferId: string | null = null;
 
       if (data.enquiry_id) {
-        // Negotiated Order: Must have a mutually accepted offer in the database
+        // Negotiated Order: Lock the enquiry row and prevent reuse
         const enquiryRes = await client.query(
           `SELECT id, listing_id, buyer_id, seller_id, status
            FROM enquiries
@@ -125,12 +142,22 @@ export class OrdersService {
           throw new AppError(400, 'INVALID_ENQUIRY', 'Invalid timber enquiry for this order.');
         }
 
+        // Prevent consuming an already ordered enquiry
+        if (enquiry.status === 'ordered') {
+          throw new AppError(
+            400,
+            'OFFER_ALREADY_CONSUMED',
+            'An order has already been placed for this negotiated offer.'
+          );
+        }
+
         const offerRes = await client.query(
           `SELECT id, enquiry_id, quantity, price, expires_at, status
            FROM offers
            WHERE enquiry_id = $1 AND status = 'accepted'
            ORDER BY created_at DESC
-           LIMIT 1`,
+           LIMIT 1
+           FOR UPDATE`,
           [data.enquiry_id]
         );
         const acceptedOffer = offerRes.rows[0];
@@ -143,6 +170,8 @@ export class OrdersService {
           );
         }
 
+        consumedOfferId = acceptedOffer.id;
+
         const offerQty = Number(acceptedOffer.quantity);
         if (Math.abs(requestedQty - offerQty) > 0.001) {
           throw new AppError(
@@ -153,32 +182,39 @@ export class OrdersService {
         }
 
         const offerPrice = Number(acceptedOffer.price);
+        const calculatedTotal = calculateAuthoritativePrice(offerPrice, offerQty);
         const clientPrice = Number(data.agreed_price);
-        const calculatedTotal = Math.round(offerPrice * offerQty * 100) / 100;
 
-        const matchesFlat = Math.abs(clientPrice - offerPrice) <= 0.01;
-        const matchesRate = Math.abs(clientPrice - calculatedTotal) <= 0.01;
+        const clientPaise = Math.round(clientPrice * 100);
+        const offerFlatPaise = Math.round(offerPrice * 100);
+        const calculatedTotalPaise = Math.round(calculatedTotal * 100);
+
+        const matchesFlat = Math.abs(clientPaise - offerFlatPaise) <= 1;
+        const matchesRate = Math.abs(clientPaise - calculatedTotalPaise) <= 1;
 
         if (!matchesFlat && !matchesRate) {
           throw new AppError(
             400,
             'PRICE_MISMATCH',
-            `Supplied order price (₹${clientPrice}) does not match the accepted offer price (₹${offerPrice}).`
+            `Supplied order price (₹${clientPrice.toFixed(2)}) does not match the accepted offer price (₹${offerPrice.toFixed(2)}).`
           );
         }
 
         finalPrice = matchesFlat ? offerPrice : calculatedTotal;
       } else {
-        // Fixed-Price Order: Authoritatively calculated from listing fixed rate
+        // Fixed-Price Order: Authoritatively calculated from listing fixed rate using integer-paise
         const unitRate = Number(listing.price_per_cft);
-        const expectedPrice = Math.round(unitRate * requestedQty * 100) / 100;
+        const expectedPrice = calculateAuthoritativePrice(unitRate, requestedQty);
         const clientPrice = Number(data.agreed_price);
 
-        if (Math.abs(clientPrice - expectedPrice) > 0.01) {
+        const expectedPaise = Math.round(expectedPrice * 100);
+        const clientPaise = Math.round(clientPrice * 100);
+
+        if (Math.abs(clientPaise - expectedPaise) > 1) {
           throw new AppError(
             400,
             'PRICE_MISMATCH',
-            `Supplied order price (₹${clientPrice}) does not match the authoritative listing fixed rate of ₹${unitRate}/CFT (Expected total: ₹${expectedPrice}).`
+            `Supplied order price (₹${clientPrice.toFixed(2)}) does not match the authoritative listing fixed rate of ₹${unitRate}/CFT (Expected total: ₹${expectedPrice.toFixed(2)}).`
           );
         }
 
@@ -267,12 +303,19 @@ export class OrdersService {
         [order.id, buyerId]
       );
 
-      // 8. Update enquiry status if applicable
+      // 8. Consume the accepted offer and enquiry atomically to prevent reuse
       if (data.enquiry_id) {
         await client.query(
           `UPDATE enquiries SET status = 'ordered', updated_at = NOW() WHERE id = $1`,
           [data.enquiry_id]
         );
+
+        if (consumedOfferId) {
+          await client.query(
+            `UPDATE offers SET status = 'ordered' WHERE id = $1`,
+            [consumedOfferId]
+          );
+        }
       }
 
       // 9. Notify seller

@@ -43,19 +43,23 @@ export class DisputesService {
   }
 
   /**
-   * Admin resolves a dispute
+   * Admin resolves a dispute with explicit inventory return decision
    */
   async resolveDispute(adminId: string, disputeId: string, data: {
     decision: string;
     admin_notes?: string;
     status: 'resolved' | 'closed';
+    inventory_action?: 'none' | 'monetary_refund_no_return' | 'price_concession' | 'full_cancellation' | 'physical_return';
+    returned_quantity?: number;
   }) {
     return await withTransaction(async (client) => {
+      // Row-lock both dispute and order to prevent race conditions
       const disRes = await client.query(
-        `SELECT d.*, o.id as order_id, o.status as order_status
+        `SELECT d.*, o.id as order_id, o.status as order_status, o.agreed_qty, o.listing_id, o.stock_restored
          FROM disputes d
          JOIN orders o ON o.id = d.order_id
-         WHERE d.id = $1`,
+         WHERE d.id = $1
+         FOR UPDATE OF d, o`,
         [disputeId]
       );
 
@@ -72,20 +76,15 @@ export class DisputesService {
       await client.query(
         `INSERT INTO admin_audit_logs (actor_id, action, entity_type, entity_id, reason)
          VALUES ($1, 'RESOLVE_DISPUTE', 'dispute', $2, $3)`,
-        [adminId, disputeId, data.decision]
+        [adminId, disputeId, `${data.decision} [Inventory Action: ${data.inventory_action || 'none'}]`]
       );
 
-      // Check if decision specifies cancellation, refund, or return
-      const decisionLower = data.decision.toLowerCase();
-      const isCancellationOrRefund =
-        decisionLower.includes('cancel') ||
-        decisionLower.includes('refund') ||
-        decisionLower.includes('return');
-
+      const inventoryAction = data.inventory_action || 'none';
       let stockRestored = false;
       let restoredQuantity = 0;
 
-      if (isCancellationOrRefund) {
+      if (inventoryAction === 'full_cancellation') {
+        // Complete cancellation before delivery or full return: restore full order quantity
         await client.query(
           `UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = $1`,
           [dispute.order_id]
@@ -94,26 +93,78 @@ export class DisputesService {
         await client.query(
           `INSERT INTO order_status_history (order_id, from_status, to_status, changed_by, note)
            VALUES ($1, $2, 'cancelled', $3, $4)`,
-          [dispute.order_id, dispute.order_status, adminId, `Dispute resolved with cancellation: ${data.decision}`]
+          [dispute.order_id, dispute.order_status, adminId, `Dispute resolved with full cancellation: ${data.decision}`]
         );
 
         const restoreResult = await ordersService.restoreOrderStock(
           client,
           dispute.order_id,
           adminId,
-          `Dispute resolved: ${data.decision}`
+          `Dispute full cancellation: ${data.decision}`
         );
         stockRestored = restoreResult.restored;
         restoredQuantity = restoreResult.quantity;
+      } else if (inventoryAction === 'physical_return') {
+        // Timber physically returned and verified at yard: restore confirmed returned quantity
+        const originalQty = Number(dispute.agreed_qty);
+        const qtyToReturn = data.returned_quantity !== undefined ? Number(data.returned_quantity) : originalQty;
+
+        if (qtyToReturn <= 0 || qtyToReturn > originalQty) {
+          throw new AppError(
+            400,
+            'INVALID_RETURN_QUANTITY',
+            `Returned quantity (${qtyToReturn}) must be positive and cannot exceed original order quantity (${originalQty}).`
+          );
+        }
+
+        await client.query(
+          `UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = $1`,
+          [dispute.order_id]
+        );
+
+        await client.query(
+          `INSERT INTO order_status_history (order_id, from_status, to_status, changed_by, note)
+           VALUES ($1, $2, 'cancelled', $3, $4)`,
+          [
+            dispute.order_id,
+            dispute.order_status,
+            adminId,
+            `Dispute physical return: ${qtyToReturn} CFT accepted into yard. Decision: ${data.decision}`,
+          ]
+        );
+
+        const restoreResult = await ordersService.restoreOrderStock(
+          client,
+          dispute.order_id,
+          adminId,
+          `Dispute physical return: ${data.decision}`,
+          qtyToReturn
+        );
+        stockRestored = restoreResult.restored;
+        restoredQuantity = restoreResult.quantity;
+      } else {
+        // Monetary refund without return, price concession, or dismissal:
+        // Physical timber is kept by the buyer — DO NOT RESTORE STOCK!
+        await client.query(
+          `INSERT INTO order_status_history (order_id, from_status, to_status, changed_by, note)
+           VALUES ($1, $2, $2, $3, $4)`,
+          [
+            dispute.order_id,
+            dispute.order_status,
+            adminId,
+            `Dispute settled with action '${inventoryAction}': ${data.decision}. Buyer retains timber; zero stock restored.`,
+          ]
+        );
       }
 
       return {
         success: true,
-        message: isCancellationOrRefund
-          ? 'Dispute resolved with order cancellation and inventory restored.'
-          : 'Dispute decision recorded.',
+        message: stockRestored
+          ? `Dispute resolved. Restored ${restoredQuantity} CFT to active inventory.`
+          : 'Dispute decision recorded. Physical inventory was retained by buyer (zero stock restored).',
         stockRestored,
         restoredQuantity,
+        inventoryAction,
       };
     });
   }
