@@ -1,10 +1,66 @@
+import type pg from 'pg';
 import { query, withTransaction } from '../../config/database.js';
 import { AppError } from '../../middleware/errorHandler.js';
 
 export class OrdersService {
   /**
-   * Atomic Order Creation with Concurrency Protection
-   * Ensures stock never becomes negative and concurrent orders cannot oversell.
+   * Idempotently restores stock for a cancelled or disputed order.
+   * Guarantees stock is restored AT MOST ONCE.
+   */
+  async restoreOrderStock(
+    clientOrPool: { query: typeof query },
+    orderId: string,
+    restoredByUserId: string,
+    reason: string
+  ): Promise<{ restored: boolean; quantity: number; listingId?: string }> {
+    // 1. Atomically mark stock_restored = true ONLY IF currently false
+    const orderRes = await clientOrPool.query(
+      `UPDATE orders
+       SET stock_restored = true,
+           updated_at = NOW()
+       WHERE id = $1 AND stock_restored = false
+       RETURNING id, listing_id, agreed_qty, status`,
+      [orderId]
+    );
+
+    const order = orderRes.rows[0];
+    if (!order) {
+      // Already restored or order not found — IDEMPOTENT NO-OP
+      return { restored: false, quantity: 0 };
+    }
+
+    const qtyToRestore = Number(order.agreed_qty);
+
+    // 2. Restore inventory to timber_listings
+    await clientOrPool.query(
+      `UPDATE timber_listings
+       SET quantity = quantity + $1,
+           status = CASE WHEN status = 'out_of_stock' THEN 'approved' ELSE status END,
+           updated_at = NOW()
+       WHERE id = $2`,
+      [qtyToRestore, order.listing_id]
+    );
+
+    // 3. Record in order status history
+    await clientOrPool.query(
+      `INSERT INTO order_status_history (order_id, from_status, to_status, changed_by, note)
+       VALUES ($1, $2, $2, $3, $4)`,
+      [
+        orderId,
+        order.status,
+        restoredByUserId,
+        `Stock restored: +${qtyToRestore} CFT returned to inventory. Reason: ${reason}`,
+      ]
+    );
+
+    return { restored: true, quantity: qtyToRestore, listingId: order.listing_id };
+  }
+
+  /**
+   * Atomic Order Creation with Authoritative Price & Concurrency Protection
+   * Never trusts client-supplied agreed_price:
+   * - Fixed price: Validates exact match with listing.price_per_cft * quantity
+   * - Negotiated: Validates against an accepted offer in the database
    */
   async createOrder(buyerId: string, data: {
     listing_id: string;
@@ -12,8 +68,124 @@ export class OrdersService {
     agreed_qty: number;
     agreed_price: number;
   }) {
+    if (!data.agreed_qty || data.agreed_qty <= 0) {
+      throw new AppError(400, 'INVALID_QUANTITY', 'Order quantity must be greater than zero.');
+    }
+
     return await withTransaction(async (client) => {
-      // 1. Atomically decrement stock with conditional check
+      // 1. Fetch and row-lock the listing
+      const listingRes = await client.query(
+        `SELECT id, seller_id, title, quantity, price_per_cft, pricing_mode, status, unit,
+                length_ft, width_in, thickness_in, pieces
+         FROM timber_listings
+         WHERE id = $1
+         FOR UPDATE`,
+        [data.listing_id]
+      );
+
+      const listing = listingRes.rows[0];
+      if (!listing) {
+        throw new AppError(404, 'NOT_FOUND', 'Timber listing not found.');
+      }
+
+      if (listing.status !== 'approved') {
+        throw new AppError(400, 'LISTING_NOT_ACTIVE', 'Listing is no longer active for orders.');
+      }
+
+      if (listing.seller_id === buyerId) {
+        throw new AppError(400, 'SELF_ORDER', 'You cannot purchase your own timber listing.');
+      }
+
+      const availableQty = Number(listing.quantity);
+      const requestedQty = Number(data.agreed_qty);
+
+      if (availableQty < requestedQty) {
+        throw new AppError(
+          409,
+          'INSUFFICIENT_STOCK',
+          `Insufficient stock available. Requested ${requestedQty} ${listing.unit || 'CFT'}, but only ${availableQty} remains in inventory.`
+        );
+      }
+
+      // 2. Authoritative Server-Side Price Calculation & Validation
+      let finalPrice: number;
+
+      if (data.enquiry_id) {
+        // Negotiated Order: Must have a mutually accepted offer in the database
+        const enquiryRes = await client.query(
+          `SELECT id, listing_id, buyer_id, seller_id, status
+           FROM enquiries
+           WHERE id = $1
+           FOR UPDATE`,
+          [data.enquiry_id]
+        );
+        const enquiry = enquiryRes.rows[0];
+
+        if (!enquiry || enquiry.buyer_id !== buyerId || enquiry.listing_id !== data.listing_id) {
+          throw new AppError(400, 'INVALID_ENQUIRY', 'Invalid timber enquiry for this order.');
+        }
+
+        const offerRes = await client.query(
+          `SELECT id, enquiry_id, quantity, price, expires_at, status
+           FROM offers
+           WHERE enquiry_id = $1 AND status = 'accepted'
+           ORDER BY created_at DESC
+           LIMIT 1`,
+          [data.enquiry_id]
+        );
+        const acceptedOffer = offerRes.rows[0];
+
+        if (!acceptedOffer) {
+          throw new AppError(
+            400,
+            'NO_ACCEPTED_OFFER',
+            'Cannot create a negotiated order without a mutually accepted offer in the database.'
+          );
+        }
+
+        const offerQty = Number(acceptedOffer.quantity);
+        if (Math.abs(requestedQty - offerQty) > 0.001) {
+          throw new AppError(
+            400,
+            'QUANTITY_MISMATCH',
+            `Order quantity (${requestedQty}) does not match the accepted offer quantity (${offerQty}).`
+          );
+        }
+
+        const offerPrice = Number(acceptedOffer.price);
+        const clientPrice = Number(data.agreed_price);
+        const calculatedTotal = Math.round(offerPrice * offerQty * 100) / 100;
+
+        const matchesFlat = Math.abs(clientPrice - offerPrice) <= 0.01;
+        const matchesRate = Math.abs(clientPrice - calculatedTotal) <= 0.01;
+
+        if (!matchesFlat && !matchesRate) {
+          throw new AppError(
+            400,
+            'PRICE_MISMATCH',
+            `Supplied order price (₹${clientPrice}) does not match the accepted offer price (₹${offerPrice}).`
+          );
+        }
+
+        finalPrice = matchesFlat ? offerPrice : calculatedTotal;
+      } else {
+        // Fixed-Price Order: Authoritatively calculated from listing fixed rate
+        const unitRate = Number(listing.price_per_cft);
+        const expectedPrice = Math.round(unitRate * requestedQty * 100) / 100;
+        const clientPrice = Number(data.agreed_price);
+
+        if (Math.abs(clientPrice - expectedPrice) > 0.01) {
+          throw new AppError(
+            400,
+            'PRICE_MISMATCH',
+            `Supplied order price (₹${clientPrice}) does not match the authoritative listing fixed rate of ₹${unitRate}/CFT (Expected total: ₹${expectedPrice}).`
+          );
+        }
+
+        finalPrice = expectedPrice;
+      }
+
+      // 3. Atomically decrement stock
       const decrementRes = await client.query(
         `UPDATE timber_listings
          SET quantity = quantity - $1,
@@ -21,25 +193,18 @@ export class OrdersService {
              updated_at = NOW()
          WHERE id = $2 AND quantity >= $1 AND status = 'approved'
          RETURNING *`,
-        [data.agreed_qty, data.listing_id]
+        [requestedQty, data.listing_id]
       );
 
-      // If no row updated, either listing not approved or stock insufficient (preventing overselling)
       if (decrementRes.rows.length === 0) {
         throw new AppError(
           409,
           'INSUFFICIENT_STOCK',
-          'Insufficient stock available or listing is no longer active. The order could not be completed.'
+          'Insufficient stock available or listing is no longer active.'
         );
       }
 
-      const listing = decrementRes.rows[0];
-
-      if (listing.seller_id === buyerId) {
-        throw new AppError(400, 'SELF_ORDER', 'You cannot purchase your own timber listing.');
-      }
-
-      // 2. Fetch species and district names for immutable snapshot
+      // 4. Fetch metadata for immutable snapshot
       const metaRes = await client.query(
         `SELECT s.name_en as species_name, t.name_en as timber_type, d.name_en as district_name,
                 sp.business_name, up.name as seller_name
@@ -55,7 +220,7 @@ export class OrdersService {
       );
       const meta = metaRes.rows[0];
 
-      // 3. Construct immutable snapshot
+      // 5. Construct snapshot
       const snapshot = {
         listing_id: listing.id,
         title: listing.title,
@@ -66,8 +231,8 @@ export class OrdersService {
         business_name: meta?.business_name,
         unit: listing.unit,
         price_per_cft: listing.price_per_cft,
-        agreed_qty: data.agreed_qty,
-        agreed_price: data.agreed_price,
+        agreed_qty: requestedQty,
+        agreed_price: finalPrice,
         dimensions: {
           length_ft: listing.length_ft,
           width_in: listing.width_in,
@@ -77,11 +242,11 @@ export class OrdersService {
         ordered_at: new Date().toISOString(),
       };
 
-      // 4. Create order record
+      // 6. Create order record
       const orderRes = await client.query(
         `INSERT INTO orders (
-           listing_id, buyer_id, seller_id, enquiry_id, snapshot, agreed_qty, agreed_price, status
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'confirmed')
+           listing_id, buyer_id, seller_id, enquiry_id, snapshot, agreed_qty, agreed_price, status, stock_restored
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'confirmed', false)
          RETURNING *`,
         [
           data.listing_id,
@@ -89,20 +254,20 @@ export class OrdersService {
           listing.seller_id,
           data.enquiry_id || null,
           JSON.stringify(snapshot),
-          data.agreed_qty,
-          data.agreed_price,
+          requestedQty,
+          finalPrice,
         ]
       );
       const order = orderRes.rows[0];
 
-      // 5. Record order status history
+      // 7. Record status history
       await client.query(
         `INSERT INTO order_status_history (order_id, from_status, to_status, changed_by, note)
-         VALUES ($1, 'awaiting_confirmation', 'confirmed', $2, 'Order confirmed after mutual agreement and stock reservation.')`,
+         VALUES ($1, 'awaiting_confirmation', 'confirmed', $2, 'Order confirmed with authoritative price verification and stock reservation.')`,
         [order.id, buyerId]
       );
 
-      // 6. Update enquiry status if enquiry_id provided
+      // 8. Update enquiry status if applicable
       if (data.enquiry_id) {
         await client.query(
           `UPDATE enquiries SET status = 'ordered', updated_at = NOW() WHERE id = $1`,
@@ -110,7 +275,7 @@ export class OrdersService {
         );
       }
 
-      // 7. Notify seller
+      // 9. Notify seller
       await client.query(
         `INSERT INTO notifications (user_id, category, title_en, title_ml, body_en, body_ml, action_url)
          VALUES ($1, 'order', 'New Timber Order Confirmed', 'പുതിയ തടി ഓർഡർ ലഭിച്ചു',
@@ -124,17 +289,98 @@ export class OrdersService {
   }
 
   /**
-   * Mutual Delivery Confirmation
-   * Order only completes when BOTH buyer and seller confirm delivery.
+   * Cancel Order and Idempotently Restore Inventory Stock
    */
-  async confirmDelivery(userId: string, orderId: string) {
+  async cancelOrder(userId: string, orderId: string, reason: string) {
     return await withTransaction(async (client) => {
       const orderRes = await client.query(
-        `SELECT * FROM orders WHERE id = $1`,
+        `SELECT * FROM orders WHERE id = $1 FOR UPDATE`,
         [orderId]
       );
       const order = orderRes.rows[0];
       if (!order) throw new AppError(404, 'NOT_FOUND', 'Order not found.');
+
+      if (order.buyer_id !== userId && order.seller_id !== userId) {
+        throw new AppError(403, 'FORBIDDEN', 'Unauthorized: You are not a party to this order.');
+      }
+
+      // Enforce valid order state transitions
+      if (order.status === 'completed') {
+        throw new AppError(400, 'ORDER_COMPLETED', 'Completed orders cannot be cancelled.');
+      }
+
+      if (order.status === 'cancelled') {
+        throw new AppError(400, 'ORDER_ALREADY_CANCELLED', 'This order has already been cancelled.');
+      }
+
+      // Record cancellation request
+      await client.query(
+        `INSERT INTO cancellation_requests (order_id, requested_by, reason)
+         VALUES ($1, $2, $3)`,
+        [orderId, userId, reason]
+      );
+
+      // Transition status to 'cancelled'
+      await client.query(
+        `UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = $1`,
+        [orderId]
+      );
+
+      await client.query(
+        `INSERT INTO order_status_history (order_id, from_status, to_status, changed_by, note)
+         VALUES ($1, $2, 'cancelled', $3, $4)`,
+        [orderId, order.status, userId, `Order cancelled: ${reason}`]
+      );
+
+      // Idempotently restore stock to timber_listings
+      const restoreResult = await this.restoreOrderStock(client, orderId, userId, `Order cancellation: ${reason}`);
+
+      // Notify counterparty
+      const notifyUserId = userId === order.buyer_id ? order.seller_id : order.buyer_id;
+      await client.query(
+        `INSERT INTO notifications (user_id, category, title_en, title_ml, body_en, body_ml, action_url)
+         VALUES ($1, 'order', 'Order Cancelled', 'ഓർഡർ റദ്ദാക്കി',
+                 'An order has been cancelled and inventory was returned.', 'ഓർഡർ റദ്ദാക്കുകയും തടി സ്റ്റോക്ക് പുനഃസ്ഥാപിക്കുകയും ചെയ്തു.',
+                 $2)`,
+        [notifyUserId, `/dashboard/orders/${orderId}`]
+      );
+
+      return {
+        success: true,
+        message: 'Order successfully cancelled and stock restored to listing.',
+        stockRestored: restoreResult.restored,
+        restoredQuantity: restoreResult.quantity,
+      };
+    });
+  }
+
+  /**
+   * Request Cancellation (routes to cancelOrder with state transition and stock restoration)
+   */
+  async requestCancellation(userId: string, orderId: string, reason: string) {
+    return await this.cancelOrder(userId, orderId, reason);
+  }
+
+  /**
+   * Mutual Delivery Confirmation
+   * Enforces valid state transitions (cannot confirm cancelled or already completed orders).
+   */
+  async confirmDelivery(userId: string, orderId: string) {
+    return await withTransaction(async (client) => {
+      const orderRes = await client.query(
+        `SELECT * FROM orders WHERE id = $1 FOR UPDATE`,
+        [orderId]
+      );
+      const order = orderRes.rows[0];
+      if (!order) throw new AppError(404, 'NOT_FOUND', 'Order not found.');
+
+      if (order.status === 'cancelled') {
+        throw new AppError(400, 'ORDER_CANCELLED', 'Cannot confirm delivery for a cancelled order.');
+      }
+
+      if (order.status === 'completed') {
+        throw new AppError(400, 'ORDER_ALREADY_COMPLETED', 'This order has already been completed.');
+      }
 
       const isBuyer = order.buyer_id === userId;
       const isSeller = order.seller_id === userId;
@@ -185,47 +431,6 @@ export class OrdersService {
           ? 'Order marked as completed! Both parties have confirmed delivery.'
           : 'Delivery confirmation recorded. Waiting for confirmation from the other party.',
       };
-    });
-  }
-
-  /**
-   * Request Cancellation
-   */
-  async requestCancellation(userId: string, orderId: string, reason: string) {
-    return await withTransaction(async (client) => {
-      const orderRes = await client.query(
-        `SELECT * FROM orders WHERE id = $1`,
-        [orderId]
-      );
-      const order = orderRes.rows[0];
-      if (!order) throw new AppError(404, 'NOT_FOUND', 'Order not found.');
-
-      if (order.buyer_id !== userId && order.seller_id !== userId) {
-        throw new AppError(403, 'FORBIDDEN', 'Unauthorized.');
-      }
-
-      if (order.status === 'completed') {
-        throw new AppError(400, 'ORDER_COMPLETED', 'Completed orders cannot be cancelled.');
-      }
-
-      await client.query(
-        `INSERT INTO cancellation_requests (order_id, requested_by, reason)
-         VALUES ($1, $2, $3)`,
-        [orderId, userId, reason]
-      );
-
-      await client.query(
-        `UPDATE orders SET status = 'cancellation_requested', updated_at = NOW() WHERE id = $1`,
-        [orderId]
-      );
-
-      await client.query(
-        `INSERT INTO order_status_history (order_id, from_status, to_status, changed_by, note)
-         VALUES ($1, $2, 'cancellation_requested', $3, $4)`,
-        [orderId, order.status, userId, `Cancellation requested: ${reason}`]
-      );
-
-      return { success: true, message: 'Cancellation request submitted.' };
     });
   }
 

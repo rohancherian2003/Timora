@@ -1,5 +1,6 @@
 import { query, withTransaction } from '../../config/database.js';
 import { AppError } from '../../middleware/errorHandler.js';
+import { ordersService } from '../orders/orders.service.js';
 
 export class DisputesService {
   /**
@@ -74,7 +75,46 @@ export class DisputesService {
         [adminId, disputeId, data.decision]
       );
 
-      return { success: true, message: 'Dispute decision recorded.' };
+      // Check if decision specifies cancellation, refund, or return
+      const decisionLower = data.decision.toLowerCase();
+      const isCancellationOrRefund =
+        decisionLower.includes('cancel') ||
+        decisionLower.includes('refund') ||
+        decisionLower.includes('return');
+
+      let stockRestored = false;
+      let restoredQuantity = 0;
+
+      if (isCancellationOrRefund) {
+        await client.query(
+          `UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = $1`,
+          [dispute.order_id]
+        );
+
+        await client.query(
+          `INSERT INTO order_status_history (order_id, from_status, to_status, changed_by, note)
+           VALUES ($1, $2, 'cancelled', $3, $4)`,
+          [dispute.order_id, dispute.order_status, adminId, `Dispute resolved with cancellation: ${data.decision}`]
+        );
+
+        const restoreResult = await ordersService.restoreOrderStock(
+          client,
+          dispute.order_id,
+          adminId,
+          `Dispute resolved: ${data.decision}`
+        );
+        stockRestored = restoreResult.restored;
+        restoredQuantity = restoreResult.quantity;
+      }
+
+      return {
+        success: true,
+        message: isCancellationOrRefund
+          ? 'Dispute resolved with order cancellation and inventory restored.'
+          : 'Dispute decision recorded.',
+        stockRestored,
+        restoredQuantity,
+      };
     });
   }
 

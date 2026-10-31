@@ -205,6 +205,15 @@ export class EnquiriesService {
       const isParticipant = userId === offer.buyer_id || userId === offer.seller_id;
       if (!isParticipant) throw new AppError(403, 'FORBIDDEN', 'Unauthorized.');
 
+      // Check offer expiry
+      if (offer.expires_at && new Date(offer.expires_at).getTime() < Date.now()) {
+        await client.query(
+          `UPDATE offers SET status = 'expired' WHERE id = $1`,
+          [offerId]
+        );
+        throw new AppError(400, 'OFFER_EXPIRED', 'This offer has expired and can no longer be accepted.');
+      }
+
       if (offer.status !== 'pending') {
         throw new AppError(400, 'OFFER_NOT_PENDING', `Offer is currently '${offer.status}' and cannot be accepted.`);
       }
@@ -212,6 +221,12 @@ export class EnquiriesService {
       await client.query(
         `UPDATE offers SET status = 'accepted' WHERE id = $1`,
         [offerId]
+      );
+
+      // Supercede any other pending offers for this enquiry
+      await client.query(
+        `UPDATE offers SET status = 'countered' WHERE enquiry_id = $1 AND id != $2 AND status = 'pending'`,
+        [offer.enquiry_id, offerId]
       );
 
       await client.query(
