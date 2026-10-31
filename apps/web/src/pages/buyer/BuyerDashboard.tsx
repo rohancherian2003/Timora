@@ -65,6 +65,49 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [dismissedResolvedId, setDismissedResolvedId] = useState<string | null>(null);
+  const [liveOrders, setLiveOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchOrders() {
+      try {
+        const { api } = await import('../../lib/api');
+        const res = await api.get('/orders');
+        if (isMounted && res.data?.success && Array.isArray(res.data?.data) && res.data.data.length > 0) {
+          const mapped = res.data.data.map((o: any) => ({
+            id: o.id,
+            listing_title: o.snapshot?.title || 'Timber Batch',
+            species: o.snapshot?.species || 'Teak',
+            seller_name: o.snapshot?.seller_name || o.snapshot?.business_name || 'Timber Depot',
+            agreed_qty: o.agreed_qty,
+            unit: o.snapshot?.unit || 'CFT',
+            agreed_price: o.agreed_price,
+            status: o.status,
+            ordered_at: o.created_at ? new Date(o.created_at).toISOString().slice(0, 10) : '2026-10-24',
+          }));
+          setLiveOrders(mapped);
+        }
+      } catch {
+        // Fall back gracefully to DEMO_BUYER_ORDERS
+      }
+    }
+    fetchOrders();
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
+
+  const handleConfirmDelivery = async (orderId: string) => {
+    try {
+      const { api } = await import('../../lib/api');
+      await api.patch(`/orders/${orderId}/confirm-delivery`);
+    } catch {
+      // Local fallback
+    }
+    setLiveOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status: 'completed' } : o))
+    );
+  };
 
   useEffect(() => {
     if (refreshUser) refreshUser();
@@ -231,7 +274,7 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       {/* Orders Tab */}
       {activeTab === 'orders' && (
         <div className="space-y-4">
-          {DEMO_BUYER_ORDERS.map((order) => (
+          {(liveOrders.length > 0 ? liveOrders : DEMO_BUYER_ORDERS).map((order) => (
             <div
               key={order.id}
               className="bg-white rounded-3xl border border-stone-300/80 p-6 shadow-xs hover:border-stone-400 hover:shadow-md transition flex flex-col sm:flex-row sm:items-center justify-between gap-4"
@@ -251,7 +294,10 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
               <div className="flex items-center gap-3">
                 {order.status === 'delivered_pending' ? (
-                  <button className="px-4 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs font-bold shadow-sm transition">
+                  <button
+                    onClick={() => handleConfirmDelivery(order.id)}
+                    className="px-4 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs font-bold shadow-sm transition"
+                  >
                     {lang === 'en' ? 'Confirm Delivery Received' : 'ഡെലിവറി ലഭിച്ചതായി സ്ഥിരീകരിക്കുക'}
                   </button>
                 ) : (
