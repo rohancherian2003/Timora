@@ -126,7 +126,7 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -141,6 +141,17 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
       description: description.trim(),
       priority,
     });
+
+    // Sync with backend support ticket API if available
+    try {
+      const { api } = await import('../lib/api');
+      await api.post('/support/tickets', {
+        category: matchedCat.en,
+        description: description.trim(),
+      });
+    } catch {
+      // Graceful offline fallback
+    }
 
     setSubmittedTicket(ticket);
     setErrors({});

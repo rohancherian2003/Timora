@@ -157,6 +157,40 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     return () => window.removeEventListener('timora_tickets_updated', handleUpdate);
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchPendingApps() {
+      try {
+        const { api } = await import('../../lib/api');
+        const res = await api.get('/admin/sellers/pending');
+        if (isMounted && res.data?.success && Array.isArray(res.data?.data) && res.data.data.length > 0) {
+          const liveApps: PendingBusiness[] = res.data.data.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            phone: s.phone,
+            businessName: s.business_name || `${s.name} Enterprise`,
+            district: s.district_name || 'Kerala',
+            locality: s.locality,
+            role: s.seller_subtype === 'mill_owner' ? 'mill' : (s.role || 'seller'),
+            details: `Registered ${new Date(s.created_at).toLocaleDateString()}`,
+            registeredAt: new Date(s.created_at).toISOString().slice(0, 16).replace('T', ' '),
+          }));
+          setApplications((prev) => {
+            const liveIds = new Set(liveApps.map((a) => a.id));
+            const retained = prev.filter((a) => !liveIds.has(a.id));
+            return [...liveApps, ...retained];
+          });
+        }
+      } catch {
+        // Fall back gracefully to INITIAL_PENDING_APPLICATIONS
+      }
+    }
+    fetchPendingApps();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const openTicketsCount = tickets.filter((t) => t.status === 'open').length;
 
   const addAudit = (action: string, target: string, note?: string) => {
@@ -171,9 +205,20 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setAuditLogs([entry, ...auditLogs]);
   };
 
-  const handleApproveApp = (app: PendingBusiness) => {
+  const handleApproveApp = async (app: PendingBusiness) => {
     setApplications(applications.filter((a) => a.id !== app.id));
     addAudit(`APPROVE_${app.role.toUpperCase()}`, `${app.businessName} (${app.name})`);
+    
+    // Attempt backend sync
+    try {
+      const { api } = await import('../../lib/api');
+      await api.patch(`/admin/sellers/${app.id}/approve`, {
+        note: `Approved by ${user?.name || 'Admin'}`,
+      });
+    } catch {
+      // Graceful local approval
+    }
+
     setMessage(
       lang === 'en'
         ? `${app.businessName} has been approved and activated.`
@@ -190,6 +235,9 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
     if (type === 'action_required') {
       addAudit(`REQUEST_INFO_${app.role.toUpperCase()}`, `${app.businessName}`, actionInput.trim());
+      import('../../lib/api').then(({ api }) => {
+        api.patch(`/admin/sellers/${app.id}/reject`, { reason: actionInput.trim() }).catch(() => {});
+      });
       setMessage(
         lang === 'en'
           ? `Requested additional documents from ${app.name}.`
@@ -197,6 +245,9 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       );
     } else {
       addAudit(`REJECT_${app.role.toUpperCase()}`, `${app.businessName}`, actionInput.trim());
+      import('../../lib/api').then(({ api }) => {
+        api.patch(`/admin/sellers/${app.id}/reject`, { reason: actionInput.trim() }).catch(() => {});
+      });
       setMessage(
         lang === 'en'
           ? `Application rejected with recorded reason.`
