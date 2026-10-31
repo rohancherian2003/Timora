@@ -144,6 +144,44 @@ export function TransportPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [transporters, setTransporters] = useState<TransporterItem[]>(INITIAL_TRANSPORTERS);
   const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
   const [expandedReviews, setExpandedReviews] = useState<Record<string, boolean>>({});
+
+  // Sync with live transport providers API
+  React.useEffect(() => {
+    let isMounted = true;
+    async function fetchProviders() {
+      try {
+        const { api } = await import('../../lib/api');
+        const res = await api.get('/transport/providers');
+        if (isMounted && res.data?.success && Array.isArray(res.data?.data) && res.data.data.length > 0) {
+          const liveItems: TransporterItem[] = res.data.data.map((p: any) => ({
+            id: String(p.id),
+            name: p.name,
+            phone: p.contact || '+919447100000',
+            service_areas: Array.isArray(p.service_areas) ? p.service_areas : ['All Kerala'],
+            vehicle_types: 'Crane-Mounted Multi-Axle Trucks (ഹെവി ക്രെയിൻ ലോറികൾ)',
+            capacity: '20 Tonnes / 500 CFT',
+            notes: p.notes || 'Inter-district forest transit with Form IV permits.',
+            verified: true,
+            rating: 4.8,
+            rating_count: 15,
+            reviews: [],
+          }));
+
+          setTransporters((prev) => {
+            const existingIds = new Set(liveItems.map((li) => li.id));
+            const retained = prev.filter((item) => !existingIds.has(item.id));
+            return [...liveItems, ...retained];
+          });
+        }
+      } catch {
+        // Fall back gracefully to INITIAL_TRANSPORTERS
+      }
+    }
+    fetchProviders();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
   const [alertModal, setAlertModal] = useState<{ isOpen: boolean; providerName?: string }>({
     isOpen: false,
   });

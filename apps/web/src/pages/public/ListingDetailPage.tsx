@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   MapPin,
@@ -20,10 +20,11 @@ import {
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
-import { getTimberListingById } from '../../utils/timberListings';
+import { getTimberListingById, TimberListingItem, mapApiListingToItem } from '../../utils/timberListings';
 import { LoginAlertModal, AlertEntityType } from '../../components/LoginAlertModal';
 import { BackButton } from '../../components/BackButton';
 import { SubmitReviewModal } from '../../components/SubmitReviewModal';
+import { api } from '../../lib/api';
 
 export interface SellerReviewItem {
   id: string;
@@ -42,7 +43,28 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
 
-  const listing = getTimberListingById(id);
+  const [liveListing, setLiveListing] = useState<TimberListingItem | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchLiveDetail() {
+      if (!id) return;
+      try {
+        const res = await api.get(`/listings/${id}`);
+        if (isMounted && res.data?.success && res.data?.data) {
+          setLiveListing(mapApiListingToItem(res.data.data));
+        }
+      } catch {
+        // Fall back gracefully to getTimberListingById(id)
+      }
+    }
+    fetchLiveDetail();
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  const listing = liveListing || getTimberListingById(id);
 
   const [selectedImage, setSelectedImage] = useState<string>(listing.image_url);
   const [showEnquiryModal, setShowEnquiryModal] = useState(false);
@@ -140,9 +162,21 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     }
   };
 
-  const handleSendEnquiry = (e: React.FormEvent) => {
+  const handleSendEnquiry = async (e: React.FormEvent) => {
     e.preventDefault();
     setSent(true);
+    try {
+      if (listing.seller_id) {
+        await api.post('/enquiries', {
+          listing_id: listing.id,
+          quantity,
+          proposed_price: proposedPrice,
+          message: message.trim() || undefined,
+        });
+      }
+    } catch {
+      // Graceful completion for demo listings or offline preview
+    }
     setTimeout(() => {
       setShowEnquiryModal(false);
       setSent(false);

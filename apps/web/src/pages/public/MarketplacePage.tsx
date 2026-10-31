@@ -23,7 +23,8 @@ import {
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
-import { TIMBER_LISTINGS, TimberListingItem } from '../../utils/timberListings';
+import { TIMBER_LISTINGS, TimberListingItem, mapApiListingToItem } from '../../utils/timberListings';
+import { api } from '../../lib/api';
 
 const SPECIES_PILLS = [
   { key: 'all', label: 'All Species', ml: 'എല്ലാ ഇനങ്ങളും' },
@@ -79,11 +80,42 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [isRaiseTicketOpen, setIsRaiseTicketOpen] = useState(false);
+  const [liveListings, setLiveListings] = useState<TimberListingItem[] | null>(null);
+  const [isLoadingLive, setIsLoadingLive] = useState(false);
   const [validationAlert, setValidationAlert] = useState<{
     type: 'warning' | 'info';
     title: string;
     message: string;
   } | null>(null);
+
+  // Live Listings Fetcher with Graceful Offline Fallback
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchLiveListings() {
+      try {
+        setIsLoadingLive(true);
+        const res = await api.get('/listings', {
+          params: {
+            search: searchQuery.trim() || undefined,
+            limit: 50,
+          },
+        });
+        if (isMounted && res.data?.success && Array.isArray(res.data?.data?.items) && res.data.data.items.length > 0) {
+          const mapped = res.data.data.items.map(mapApiListingToItem);
+          setLiveListings(mapped);
+        }
+      } catch {
+        // Gracefully preserve fallback TIMBER_LISTINGS
+      } finally {
+        if (isMounted) setIsLoadingLive(false);
+      }
+    }
+
+    fetchLiveListings();
+    return () => {
+      isMounted = false;
+    };
+  }, [searchQuery]);
 
   // Update query params helper
   const updateFilter = (key: string, value: string) => {
@@ -130,8 +162,9 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     }
   };
 
-  // Filter listings
-  const filteredListings = TIMBER_LISTINGS.filter((item) => {
+  // Filter listings across authoritative live items or cached directory
+  const sourceListings = (liveListings && liveListings.length > 0) ? liveListings : TIMBER_LISTINGS;
+  const filteredListings = sourceListings.filter((item) => {
     if (selectedSpecies !== 'all') {
       if (selectedSpecies === 'firewood') {
         if (!item.type.toLowerCase().includes('firewood') && !item.title.toLowerCase().includes('firewood')) {

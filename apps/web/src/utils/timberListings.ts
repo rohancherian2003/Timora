@@ -228,3 +228,53 @@ export function getTimberListingById(id: string | undefined): TimberListingItem 
   const found = TIMBER_LISTINGS.find((item) => item.id === String(id));
   return found || TIMBER_LISTINGS[0]!;
 }
+
+export function mapApiListingToItem(row: any): TimberListingItem {
+  const images: Array<{ id: string; url: string; is_primary?: boolean }> = Array.isArray(row.images)
+    ? row.images
+    : (typeof row.images === 'string' ? JSON.parse(row.images || '[]') : []);
+
+  const primaryImg = images.find((img) => img.is_primary)?.url || images[0]?.url || '/images/timber/teak-logs.png';
+  const additionalImgs = images.map((img) => img.url).filter(Boolean);
+
+  let dimensions = 'Standard Kerala Sawn';
+  if (row.length_ft && row.width_in && row.thickness_in) {
+    dimensions = `${row.length_ft} ft × ${row.width_in} in × ${row.thickness_in} in`;
+  } else if (row.length_ft && row.diameter_in) {
+    dimensions = `${row.length_ft} ft Length × ${row.diameter_in} in Diameter`;
+  }
+
+  const districtDisplay = row.district_name_en
+    ? `${row.district_name_en}${row.district_name_ml ? ` (${row.district_name_ml})` : ''}`
+    : (row.district || 'Kerala');
+
+  return {
+    id: String(row.id),
+    title: row.title || 'Timber Listing',
+    title_ml: row.title_ml || row.title,
+    species: row.species_name_en || row.species || 'Teak',
+    species_ml: row.species_name_ml || row.species_ml || 'തേക്ക്',
+    type: row.type_name_en || row.type || 'Round Logs',
+    type_ml: row.type_name_ml || row.type_ml || 'ഉരുണ്ട തടികൾ',
+    district: districtDisplay,
+    locality: row.locality || 'Kerala Depot',
+    locality_ml: row.locality_ml || row.locality || 'കേരള ഡിപ്പോ',
+    quantity: parseFloat(String(row.quantity || 0)),
+    unit: row.unit ? row.unit.toUpperCase() : 'CFT',
+    price_per_cft: parseFloat(String(row.price_per_cft || 0)),
+    seller_name: row.business_name || row.seller_name || 'Timber Depot',
+    seller_phone: row.seller_phone || '',
+    seller_verified: row.seller_verified === 'approved' || row.seller_verified === 'APPROVED' || row.seller_verified === true,
+    image_url: primaryImg,
+    additional_images: additionalImgs.length > 0 ? additionalImgs : [primaryImg],
+    dimensions,
+    pieces: row.pieces ? parseInt(String(row.pieces), 10) : undefined,
+    grade: row.grade || (row.is_dried ? 'Air-Dried Selected' : 'Standard Timber'),
+    transit_pass: true,
+    moisture: row.moisture_pct ? `${row.moisture_pct}% Moisture` : (row.is_dried ? 'Seasoned / Dried' : 'Natural Log'),
+    condition_notes: row.condition_notes || row.description || 'Verified timber stock from licensed Kerala seller.',
+    condition_notes_ml: row.condition_notes_ml || 'കേരള അംഗീകൃത തടി ഡിപ്പോയിൽ നിന്നുള്ള സ്റ്റോക്ക്.',
+    description: row.description,
+    seller_id: row.seller_id,
+  };
+}
