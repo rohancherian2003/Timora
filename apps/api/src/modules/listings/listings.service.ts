@@ -145,7 +145,7 @@ export class ListingsService {
       [sellerId]
     );
 
-    const status = sellerCheck.rows[0]?.approval_status;
+    const status = sellerCheck.rows[0]?.approval_status?.toLowerCase();
     if (status !== 'approved') {
       throw new AppError(
         403,

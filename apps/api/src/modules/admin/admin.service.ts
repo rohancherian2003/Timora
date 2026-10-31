@@ -152,7 +152,7 @@ export class AdminService {
 
       // Dispatch in-dashboard notification to user
       const targetUserId = entityType === 'mill'
-        ? (await client.query('SELECT seller_id FROM timber_mills WHERE id = $1', [entityId])).rows[0]?.seller_id
+        ? (await client.query('SELECT owner_id FROM timber_mills WHERE id = $1', [entityId])).rows[0]?.owner_id
         : entityId;
 
       if (targetUserId) {

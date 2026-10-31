@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { listingsController } from './listings.controller.js';
 import { validate } from '../../middleware/validate.js';
-import { authenticate } from '../../middleware/auth.js';
+import { authenticate, optionalAuthenticate } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/requireRole.js';
 import {
   createListingSchema,
@@ -34,6 +34,7 @@ listingsRouter.get(
 
 listingsRouter.get(
   '/:id',
+  optionalAuthenticate,
   listingsController.getListingById.bind(listingsController)
 );
 

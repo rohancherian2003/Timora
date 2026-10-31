@@ -381,7 +381,7 @@ export class AuthService {
            SET mill_name = $1,
                district_id = COALESCE($2, district_id),
                updated_at = NOW()
-           WHERE seller_id = $3 OR owner_id = $3`,
+           WHERE owner_id = $3`,
           [millName.trim(), districtId, userId]
         );
       }
@@ -392,8 +392,7 @@ export class AuthService {
           : null;
         await query(
           `UPDATE carpenter_profiles 
-           SET specializations = COALESCE($1, specializations),
-               specialization = COALESCE($1, specialization),
+           SET specialization = COALESCE($1, specialization),
                experience_yrs = COALESCE($2, experience_yrs),
                business_name = COALESCE($3, business_name),
                district_id = COALESCE($4, district_id),
@@ -565,7 +564,7 @@ export class AuthService {
        LEFT JOIN user_profiles p ON p.user_id = u.id
        LEFT JOIN kerala_districts kd ON kd.id = p.district_id
        LEFT JOIN seller_profiles sp ON sp.user_id = u.id
-       LEFT JOIN timber_mills tm ON tm.seller_id = u.id OR tm.owner_id = u.id
+       LEFT JOIN timber_mills tm ON tm.owner_id = u.id
        LEFT JOIN carpenter_profiles cp ON cp.user_id = u.id
        LEFT JOIN transport_owner_profiles tp ON tp.user_id = u.id
        WHERE u.id = $1`,
