@@ -7,7 +7,12 @@ import { AppError } from '../middleware/errorHandler.js';
 
 let supabaseClient: ReturnType<typeof createClient> | null = null;
 
-if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+if (
+  env.SUPABASE_URL &&
+  env.SUPABASE_SERVICE_ROLE_KEY &&
+  !env.SUPABASE_URL.includes('placeholder') &&
+  env.SUPABASE_SERVICE_ROLE_KEY !== 'placeholder'
+) {
   supabaseClient = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
   });
@@ -18,24 +23,85 @@ export interface UploadResult {
   publicUrl: string;
 }
 
+/**
+ * Validates actual binary content (magic bytes) to ensure the uploaded file
+ * is genuinely a valid JPEG, PNG, or WebP image and not an executable or malicious script.
+ */
+export function detectImageSignature(buffer: Buffer): 'image/jpeg' | 'image/png' | 'image/webp' | null {
+  if (!buffer || buffer.length < 12) return null;
+
+  // JPEG magic bytes: FF D8 FF
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return 'image/jpeg';
+  }
+
+  // PNG magic bytes: 89 50 4E 47 0D 0A 1A 0A
+  if (
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  ) {
+    return 'image/png';
+  }
+
+  // WebP magic bytes: RIFF....WEBP
+  const riff = buffer.toString('ascii', 0, 4);
+  const webp = buffer.toString('ascii', 8, 12);
+  if (riff === 'RIFF' && webp === 'WEBP') {
+    return 'image/webp';
+  }
+
+  return null;
+}
+
 export async function uploadListingImage(
   buffer: Buffer,
   originalName: string,
   mimeType: string,
   listingId: string
 ): Promise<UploadResult> {
+  if (!buffer || buffer.length === 0) {
+    throw new AppError(400, 'EMPTY_FILE', 'Uploaded image file cannot be empty.');
+  }
+
   const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
-  if (!allowedMimes.includes(mimeType)) {
+  const normalizedMime = mimeType?.toLowerCase()?.trim();
+  if (!allowedMimes.includes(normalizedMime)) {
     throw new AppError(400, 'INVALID_FILE_TYPE', 'Only JPEG, PNG, and WebP images are permitted.');
   }
 
   if (buffer.length > env.IMAGE_MAX_SIZE_BYTES) {
-    throw new AppError(400, 'FILE_TOO_LARGE', `Image file exceeds maximum size of ${env.IMAGE_MAX_SIZE_BYTES / (1024 * 1024)}MB.`);
+    throw new AppError(
+      400,
+      'FILE_TOO_LARGE',
+      `Image file exceeds maximum size of ${env.IMAGE_MAX_SIZE_BYTES / (1024 * 1024)}MB.`
+    );
   }
 
-  const ext = path.extname(originalName).toLowerCase() || '.jpg';
+  // Deep inspection of magic bytes / content signature
+  const detectedMime = detectImageSignature(buffer);
+  if (!detectedMime) {
+    throw new AppError(
+      400,
+      'INVALID_IMAGE_CONTENT',
+      'File content does not match genuine image binary signature (JPEG, PNG, or WebP).'
+    );
+  }
+
+  // Determine safe extension based on actual content type
+  const extensionMap: Record<string, string> = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/webp': '.webp',
+  };
+  const safeExt = extensionMap[detectedMime] || '.jpg';
   const fileHash = crypto.randomBytes(16).toString('hex');
-  const storageKey = `listings/${listingId}/${Date.now()}-${fileHash}${ext}`;
+  const storageKey = `listings/${listingId}/${Date.now()}-${fileHash}${safeExt}`;
 
   if (supabaseClient) {
     const { error } = await supabaseClient.storage

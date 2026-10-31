@@ -131,8 +131,24 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
     if (!validate()) return;
 
     const matchedCat = CATEGORIES.find((c) => c.key === categoryKey) || CATEGORIES[0]!;
+    let backendReference: string | undefined;
+
+    // Create support ticket on backend to obtain authoritative TKT-YYYY-NNNN reference
+    try {
+      const { api } = await import('../lib/api');
+      const res = await api.post('/support/tickets', {
+        category: matchedCat.en,
+        description: description.trim(),
+      });
+      if (res.data?.success && res.data?.data?.reference) {
+        backendReference = res.data.data.reference;
+      }
+    } catch {
+      // Graceful offline fallback
+    }
 
     const ticket = createTicket({
+      id: backendReference,
       name: name.trim(),
       phone: phone.replace(/\D/g, ''),
       role,
@@ -141,17 +157,6 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
       description: description.trim(),
       priority,
     });
-
-    // Sync with backend support ticket API if available
-    try {
-      const { api } = await import('../lib/api');
-      await api.post('/support/tickets', {
-        category: matchedCat.en,
-        description: description.trim(),
-      });
-    } catch {
-      // Graceful offline fallback
-    }
 
     setSubmittedTicket(ticket);
     setErrors({});

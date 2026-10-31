@@ -25,8 +25,8 @@ export const resolveDisputeSchema = z.object({
 
 export const createReviewSchema = z.object({
   body: z.object({
-    order_id: z.string().uuid(),
-    rating: z.number().int().min(1).max(5),
+    order_id: z.string().uuid('Valid order UUID is required.'),
+    rating: z.number().int('Rating must be an integer.').min(1, 'Rating must be between 1 and 5.').max(5, 'Rating must be between 1 and 5.'),
     body: z.string().min(5, 'Review comment must be at least 5 characters.').optional(),
   }),
 });

@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { listingsService } from './listings.service.js';
 import { uploadListingImage, deleteListingImage } from '../../utils/storage.js';
+import { AppError } from '../../middleware/errorHandler.js';
 import type { ApiSuccessResponse } from '@timora/shared';
 
 export class ListingsController {
@@ -90,8 +91,8 @@ export class ListingsController {
       const listingId = req.params.id as string;
       const file = req.file;
 
-      if (!file) {
-        throw new Error('Image file is required.');
+      if (!file || !file.buffer || file.buffer.length === 0) {
+        throw new AppError(400, 'FILE_REQUIRED', 'Image file is required.');
       }
 
       const uploaded = await uploadListingImage(
@@ -101,13 +102,21 @@ export class ListingsController {
         listingId
       );
 
-      const result = await listingsService.addListingImage(sellerId, listingId, uploaded);
-      const response: ApiSuccessResponse = {
-        success: true,
-        data: result,
-        message: 'Photograph uploaded successfully.',
-      };
-      res.status(201).json(response);
+      try {
+        const result = await listingsService.addListingImage(sellerId, listingId, uploaded);
+        const response: ApiSuccessResponse = {
+          success: true,
+          data: result,
+          message: 'Photograph uploaded successfully.',
+        };
+        res.status(201).json(response);
+      } catch (dbErr) {
+        // Rollback / clean up uploaded storage key if database insertion fails
+        if (uploaded?.storageKey) {
+          await deleteListingImage(uploaded.storageKey).catch(() => {});
+        }
+        throw dbErr;
+      }
     } catch (err) {
       next(err);
     }

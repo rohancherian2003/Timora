@@ -12,13 +12,15 @@ import {
   LifeBuoy,
   ShieldCheck,
   AlertCircle,
-  Plus
+  Plus,
+  Star
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { getTicketsForUser, SupportTicket } from '../../utils/ticketService';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
+import { SubmitReviewModal } from '../../components/SubmitReviewModal';
 import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
 
 const DEMO_BUYER_ORDERS = [
@@ -66,6 +68,11 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [dismissedResolvedId, setDismissedResolvedId] = useState<string | null>(null);
   const [liveOrders, setLiveOrders] = useState<any[]>([]);
+  const [selectedReviewOrder, setSelectedReviewOrder] = useState<{
+    id: string;
+    sellerId: string;
+    sellerName: string;
+  } | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -301,10 +308,25 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     {lang === 'en' ? 'Confirm Delivery Received' : 'ഡെലിവറി ലഭിച്ചതായി സ്ഥിരീകരിക്കുക'}
                   </button>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    {lang === 'en' ? 'Completed & Delivered' : 'പൂർത്തിയായി'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      {lang === 'en' ? 'Completed & Delivered' : 'പൂർത്തിയായി'}
+                    </span>
+                    <button
+                      onClick={() =>
+                        setSelectedReviewOrder({
+                          id: order.id,
+                          sellerId: order.seller_id || '',
+                          sellerName: order.seller_name || 'Timber Merchant',
+                        })
+                      }
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#8E7F6B]/40 hover:bg-[#E7E1D6]/50 text-[#4A3626] text-xs font-bold transition"
+                    >
+                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                      <span>{lang === 'en' ? 'Review Seller' : 'റിവ്യൂ'}</span>
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -452,6 +474,18 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         onClose={() => setIsEditProfileOpen(false)}
         lang={lang}
       />
+
+      {selectedReviewOrder && (
+        <SubmitReviewModal
+          isOpen={Boolean(selectedReviewOrder)}
+          onClose={() => setSelectedReviewOrder(null)}
+          orderId={selectedReviewOrder.id}
+          targetType="seller"
+          targetId={selectedReviewOrder.sellerId}
+          targetName={selectedReviewOrder.sellerName}
+          lang={lang}
+        />
+      )}
     </div>
   );
 }

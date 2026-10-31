@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from '../../config/database.js';
 import { authenticate } from '../../middleware/auth.js';
+import { AppError } from '../../middleware/errorHandler.js';
 import { formatTicketRef } from '@timora/shared';
 import type { ApiSuccessResponse } from '@timora/shared';
 import { notificationsService } from '../notifications/notifications.service.js';
@@ -64,21 +65,45 @@ supportRouter.patch('/notifications/:id/read', async (req, res, next) => {
   }
 });
 
-// Create support ticket
+// Create support ticket with concurrency-safe yearly numbering (TKT-YYYY-NNNN)
 supportRouter.post('/tickets', async (req, res, next) => {
   try {
     const userId = req.user!.id;
     const { category, description } = req.body;
 
-    const countRes = await query<{ count: string }>('SELECT COUNT(*) FROM support_tickets');
-    const seq = parseInt(countRes.rows[0]?.count || '0', 10) + 1;
-    const reference = formatTicketRef(seq);
+    if (!description || typeof description !== 'string' || description.trim().length < 5) {
+      throw new AppError(400, 'INVALID_INPUT', 'Ticket description must be at least 5 characters.');
+    }
+
+    const currentYear = new Date().getFullYear();
+    let seq = 1;
+
+    try {
+      const seqRes = await query<{ current_seq: number }>(
+        `INSERT INTO ticket_sequences (year, current_seq, updated_at)
+         VALUES ($1, 1, NOW())
+         ON CONFLICT (year) DO UPDATE
+         SET current_seq = ticket_sequences.current_seq + 1, updated_at = NOW()
+         RETURNING current_seq`,
+        [currentYear]
+      );
+      seq = seqRes.rows[0]?.current_seq ?? 1;
+    } catch {
+      // Fallback if ticket_sequences table is not yet migrated in isolated environments
+      const countRes = await query<{ count: string }>(
+        `SELECT COUNT(*) FROM support_tickets WHERE reference LIKE $1`,
+        [`TKT-${currentYear}-%`]
+      );
+      seq = parseInt(countRes.rows[0]?.count || '0', 10) + 1;
+    }
+
+    const reference = formatTicketRef(seq, currentYear);
 
     const result = await query(
       `INSERT INTO support_tickets (user_id, reference, category, description, status)
        VALUES ($1, $2, $3, $4, 'open')
        RETURNING *`,
-      [userId, reference, category || 'general', description]
+      [userId, reference, (category || 'general').trim(), description.trim()]
     );
 
     const response: ApiSuccessResponse = {

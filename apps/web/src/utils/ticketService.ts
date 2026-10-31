@@ -108,7 +108,7 @@ export function saveStoredTickets(tickets: SupportTicket[]): void {
   }
 }
 
-export function createTicket(ticketData: Omit<SupportTicket, 'id' | 'status' | 'createdAt'>): SupportTicket {
+export function createTicket(ticketData: Omit<SupportTicket, 'id' | 'status' | 'createdAt'> & { id?: string }): SupportTicket {
   const tickets = getStoredTickets();
   const idNumber = Math.floor(1000 + Math.random() * 9000);
   const now = new Date();
@@ -116,7 +116,7 @@ export function createTicket(ticketData: Omit<SupportTicket, 'id' | 'status' | '
 
   const newTicket: SupportTicket = {
     ...ticketData,
-    id: `TKT-${now.getFullYear()}-${idNumber}`,
+    id: ticketData.id || `TKT-${now.getFullYear()}-${idNumber}`,
     status: 'open',
     createdAt: dateStr,
   };

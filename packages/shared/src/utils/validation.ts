@@ -78,10 +78,10 @@ export function formatINR(amount: number, options?: { compact?: boolean }): stri
 }
 
 /**
- * Generate a unique support ticket reference (e.g. TIM-00042).
+ * Generate a unique support ticket reference in standard TKT-YYYY-NNNN format (e.g. TKT-2026-0001).
  */
-export function formatTicketRef(sequenceNumber: number): string {
-  return `TIM-${String(sequenceNumber).padStart(5, '0')}`;
+export function formatTicketRef(sequenceNumber: number, year: number = new Date().getFullYear()): string {
+  return `TKT-${year}-${String(sequenceNumber).padStart(4, '0')}`;
 }
 
 /**

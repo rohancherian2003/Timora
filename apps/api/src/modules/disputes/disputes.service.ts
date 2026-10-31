@@ -175,71 +175,73 @@ export class DisputesService {
    * Exactly 1 review per eligible party per completed order.
    */
   async createReview(reviewerId: string, data: { order_id: string; rating: number; body?: string }) {
-    const orderRes = await query(
-      `SELECT id, buyer_id, seller_id, status FROM orders WHERE id = $1`,
-      [data.order_id]
-    );
-
-    const order = orderRes.rows[0];
-    if (!order) throw new AppError(404, 'NOT_FOUND', 'Order not found.');
-
-    if (order.status !== 'completed') {
-      throw new AppError(
-        400,
-        'ORDER_NOT_COMPLETED',
-        'Reviews can only be submitted after both parties have confirmed delivery and the order is marked completed.'
+    return await withTransaction(async (client) => {
+      const orderRes = await client.query(
+        `SELECT id, buyer_id, seller_id, status FROM orders WHERE id = $1 FOR UPDATE`,
+        [data.order_id]
       );
-    }
 
-    const isBuyer = order.buyer_id === reviewerId;
-    const isSeller = order.seller_id === reviewerId;
-    if (!isBuyer && !isSeller) {
-      throw new AppError(403, 'FORBIDDEN', 'You can only review orders you participated in.');
-    }
+      const order = orderRes.rows[0];
+      if (!order) throw new AppError(404, 'NOT_FOUND', 'Order not found.');
 
-    const revieweeId = isBuyer ? order.seller_id : order.buyer_id;
+      if (order.status !== 'completed') {
+        throw new AppError(
+          400,
+          'ORDER_NOT_COMPLETED',
+          'Reviews can only be submitted after both parties have confirmed delivery and the order is marked completed.'
+        );
+      }
 
-    // Check duplicate review
-    const existing = await query(
-      `SELECT id FROM reviews WHERE order_id = $1 AND reviewer_id = $2`,
-      [data.order_id, reviewerId]
-    );
-    if (existing.rows.length > 0) {
-      throw new AppError(409, 'DUPLICATE_REVIEW', 'You have already submitted a review for this completed order.');
-    }
+      const isBuyer = order.buyer_id === reviewerId;
+      const isSeller = order.seller_id === reviewerId;
+      if (!isBuyer && !isSeller) {
+        throw new AppError(403, 'FORBIDDEN', 'You can only review orders you participated in.');
+      }
 
-    const res = await query(
-      `INSERT INTO reviews (order_id, reviewer_id, reviewee_id, rating, body)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [data.order_id, reviewerId, revieweeId, data.rating, data.body || null]
-    );
+      const revieweeId = isBuyer ? order.seller_id : order.buyer_id;
 
-    const insertedReview = res.rows[0];
-
-    // Recalculate average rating and count for reviewee
-    const statsRes = await query(
-      `SELECT AVG(rating)::numeric(3,2) as avg_rating, COUNT(*)::int as total_count
-       FROM reviews
-       WHERE reviewee_id = $1`,
-      [revieweeId]
-    );
-
-    const stats = statsRes.rows[0];
-    if (stats) {
-      const avgRating = parseFloat(stats.avg_rating) || data.rating;
-      const count = parseInt(stats.total_count, 10) || 1;
-
-      // Update carpenter_profiles if reviewee is a carpenter
-      await query(
-        `UPDATE carpenter_profiles 
-         SET rating = $1, rating_count = $2, updated_at = NOW() 
-         WHERE user_id = $3`,
-        [avgRating, count, revieweeId]
+      // Check duplicate review
+      const existing = await client.query(
+        `SELECT id FROM reviews WHERE order_id = $1 AND reviewer_id = $2`,
+        [data.order_id, reviewerId]
       );
-    }
+      if (existing.rows.length > 0) {
+        throw new AppError(409, 'DUPLICATE_REVIEW', 'You have already submitted a review for this completed order.');
+      }
 
-    return insertedReview;
+      const res = await client.query(
+        `INSERT INTO reviews (order_id, reviewer_id, reviewee_id, rating, body)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *`,
+        [data.order_id, reviewerId, revieweeId, data.rating, data.body || null]
+      );
+
+      const insertedReview = res.rows[0];
+
+      // Recalculate average rating and count for reviewee
+      const statsRes = await client.query(
+        `SELECT AVG(rating)::numeric(3,2) as avg_rating, COUNT(*)::int as total_count
+         FROM reviews
+         WHERE reviewee_id = $1`,
+        [revieweeId]
+      );
+
+      const stats = statsRes.rows[0];
+      if (stats) {
+        const avgRating = parseFloat(stats.avg_rating) || data.rating;
+        const count = parseInt(stats.total_count, 10) || 1;
+
+        // Update carpenter_profiles if reviewee is a carpenter
+        await client.query(
+          `UPDATE carpenter_profiles 
+           SET rating = $1, rating_count = $2, updated_at = NOW() 
+           WHERE user_id = $3`,
+          [avgRating, count, revieweeId]
+        );
+      }
+
+      return insertedReview;
+    });
   }
 
   /**

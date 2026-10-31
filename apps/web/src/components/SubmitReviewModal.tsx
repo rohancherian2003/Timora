@@ -10,6 +10,7 @@ export interface SubmitReviewModalProps {
   targetType: 'carpenter' | 'mill' | 'transport' | 'seller';
   targetId: string;
   targetName: string;
+  orderId?: string;
   onReviewSubmitted?: (review: {
     id: string;
     author: string;
@@ -29,6 +30,7 @@ export function SubmitReviewModal({
   targetType,
   targetId,
   targetName,
+  orderId,
   onReviewSubmitted,
   lang = 'en',
 }: SubmitReviewModalProps) {
@@ -40,12 +42,70 @@ export function SubmitReviewModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [resolvedOrderId, setResolvedOrderId] = useState<string | null>(orderId || null);
+  const [hasEligibleOrder, setHasEligibleOrder] = useState<boolean>(Boolean(orderId));
+  const [isCheckingOrders, setIsCheckingOrders] = useState(false);
+
+  // Check for eligible completed orders when modal opens without a pre-supplied orderId
+  React.useEffect(() => {
+    if (!isOpen || !isAuthenticated) return;
+    if (orderId) {
+      setResolvedOrderId(orderId);
+      setHasEligibleOrder(true);
+      return;
+    }
+
+    let isMounted = true;
+    async function checkCompletedOrders() {
+      setIsCheckingOrders(true);
+      try {
+        const { api } = await import('../lib/api');
+        const res = await api.get('/orders');
+        if (isMounted && res.data?.success && Array.isArray(res.data?.data)) {
+          const eligible = res.data.data.find(
+            (o: any) =>
+              o.status === 'completed' &&
+              (o.seller_id === targetId || o.listing_id === targetId || o.buyer_id === targetId || o.id === targetId)
+          );
+          if (eligible) {
+            setResolvedOrderId(eligible.id);
+            setHasEligibleOrder(true);
+          } else {
+            setResolvedOrderId(null);
+            setHasEligibleOrder(false);
+          }
+        }
+      } catch {
+        // Fallback: allow submission attempt and let backend enforce transaction verification
+        if (isMounted) {
+          setHasEligibleOrder(true);
+        }
+      } finally {
+        if (isMounted) setIsCheckingOrders(false);
+      }
+    }
+
+    checkCompletedOrders();
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, isAuthenticated, orderId, targetId]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+
+    const targetOrderId = orderId || resolvedOrderId;
+    if (!targetOrderId) {
+      setErrorMsg(
+        lang === 'en'
+          ? 'Only users with a confirmed completed transaction can submit verified reviews.'
+          : 'പൂർത്തിയായ ഇടപാടുകളുള്ള ഉപയോക്താക്കൾക്ക് മാത്രമേ വെരിഫൈഡ് റിവ്യൂ നൽകാൻ അനുമതിയുള്ളൂ.'
+      );
+      return;
+    }
 
     if (!comment.trim() || comment.trim().length < 5) {
       setErrorMsg(
@@ -59,31 +119,20 @@ export function SubmitReviewModal({
     setIsSubmitting(true);
 
     try {
-      // Attempt backend review submission
       const { api } = await import('../lib/api');
-      try {
-        await api.post('/reviews', {
-          entity_id: targetId,
-          rating,
-          body: comment.trim(),
-        });
-      } catch (backendErr: any) {
-        // If backend returns ORDER_NOT_COMPLETED or FORBIDDEN, handle gracefully
-        const errCode = backendErr?.response?.data?.error?.code;
-        if (errCode === 'ORDER_NOT_COMPLETED' || errCode === 'FORBIDDEN') {
-          setErrorMsg(
-            lang === 'en'
-              ? 'Only users with a confirmed completed transaction can submit verified reviews.'
-              : 'പൂർത്തിയായ ഇടപാടുകളുള്ള ഉപയോക്താക്കൾക്ക് മാത്രമേ വെരിഫൈഡ് റിവ്യൂ നൽകാൻ അനുമതിയുള്ളൂ.'
-          );
-          setIsSubmitting(false);
-          return;
-        }
+      const res = await api.post('/reviews', {
+        order_id: targetOrderId,
+        rating,
+        body: comment.trim(),
+      });
+
+      if (!res.data?.success) {
+        throw new Error(res.data?.message || 'Failed to submit review.');
       }
 
       // Format newly created review
       const newReview = {
-        id: `rev-local-${Date.now()}`,
+        id: res.data?.data?.id || `rev-local-${Date.now()}`,
         author: user?.name || 'Verified Client',
         role: user?.role === 'buyer' ? 'Verified Buyer' : 'Verified Trade Partner',
         rating,
@@ -105,9 +154,29 @@ export function SubmitReviewModal({
         setComment('');
         onClose();
       }, 1500);
-    } catch (err: any) {
+    } catch (backendErr: any) {
       setIsSubmitting(false);
-      setErrorMsg(err?.message || (lang === 'en' ? 'Failed to submit review.' : 'റിവ്യൂ സമർപ്പിക്കാൻ സാധിച്ചില്ല.'));
+      const errCode = backendErr?.response?.data?.error?.code;
+      const errMsg =
+        backendErr?.response?.data?.error?.message ||
+        backendErr?.response?.data?.message ||
+        backendErr?.message;
+
+      if (errCode === 'ORDER_NOT_COMPLETED' || errCode === 'FORBIDDEN') {
+        setErrorMsg(
+          lang === 'en'
+            ? 'Only users with a confirmed completed transaction can submit verified reviews.'
+            : 'പൂർത്തിയായ ഇടപാടുകളുള്ള ഉപയോക്താക്കൾക്ക് മാത്രമേ വെരിഫൈഡ് റിവ്യൂ നൽകാൻ അനുമതിയുള്ളൂ.'
+        );
+      } else if (errCode === 'DUPLICATE_REVIEW') {
+        setErrorMsg(
+          lang === 'en'
+            ? 'You have already submitted a review for this completed transaction.'
+            : 'ഈ ഇടപാടിന് താങ്കൾ ഇതിനകം റിവ്യൂ നൽകിയിട്ടുണ്ട്.'
+        );
+      } else {
+        setErrorMsg(errMsg || (lang === 'en' ? 'Failed to submit review.' : 'റിവ്യൂ സമർപ്പിക്കാൻ സാധിച്ചില്ല.'));
+      }
     }
   };
 
@@ -188,6 +257,17 @@ export function SubmitReviewModal({
               </div>
             )}
 
+            {!hasEligibleOrder && !isCheckingOrders && (
+              <div className="p-3 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <span>
+                  {lang === 'en'
+                    ? 'Only clients with a confirmed completed transaction can submit verified reviews.'
+                    : 'പൂർത്തിയായ ഇടപാടുകളുള്ള ഉപയോക്താക്കൾക്ക് മാത്രമേ വെരിഫൈഡ് റിവ്യൂ നൽകാൻ സാധിക്കൂ.'}
+                </span>
+              </div>
+            )}
+
             {/* Verified Buyer Badge notice */}
             <div className="p-3 bg-emerald-50/80 rounded-2xl border border-emerald-200/80 flex items-center gap-2 text-emerald-900 text-[11px]">
               <ShieldCheck className="w-4 h-4 text-emerald-700 flex-shrink-0" />
@@ -260,8 +340,8 @@ export function SubmitReviewModal({
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="px-4 py-2 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold transition flex items-center gap-1.5 shadow-xs text-xs"
+                disabled={isSubmitting || (!hasEligibleOrder && !isCheckingOrders)}
+                className="px-4 py-2 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] disabled:opacity-50 text-white font-bold transition flex items-center gap-1.5 shadow-xs text-xs"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>

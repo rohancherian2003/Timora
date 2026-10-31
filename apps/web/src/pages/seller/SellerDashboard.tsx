@@ -14,6 +14,11 @@ import {
   MessageSquare,
   Trees,
   User,
+  Upload,
+  Image as ImageIcon,
+  Trash2,
+  Camera,
+  X,
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
@@ -43,6 +48,99 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [pricePerCft, setPricePerCft] = useState(2400);
   const [submitted, setSubmitted] = useState(false);
   const [sellerListings, setSellerListings] = useState<any[]>([]);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [listingError, setListingError] = useState<string | null>(null);
+  const [isSubmittingListing, setIsSubmittingListing] = useState(false);
+  const [managingPhotosListing, setManagingPhotosListing] = useState<any | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageError(null);
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const maxSizeBytes = 10 * 1024 * 1024; // 10MB
+
+    if (selectedImages.length + files.length > 8) {
+      setImageError(
+        lang === 'en'
+          ? 'Maximum 8 photographs allowed per timber listing.'
+          : 'ഒരു ലിസ്റ്റിംഗിൽ പരമാവധി 8 ഫോട്ടോകൾ മാത്രമേ അനുവദിക്കൂ.'
+      );
+      return;
+    }
+
+    for (const file of files) {
+      if (!allowedTypes.includes(file.type)) {
+        setImageError(
+          lang === 'en'
+            ? `"${file.name}" is not supported. Only JPEG, PNG, and WebP are allowed.`
+            : `"${file.name}" സ്വീകാര്യമല്ല. JPEG, PNG, WebP ഫോർമാറ്റുകൾ മാത്രം തിരഞ്ഞെടുക്കുക.`
+        );
+        return;
+      }
+      if (file.size > maxSizeBytes) {
+        setImageError(
+          lang === 'en'
+            ? `"${file.name}" exceeds the 10MB file limit.`
+            : `"${file.name}" 10MB ൽ കൂടുതലാണ്.`
+        );
+        return;
+      }
+    }
+
+    const newPreviews = files.map((file) => URL.createObjectURL(file));
+    setSelectedImages((prev) => [...prev, ...files]);
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
+  };
+
+  const handleRemoveImage = (index: number) => {
+    const url = imagePreviews[index];
+    if (url) URL.revokeObjectURL(url);
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUploadSinglePhoto = async (listingId: string, file: File) => {
+    setIsUploadingPhoto(true);
+    try {
+      const { api } = await import('../../lib/api');
+      const formData = new FormData();
+      formData.append('image', file);
+      await api.post(`/listings/${listingId}/images`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const listRes = await api.get('/listings/seller/me');
+      if (listRes.data?.success && Array.isArray(listRes.data?.data)) {
+        setSellerListings(listRes.data.data);
+        const updated = listRes.data.data.find((l: any) => l.id === listingId);
+        if (updated) setManagingPhotosListing(updated);
+      }
+    } catch (err: any) {
+      alert(err?.response?.data?.error?.message || err?.message || 'Failed to upload photo.');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleDeletePhoto = async (listingId: string, imageId: string) => {
+    if (!window.confirm(lang === 'en' ? 'Remove this photograph?' : 'ഈ ഫോട്ടോ നീക്കം ചെയ്യണോ?')) return;
+    try {
+      const { api } = await import('../../lib/api');
+      await api.delete(`/listings/${listingId}/images/${imageId}`);
+      const listRes = await api.get('/listings/seller/me');
+      if (listRes.data?.success && Array.isArray(listRes.data?.data)) {
+        setSellerListings(listRes.data.data);
+        const updated = listRes.data.data.find((l: any) => l.id === listingId);
+        if (updated) setManagingPhotosListing(updated);
+      }
+    } catch (err: any) {
+      alert(err?.response?.data?.error?.message || err?.message || 'Failed to delete photo.');
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -75,10 +173,13 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setIsSubmittingListing(true);
+    setListingError(null);
+    setImageError(null);
+
     try {
       const { api } = await import('../../lib/api');
-      await api.post('/listings', {
+      const res = await api.post('/listings', {
         title: title.trim(),
         species_id: speciesId,
         timber_type_id: typeId,
@@ -88,14 +189,53 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         pricing_mode: 'fixed',
         unit: 'cft',
       });
-    } catch {
-      // Graceful completion for demo accounts or offline preview
+
+      const listingId = res.data?.data?.id;
+
+      // Upload selected photographs to backend storage
+      if (listingId && selectedImages.length > 0) {
+        for (const file of selectedImages) {
+          const formData = new FormData();
+          formData.append('image', file);
+          try {
+            await api.post(`/listings/${listingId}/images`, formData, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            });
+          } catch (uploadErr) {
+            console.error('Failed to upload image:', uploadErr);
+          }
+        }
+      }
+
+      imagePreviews.forEach((url) => URL.revokeObjectURL(url));
+      setSelectedImages([]);
+      setImagePreviews([]);
+
+      setSubmitted(true);
+      setIsSubmittingListing(false);
+
+      // Refresh listings
+      try {
+        const listRes = await api.get('/listings/seller/me');
+        if (listRes.data?.success && Array.isArray(listRes.data?.data)) {
+          setSellerListings(listRes.data.data);
+        }
+      } catch {}
+
+      setTimeout(() => {
+        setShowAddForm(false);
+        setSubmitted(false);
+        setTitle('');
+      }, 1500);
+    } catch (err: any) {
+      setIsSubmittingListing(false);
+      setListingError(
+        err?.response?.data?.message ||
+        err?.response?.data?.error?.message ||
+        err?.message ||
+        (lang === 'en' ? 'Failed to submit listing.' : 'ലിസ്റ്റിംഗ് സമർപ്പിക്കാൻ സാധിച്ചില്ല.')
+      );
     }
-    setTimeout(() => {
-      setShowAddForm(false);
-      setSubmitted(false);
-      setTitle('');
-    }, 1500);
   };
 
   return (
@@ -390,11 +530,79 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 </div>
               </div>
 
+              {/* Timber Photographs Upload Area */}
+              <div className="space-y-2 pt-1">
+                <label className="block text-xs font-semibold text-stone-700">
+                  {lang === 'en' ? 'Timber Photographs (Max 8)' : 'തടിയുടെ ഫോട്ടോകൾ (പരമാവധി 8)'}
+                </label>
+
+                {imageError && (
+                  <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-900 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                    <span>{imageError}</span>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-3 items-center">
+                  {imagePreviews.map((previewUrl, idx) => (
+                    <div key={idx} className="relative w-20 h-20 rounded-2xl border border-stone-300 overflow-hidden group shadow-xs">
+                      <img src={previewUrl} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(idx)}
+                        className="absolute top-1 right-1 p-1 bg-black/70 hover:bg-black text-white rounded-full transition"
+                        title={lang === 'en' ? 'Remove' : 'നീക്കം ചെയ്യുക'}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                      {idx === 0 && (
+                        <span className="absolute bottom-0 inset-x-0 bg-[#5B6147]/90 text-white text-[9px] text-center font-bold py-0.5">
+                          {lang === 'en' ? 'Primary' : 'പ്രധാനം'}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+
+                  {selectedImages.length < 8 && (
+                    <label className="w-20 h-20 rounded-2xl border-2 border-dashed border-[#8E7F6B]/40 hover:border-[#5B6147] flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-[#E7E1D6]/30 transition group">
+                      <Camera className="w-6 h-6 text-[#8E7F6B] group-hover:text-[#5B6147] transition" />
+                      <span className="text-[10px] font-semibold text-stone-500 mt-1">
+                        {lang === 'en' ? 'Add Photo' : 'ചേർക്കുക'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+                <p className="text-[11px] text-stone-400">
+                  {lang === 'en'
+                    ? 'Upload clear photos of cross-cut end grains, side grain, and logs/planks (JPEG, PNG, WebP up to 10MB).'
+                    : 'തടിയുടെ വ്യക്തമായ ചിത്രങ്ങൾ അപ്‌ലോഡ് ചെയ്യുക (JPEG, PNG, WebP, പരമാവധി 10MB).'}
+                </p>
+              </div>
+
+              {listingError && (
+                <div className="p-3 rounded-2xl bg-rose-50 border border-rose-300 text-rose-900 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                  <span>{listingError}</span>
+                </div>
+              )}
+
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-sm shadow-md shadow-amber-950/10 transition"
+                disabled={isSubmittingListing}
+                className="w-full py-3 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] disabled:opacity-50 text-white font-bold text-sm shadow-md shadow-amber-950/10 transition flex items-center justify-center gap-2"
               >
-                {lang === 'en' ? 'Submit Listing for Approval' : 'അംഗീകാരത്തിനായി ലിസ്റ്റിംഗ് സമർപ്പിക്കുക'}
+                {isSubmittingListing ? (
+                  <span>{lang === 'en' ? 'Uploading & Submitting...' : 'സമർപ്പിക്കുന്നു...'}</span>
+                ) : (
+                  <span>{lang === 'en' ? 'Submit Listing for Approval' : 'അംഗീകാരത്തിനായി ലിസ്റ്റിംഗ് സമർപ്പിക്കുക'}</span>
+                )}
               </button>
             </form>
           )}
@@ -412,28 +620,61 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
         <div className="divide-y divide-stone-200 text-xs sm:text-sm">
           {sellerListings.length > 0 ? (
-            sellerListings.map((item) => (
-              <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#E7E1D6]/50">
-                <div>
-                  <div className="font-bold text-[#4A3626]">{item.title}</div>
-                  <div className="text-xs text-stone-500 mt-0.5">
-                    {item.species_name_en || 'Timber'} · {item.type_name_en || 'Planks'} · {item.district_name_en || 'Kerala'}
+            sellerListings.map((item) => {
+              const primaryImg = Array.isArray(item.images)
+                ? item.images.find((img: any) => img.is_primary)?.url || item.images[0]?.url
+                : null;
+              const photoCount = Array.isArray(item.images) ? item.images.length : 0;
+
+              return (
+                <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#E7E1D6]/50 transition">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-stone-100 border border-stone-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                      {primaryImg ? (
+                        <img src={primaryImg} alt={item.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <Trees className="w-6 h-6 text-stone-300" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-bold text-[#4A3626] flex items-center gap-2">
+                        <span>{item.title}</span>
+                        {photoCount > 0 && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-600 font-mono font-medium flex items-center gap-0.5">
+                            <ImageIcon className="w-2.5 h-2.5 text-[#5B6147]" />
+                            {photoCount}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-stone-500 mt-0.5">
+                        {item.species_name_en || 'Timber'} · {item.type_name_en || 'Planks'} · {item.district_name_en || 'Kerala'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+                    <span className="font-mono font-bold text-[#4A3626]">
+                      {item.quantity} CFT @ ₹{Number(item.price_per_cft).toLocaleString('en-IN')}/CFT
+                    </span>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      item.status === 'approved'
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        : 'bg-stone-100 text-[#4A3626] border border-stone-300'
+                    }`}>
+                      {item.status === 'approved' ? (lang === 'en' ? 'Approved (Live)' : 'ലൈവ്') : (lang === 'en' ? 'Pending Review' : 'പരിശോധനയിൽ')}
+                    </span>
+                    <button
+                      onClick={() => setManagingPhotosListing(item)}
+                      className="px-2.5 py-1 rounded-xl border border-[#8E7F6B]/40 hover:bg-[#E7E1D6]/50 text-[#4A3626] text-xs font-semibold transition flex items-center gap-1"
+                      title={lang === 'en' ? 'Manage photographs' : 'ഫോട്ടോകൾ'}
+                    >
+                      <Camera className="w-3.5 h-3.5 text-[#5B6147]" />
+                      <span>{lang === 'en' ? 'Photos' : 'ചിത്രങ്ങൾ'}</span>
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className="font-mono font-bold text-[#4A3626]">
-                    {item.quantity} CFT @ ₹{Number(item.price_per_cft).toLocaleString('en-IN')}/CFT
-                  </span>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                    item.status === 'approved'
-                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                      : 'bg-stone-100 text-[#4A3626] border border-stone-300'
-                  }`}>
-                    {item.status === 'approved' ? (lang === 'en' ? 'Approved (Live)' : 'ലൈവ്') : (lang === 'en' ? 'Pending Review' : 'പരിശോധനയിൽ')}
-                  </span>
-                </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <>
               <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#E7E1D6]/50">
@@ -477,6 +718,89 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         onClose={() => setIsEditProfileOpen(false)}
         lang={lang}
       />
+
+      {/* Photo Management Modal for Existing Listings */}
+      {managingPhotosListing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-stone-300 p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+              <div>
+                <h3 className="font-extrabold font-serif text-[#4A3626] text-base">
+                  {lang === 'en' ? 'Manage Timber Photographs' : 'ഫോട്ടോകൾ മാറ്റുക'}
+                </h3>
+                <p className="text-xs text-[#7A5A3A] font-medium line-clamp-1">
+                  {managingPhotosListing.title}
+                </p>
+              </div>
+              <button
+                onClick={() => setManagingPhotosListing(null)}
+                className="p-1.5 rounded-xl hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                {Array.isArray(managingPhotosListing.images) &&
+                  managingPhotosListing.images.map((img: any) => (
+                    <div key={img.id} className="relative aspect-square rounded-2xl border border-stone-200 overflow-hidden shadow-xs group">
+                      <img src={img.url} alt="Timber photograph" className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => handleDeletePhoto(managingPhotosListing.id, img.id)}
+                        className="absolute top-1 right-1 p-1 bg-black/70 hover:bg-rose-600 text-white rounded-full transition opacity-0 group-hover:opacity-100"
+                        title={lang === 'en' ? 'Delete photo' : 'നീക്കം ചെയ്യുക'}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                      {img.is_primary && (
+                        <span className="absolute bottom-0 inset-x-0 bg-[#5B6147]/90 text-white text-[9px] text-center font-bold py-0.5">
+                          {lang === 'en' ? 'Primary' : 'പ്രധാനം'}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+
+                {(!Array.isArray(managingPhotosListing.images) || managingPhotosListing.images.length < 8) && (
+                  <label className="aspect-square rounded-2xl border-2 border-dashed border-[#8E7F6B]/40 hover:border-[#5B6147] flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-[#E7E1D6]/30 transition group">
+                    <Camera className="w-6 h-6 text-[#8E7F6B] group-hover:text-[#5B6147] transition" />
+                    <span className="text-[10px] font-semibold text-stone-500 mt-1">
+                      {isUploadingPhoto
+                        ? (lang === 'en' ? 'Uploading...' : 'അപ്‌ലോഡ്...')
+                        : (lang === 'en' ? 'Add Photo' : 'ചേർക്കുക')}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      disabled={isUploadingPhoto}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUploadSinglePhoto(managingPhotosListing.id, file);
+                        e.target.value = '';
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-stone-500 pt-2 border-t border-stone-200">
+                <span>
+                  {lang === 'en'
+                    ? `${Array.isArray(managingPhotosListing.images) ? managingPhotosListing.images.length : 0} of 8 photos uploaded`
+                    : `8 ൽ ${Array.isArray(managingPhotosListing.images) ? managingPhotosListing.images.length : 0} ഫോട്ടോകൾ`}
+                </span>
+                <button
+                  onClick={() => setManagingPhotosListing(null)}
+                  className="px-4 py-2 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs transition"
+                >
+                  {lang === 'en' ? 'Done' : 'ശരി'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
