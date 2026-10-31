@@ -74,7 +74,7 @@ export async function checkStorageConnectivity(): Promise<{
   }
 
   return {
-    connected: env.NODE_ENV !== 'production',
+    connected: false,
     provider: 'mock_development',
     bucket: env.SUPABASE_STORAGE_BUCKET,
     message: 'Using mock development storage fallback (Supabase credentials not configured).',

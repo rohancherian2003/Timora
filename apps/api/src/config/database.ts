@@ -4,13 +4,17 @@ import { logger } from '../utils/logger.js';
 
 const { Pool } = pg;
 
-export const pool = new Pool({
-  connectionString: env.DATABASE_URL,
+export let pool = new Pool({
+  connectionString: process.env.TEST_DATABASE_URL || env.DATABASE_URL,
   ssl: env.DATABASE_SSL ? { rejectUnauthorized: false } : false,
   max: 20,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,
 });
+
+export function setPoolForTesting(newPool: pg.Pool): void {
+  pool = newPool;
+}
 
 pool.on('error', (err) => {
   logger.error({ err }, 'Unexpected PostgreSQL pool error');

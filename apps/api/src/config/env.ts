@@ -48,7 +48,7 @@ const envSchema = z.object({
   // Supabase Storage
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
-  SUPABASE_STORAGE_BUCKET: z.string().default('timora-images'),
+  SUPABASE_STORAGE_BUCKET: z.string().default('timber-listings'),
   IMAGE_MAX_SIZE_BYTES: z.coerce.number().default(10 * 1024 * 1024),
 
   // Super Admin
