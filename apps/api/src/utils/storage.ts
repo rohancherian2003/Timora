@@ -7,15 +7,78 @@ import { AppError } from '../middleware/errorHandler.js';
 
 let supabaseClient: ReturnType<typeof createClient> | null = null;
 
-if (
-  env.SUPABASE_URL &&
-  env.SUPABASE_SERVICE_ROLE_KEY &&
-  !env.SUPABASE_URL.includes('placeholder') &&
-  env.SUPABASE_SERVICE_ROLE_KEY !== 'placeholder'
-) {
-  supabaseClient = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false },
-  });
+function initSupabaseClient() {
+  if (
+    env.SUPABASE_URL &&
+    env.SUPABASE_SERVICE_ROLE_KEY &&
+    !env.SUPABASE_URL.includes('placeholder') &&
+    env.SUPABASE_SERVICE_ROLE_KEY !== 'placeholder'
+  ) {
+    supabaseClient = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false },
+    });
+  }
+}
+
+initSupabaseClient();
+
+/**
+ * Testing helper allowing isolated test suites to inject mock or live isolated Supabase clients.
+ */
+export function setSupabaseClientForTesting(client: ReturnType<typeof createClient> | null): void {
+  supabaseClient = client;
+}
+
+/**
+ * Reset Supabase client back to environment default.
+ */
+export function resetSupabaseClient(): void {
+  supabaseClient = null;
+  initSupabaseClient();
+}
+
+/**
+ * Inspect storage connectivity status.
+ */
+export async function checkStorageConnectivity(): Promise<{
+  connected: boolean;
+  provider: 'supabase' | 'mock_development';
+  bucket: string;
+  message: string;
+}> {
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient.storage.getBucket(env.SUPABASE_STORAGE_BUCKET);
+      if (error) {
+        return {
+          connected: false,
+          provider: 'supabase',
+          bucket: env.SUPABASE_STORAGE_BUCKET,
+          message: error.message,
+        };
+      }
+      return {
+        connected: true,
+        provider: 'supabase',
+        bucket: env.SUPABASE_STORAGE_BUCKET,
+        message: 'Connected to Supabase Storage bucket.',
+      };
+    } catch (err: any) {
+      return {
+        connected: false,
+        provider: 'supabase',
+        bucket: env.SUPABASE_STORAGE_BUCKET,
+        message: err.message || 'Failed to connect to Supabase Storage.',
+      };
+    }
+  }
+
+  return {
+    connected: env.NODE_ENV !== 'production',
+    provider: 'mock_development',
+    bucket: env.SUPABASE_STORAGE_BUCKET,
+    message: 'Using mock development storage fallback (Supabase credentials not configured).',
+  };
 }
 
 export interface UploadResult {
@@ -103,17 +166,27 @@ export async function uploadListingImage(
   const fileHash = crypto.randomBytes(16).toString('hex');
   const storageKey = `listings/${listingId}/${Date.now()}-${fileHash}${safeExt}`;
 
+  // Production Guard: Never permit mock fallback in production
+  if (env.NODE_ENV === 'production' && !supabaseClient) {
+    throw new AppError(
+      500,
+      'STORAGE_CONFIG_MISSING',
+      'Supabase Storage is not configured in production environment. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.'
+    );
+  }
+
+  // Real Supabase upload path
   if (supabaseClient) {
     const { error } = await supabaseClient.storage
       .from(env.SUPABASE_STORAGE_BUCKET)
       .upload(storageKey, buffer, {
-        contentType: mimeType,
+        contentType: normalizedMime,
         upsert: false,
       });
 
     if (error) {
       logger.error({ error, storageKey }, 'Supabase Storage upload failed');
-      throw new AppError(500, 'STORAGE_ERROR', 'Failed to upload image to storage service.');
+      throw new AppError(500, 'STORAGE_ERROR', `Supabase Storage upload failed: ${error.message}`);
     }
 
     const { data: publicUrlData } = supabaseClient.storage
@@ -126,12 +199,25 @@ export async function uploadListingImage(
     };
   }
 
-  // Fallback demo storage URL when Supabase credentials are not provided
-  logger.info({ storageKey, size: buffer.length }, 'Using mock storage upload for development');
+  // Fallback demo storage URL when Supabase credentials are not provided (development/test only)
+  logger.warn(
+    { storageKey, size: buffer.length },
+    'Using isolated mock storage upload for development. Real Supabase credentials not provided.'
+  );
   return {
     storageKey,
-    publicUrl: `https://images.unsplash.com/photo-1546484396-fb3fc6f95f98?auto=format&fit=crop&w=800&q=80&demo=${fileHash}`,
+    publicUrl: `https://images.unsplash.com/photo-1546484396-fb3fc6f95f98?auto=format&fit=crop&w=800&q=80&timora_storage=mock_dev&demo=${fileHash}`,
   };
+}
+
+export function getListingImageUrl(storageKey: string): string {
+  if (supabaseClient) {
+    const { data } = supabaseClient.storage
+      .from(env.SUPABASE_STORAGE_BUCKET)
+      .getPublicUrl(storageKey);
+    return data.publicUrl;
+  }
+  return `https://images.unsplash.com/photo-1546484396-fb3fc6f95f98?auto=format&fit=crop&w=800&q=80&timora_storage=mock_dev&key=${encodeURIComponent(storageKey)}`;
 }
 
 export async function deleteListingImage(storageKey: string): Promise<void> {
@@ -142,6 +228,7 @@ export async function deleteListingImage(storageKey: string): Promise<void> {
 
     if (error) {
       logger.error({ error, storageKey }, 'Supabase Storage deletion failed');
+      throw new AppError(500, 'STORAGE_ERROR', `Supabase Storage deletion failed: ${error.message}`);
     }
   }
 }

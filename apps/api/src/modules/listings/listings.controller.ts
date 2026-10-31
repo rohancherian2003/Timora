@@ -122,6 +122,53 @@ export class ListingsController {
     }
   }
 
+  async replaceImage(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const sellerId = req.user!.id;
+      const listingId = req.params.id as string;
+      const imageId = req.params.imageId as string;
+      const file = req.file;
+
+      if (!file || !file.buffer || file.buffer.length === 0) {
+        throw new AppError(400, 'FILE_REQUIRED', 'Image file is required for replacement.');
+      }
+
+      const uploaded = await uploadListingImage(
+        file.buffer,
+        file.originalname,
+        file.mimetype,
+        listingId
+      );
+
+      try {
+        const result = await listingsService.replaceListingImage(
+          sellerId,
+          listingId,
+          imageId,
+          uploaded
+        );
+
+        if (result?.old_storage_key && result.old_storage_key !== uploaded.storageKey) {
+          await deleteListingImage(result.old_storage_key).catch(() => {});
+        }
+
+        const response: ApiSuccessResponse = {
+          success: true,
+          data: result,
+          message: 'Photograph replaced successfully.',
+        };
+        res.status(200).json(response);
+      } catch (dbErr) {
+        if (uploaded?.storageKey) {
+          await deleteListingImage(uploaded.storageKey).catch(() => {});
+        }
+        throw dbErr;
+      }
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async deleteImage(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const sellerId = req.user!.id;

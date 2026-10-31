@@ -332,6 +332,53 @@ export class ListingsService {
   }
 
   /**
+   * Replace existing listing image
+   */
+  async replaceListingImage(
+    sellerId: string,
+    listingId: string,
+    imageId: string,
+    newImage: { storageKey: string; publicUrl: string }
+  ) {
+    const listing = await query(
+      `SELECT seller_id FROM timber_listings WHERE id = $1`,
+      [listingId]
+    );
+
+    if (listing.rows.length === 0) {
+      throw new AppError(404, 'NOT_FOUND', 'Listing not found.');
+    }
+
+    if (listing.rows[0]?.seller_id !== sellerId) {
+      throw new AppError(403, 'FORBIDDEN', 'You do not own this listing.');
+    }
+
+    const existing = await query(
+      `SELECT id, storage_key, is_primary FROM listing_images WHERE id = $1 AND listing_id = $2`,
+      [imageId, listingId]
+    );
+
+    if (existing.rows.length === 0) {
+      throw new AppError(404, 'NOT_FOUND', 'Image not found on this listing.');
+    }
+
+    const oldStorageKey = existing.rows[0]?.storage_key;
+
+    const res = await query(
+      `UPDATE listing_images
+       SET storage_key = $1, url = $2
+       WHERE id = $3 AND listing_id = $4
+       RETURNING *`,
+      [newImage.storageKey, newImage.publicUrl, imageId, listingId]
+    );
+
+    return {
+      ...res.rows[0],
+      old_storage_key: oldStorageKey,
+    };
+  }
+
+  /**
    * Retrieve all listings belonging to a seller
    */
   async getSellerListings(sellerId: string) {

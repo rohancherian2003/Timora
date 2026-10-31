@@ -63,13 +63,21 @@ listingsRouter.post(
   listingsController.submitForReview.bind(listingsController)
 );
 
-// Photo upload & delete
+// Photo upload, replace & delete
 listingsRouter.post(
   '/:id/images',
   authenticate,
   requireRole('seller'),
   upload.single('image'),
   listingsController.uploadImage.bind(listingsController)
+);
+
+listingsRouter.put(
+  '/:id/images/:imageId',
+  authenticate,
+  requireRole('seller'),
+  upload.single('image'),
+  listingsController.replaceImage.bind(listingsController)
 );
 
 listingsRouter.delete(

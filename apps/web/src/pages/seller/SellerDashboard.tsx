@@ -142,6 +142,28 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     }
   };
 
+  const handleReplacePhoto = async (listingId: string, imageId: string, file: File) => {
+    setIsUploadingPhoto(true);
+    try {
+      const { api } = await import('../../lib/api');
+      const formData = new FormData();
+      formData.append('image', file);
+      await api.put(`/listings/${listingId}/images/${imageId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const listRes = await api.get('/listings/seller/me');
+      if (listRes.data?.success && Array.isArray(listRes.data?.data)) {
+        setSellerListings(listRes.data.data);
+        const updated = listRes.data.data.find((l: any) => l.id === listingId);
+        if (updated) setManagingPhotosListing(updated);
+      }
+    } catch (err: any) {
+      alert(err?.response?.data?.error?.message || err?.message || 'Failed to replace photo.');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
     async function fetchMyListings() {
@@ -746,13 +768,32 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   managingPhotosListing.images.map((img: any) => (
                     <div key={img.id} className="relative aspect-square rounded-2xl border border-stone-200 overflow-hidden shadow-xs group">
                       <img src={img.url} alt="Timber photograph" className="w-full h-full object-cover" />
-                      <button
-                        onClick={() => handleDeletePhoto(managingPhotosListing.id, img.id)}
-                        className="absolute top-1 right-1 p-1 bg-black/70 hover:bg-rose-600 text-white rounded-full transition opacity-0 group-hover:opacity-100"
-                        title={lang === 'en' ? 'Delete photo' : 'നീക്കം ചെയ്യുക'}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                      <div className="absolute top-1 right-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                        <label
+                          className="p-1 bg-black/70 hover:bg-[#5B6147] text-white rounded-full transition cursor-pointer"
+                          title={lang === 'en' ? 'Replace photo' : 'മാറ്റുക'}
+                        >
+                          <Upload className="w-3 h-3" />
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            disabled={isUploadingPhoto}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleReplacePhoto(managingPhotosListing.id, img.id, file);
+                              e.target.value = '';
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+                        <button
+                          onClick={() => handleDeletePhoto(managingPhotosListing.id, img.id)}
+                          className="p-1 bg-black/70 hover:bg-rose-600 text-white rounded-full transition"
+                          title={lang === 'en' ? 'Delete photo' : 'നീക്കം ചെയ്യുക'}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                       {img.is_primary && (
                         <span className="absolute bottom-0 inset-x-0 bg-[#5B6147]/90 text-white text-[9px] text-center font-bold py-0.5">
                           {lang === 'en' ? 'Primary' : 'പ്രധാനം'}
