@@ -247,15 +247,16 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    if (!name.trim()) {
-      setErrorMsg(lang === 'en' ? 'Personal name is required.' : 'പേര് നൽകേണ്ടതാണ്.');
+    const trimmedName = name.trim();
+    if (!trimmedName || trimmedName.length < 2) {
+      setErrorMsg(lang === 'en' ? 'Personal name must be at least 2 characters.' : 'പേര് കുറഞ്ഞത് 2 അക്ഷരങ്ങൾ ഉണ്ടായിരിക്കണം.');
       return;
     }
 
     setIsSaving(true);
     try {
       const updatedFields: Partial<UserProfile> = {
-        name: name.trim(),
+        name: trimmedName,
         district,
       };
 
@@ -268,11 +269,11 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
         }
       } else if (user.role === 'carpenter') {
         updatedFields.skills = skills.split(',').map((s) => s.trim()).filter(Boolean);
-        updatedFields.experience = Number(experience) || 1;
+        updatedFields.experience = Math.max(0, Math.min(70, Number(experience) || 0));
         updatedFields.businessName = businessName.trim();
       } else if (user.role === 'transport') {
         updatedFields.vehicleDetails = vehicleDetails.trim();
-        updatedFields.tonnageCapacity = Number(tonnageCapacity) || 1;
+        updatedFields.tonnageCapacity = Math.max(0.1, Math.min(100, Number(tonnageCapacity) || 1));
         updatedFields.businessName = businessName.trim();
       }
 

@@ -176,7 +176,11 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setForgotError(null);
 
     if (forgotOtp !== '123456' && forgotOtp.length !== 6) {
-      setForgotError(lang === 'en' ? 'Invalid OTP. Demo OTP is 123456.' : 'അസാധുവായ OTP. ഡെമോ OTP 123456 ആണ്.');
+      setForgotError(
+        lang === 'en'
+          ? 'Invalid verification code. Demo-only verification code is 123456.'
+          : 'അസാധുവായ OTP. ഡെമോ കോഡ് 123456 ആണ്.'
+      );
       return;
     }
 
@@ -497,13 +501,22 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   type="submit"
                   className="w-full py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs transition"
                 >
-                  {lang === 'en' ? 'Send Demo OTP' : 'ഡെമോ OTP അയക്കുക'}
+                  {lang === 'en' ? 'Proceed with Demo Verification' : 'ഡെമോ വെരിഫിക്കേഷനുമായി മുന്നോട്ട് പോകുക'}
                 </button>
               </form>
             ) : (
               <form onSubmit={handleForgotStep2} className="space-y-3">
-                <div className="p-2 bg-stone-100 rounded-xl text-center text-xs text-stone-700">
-                  <span>Demo OTP: <b className="font-mono text-sm">123456</b></span>
+                <div className="p-3 bg-stone-100 rounded-xl text-center text-xs text-stone-700 space-y-1">
+                  <div className="text-[11px] font-semibold text-[#5B6147]">
+                    {lang === 'en' ? 'Simulated SMS Verification (Demo Only)' : 'സിമുലേറ്റഡ് SMS വെരിഫിക്കേഷൻ (ഡെമോ മാത്രം)'}
+                  </div>
+                  <div>
+                    {lang === 'en' ? 'Fixed Demo OTP: ' : 'ഡെമോ OTP: '}
+                    <b className="font-mono text-sm tracking-wider text-[#4A3626]">123456</b>
+                  </div>
+                  <div className="text-[10px] text-stone-500 italic">
+                    {lang === 'en' ? '(No real SMS sent)' : '(യഥാർത്ഥ SMS അയച്ചിട്ടില്ല)'}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-700 mb-1">

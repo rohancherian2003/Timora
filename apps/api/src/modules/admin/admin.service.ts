@@ -34,19 +34,7 @@ export class AdminService {
    * Get pending seller and business registration approvals
    */
   async getPendingSellers() {
-    const res = await query(
-      `SELECT u.id, u.phone, u.role, u.created_at,
-              up.name, d.name_en as district_name,
-              sp.business_name, sp.locality, sp.seller_subtype,
-              COALESCE(sp.approval_status, 'pending') as approval_status
-       FROM users u
-       JOIN user_profiles up ON up.user_id = u.id
-       JOIN seller_profiles sp ON sp.user_id = u.id
-       LEFT JOIN kerala_districts d ON d.id = sp.district_id
-       WHERE sp.approval_status IN ('pending', 'PENDING_APPROVAL')
-       ORDER BY u.created_at ASC`
-    );
-    return res.rows;
+    return this.getPendingBusinessApplications();
   }
 
   /**
@@ -55,48 +43,57 @@ export class AdminService {
   async getPendingBusinessApplications() {
     const sellersRes = await query(
       `SELECT u.id, u.phone, u.role, u.created_at,
-              up.name, d.name_en as district_name,
-              sp.business_name, sp.locality, sp.seller_subtype,
+              COALESCE(up.name, '') as name, d.name_en as district_name,
+              COALESCE(tm.mill_name, sp.business_name, up.name, '') as business_name,
+              COALESCE(tm.locality, sp.locality, '') as locality,
+              sp.seller_subtype,
               'seller' as entity_type,
-              COALESCE(sp.approval_status, 'PENDING_APPROVAL') as approval_status
+              COALESCE(sp.approval_status, tm.approval_status, 'PENDING_APPROVAL') as approval_status
        FROM users u
-       JOIN user_profiles up ON up.user_id = u.id
+       LEFT JOIN user_profiles up ON up.user_id = u.id
        JOIN seller_profiles sp ON sp.user_id = u.id
-       LEFT JOIN kerala_districts d ON d.id = sp.district_id
-       WHERE sp.approval_status IN ('pending', 'PENDING_APPROVAL')`
+       LEFT JOIN timber_mills tm ON tm.owner_id = u.id
+       LEFT JOIN kerala_districts d ON d.id = COALESCE(tm.district_id, sp.district_id, up.district_id)
+       WHERE sp.approval_status IN ('pending', 'PENDING_APPROVAL')
+          OR tm.approval_status IN ('pending', 'PENDING_APPROVAL')`
     );
 
     const carpentersRes = await query(
       `SELECT u.id, u.phone, u.role, u.created_at,
-              up.name, d.name_en as district_name,
-              COALESCE(cp.business_name, up.name) as business_name, '' as locality,
+              COALESCE(up.name, '') as name, d.name_en as district_name,
+              COALESCE(cp.business_name, up.name, '') as business_name, '' as locality,
+              NULL::text as seller_subtype,
               'carpenter' as entity_type,
               COALESCE(cp.approval_status, 'PENDING_APPROVAL') as approval_status
        FROM users u
-       JOIN user_profiles up ON up.user_id = u.id
+       LEFT JOIN user_profiles up ON up.user_id = u.id
        JOIN carpenter_profiles cp ON cp.user_id = u.id
-       LEFT JOIN kerala_districts d ON d.id = cp.district_id
+       LEFT JOIN kerala_districts d ON d.id = COALESCE(cp.district_id, up.district_id)
        WHERE cp.approval_status IN ('pending', 'PENDING_APPROVAL')`
     );
 
     const transportRes = await query(
       `SELECT u.id, u.phone, u.role, u.created_at,
-              up.name, d.name_en as district_name,
-              tp.business_name, '' as locality,
+              COALESCE(up.name, '') as name, d.name_en as district_name,
+              COALESCE(tp.business_name, up.name, '') as business_name, '' as locality,
+              NULL::text as seller_subtype,
               'transport' as entity_type,
               COALESCE(tp.approval_status, 'PENDING_APPROVAL') as approval_status
        FROM users u
-       JOIN user_profiles up ON up.user_id = u.id
+       LEFT JOIN user_profiles up ON up.user_id = u.id
        JOIN transport_owner_profiles tp ON tp.user_id = u.id
-       LEFT JOIN kerala_districts d ON d.id = tp.district_id
+       LEFT JOIN kerala_districts d ON d.id = COALESCE(tp.district_id, up.district_id)
        WHERE tp.approval_status IN ('pending', 'PENDING_APPROVAL')`
     );
 
-    return [
+    const all = [
       ...sellersRes.rows,
       ...carpentersRes.rows,
       ...transportRes.rows,
     ];
+
+    all.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    return all;
   }
 
   /**
@@ -175,87 +172,321 @@ export class AdminService {
   }
 
   /**
-   * Approve a seller account
+   * Approve a business account (Seller, Mill, Carpenter, Transport)
    */
   async approveSeller(adminId: string, sellerId: string, note?: string) {
     return await withTransaction(async (client) => {
-      const prev = await client.query(
-        `SELECT approval_status FROM seller_profiles WHERE user_id = $1`,
-        [sellerId]
+      // 1. Look up user to check role, or check if ID is a timber mill ID
+      let resolvedUserId = sellerId;
+      let userRes = await client.query(
+        `SELECT id, role FROM users WHERE id = $1`,
+        [resolvedUserId]
       );
-      if (prev.rows.length === 0) throw new AppError(404, 'NOT_FOUND', 'Seller profile not found.');
+      if (userRes.rows.length === 0) {
+        // Check if ID was a timber mill ID
+        const millRes = await client.query(
+          `SELECT owner_id FROM timber_mills WHERE id = $1`,
+          [sellerId]
+        );
+        if (millRes.rows.length > 0) {
+          resolvedUserId = millRes.rows[0].owner_id;
+          userRes = await client.query(
+            `SELECT id, role FROM users WHERE id = $1`,
+            [resolvedUserId]
+          );
+        }
+      }
 
-      await client.query(
-        `UPDATE seller_profiles
-         SET approval_status = 'approved', approved_by = $1, approval_note = $2, approved_at = NOW(), updated_at = NOW()
-         WHERE user_id = $3`,
-        [adminId, note || null, sellerId]
-      );
+      if (userRes.rows.length === 0) {
+        throw new AppError(404, 'NOT_FOUND', 'User record not found.');
+      }
 
-      await this.logAudit(client, {
-        actorId: adminId,
-        action: 'APPROVE_SELLER',
-        entityType: 'seller_profile',
-        entityId: sellerId,
-        prevState: prev.rows[0],
-        newState: { approval_status: 'approved', note },
-      });
+      const user = userRes.rows[0];
+      const role = user.role;
 
-      // In-dashboard notification to seller
-      notificationsService.dispatch({
-        userId: sellerId,
-        category: 'verification',
-        title_en: 'Seller Account Approved',
-        title_ml: 'കച്ചവട അക്കൗണ്ട് അംഗീകരിച്ചു',
-        body_en: note || 'Your seller registration has been approved. You can now post timber listings.',
-        body_ml: note || 'നിങ്ങളുടെ വിൽപ്പന അക്കൗണ്ട് അംഗീകരിച്ചു. ഇനി തടി ലിസ്റ്റിംഗുകൾ ചേർക്കാം.',
-        action_url: '/dashboard/seller',
-      }).catch(() => {});
+      if (role === 'seller') {
+        const prev = await client.query(
+          `SELECT approval_status FROM seller_profiles WHERE user_id = $1`,
+          [resolvedUserId]
+        );
+        if (prev.rows.length === 0) {
+          throw new AppError(404, 'NOT_FOUND', 'Seller profile not found.');
+        }
 
-      return { success: true, message: 'Seller approved successfully.' };
+        await client.query(
+          `UPDATE seller_profiles
+           SET approval_status = 'approved', approved_by = $1, approval_note = $2, approved_at = NOW(), updated_at = NOW()
+           WHERE user_id = $3`,
+          [adminId, note || null, resolvedUserId]
+        );
+
+        // Also update timber_mills if associated with this seller
+        await client.query(
+          `UPDATE timber_mills
+           SET approval_status = 'approved', approved_by = $1, approval_note = $2, approved_at = NOW(), updated_at = NOW()
+           WHERE owner_id = $3`,
+          [adminId, note || null, resolvedUserId]
+        );
+
+        await this.logAudit(client, {
+          actorId: adminId,
+          action: 'APPROVE_SELLER',
+          entityType: 'seller_profile',
+          entityId: resolvedUserId,
+          prevState: prev.rows[0],
+          newState: { approval_status: 'approved', note },
+        });
+
+        // In-dashboard notification to seller
+        notificationsService.dispatch({
+          userId: resolvedUserId,
+          category: 'verification',
+          title_en: 'Seller Account Approved',
+          title_ml: 'കച്ചവട അക്കൗണ്ട് അംഗീകരിച്ചു',
+          body_en: note || 'Your seller registration has been approved. You can now post timber listings.',
+          body_ml: note || 'നിങ്ങളുടെ വിൽപ്പന അക്കൗണ്ട് അംഗീകരിച്ചു. ഇനി തടി ലിസ്റ്റിംഗുകൾ ചേർക്കാം.',
+          action_url: '/dashboard/seller',
+        }).catch(() => {});
+
+        return { success: true, message: 'Seller approved successfully.' };
+      } else if (role === 'carpenter') {
+        const prev = await client.query(
+          `SELECT approval_status FROM carpenter_profiles WHERE user_id = $1`,
+          [resolvedUserId]
+        );
+        if (prev.rows.length === 0) {
+          throw new AppError(404, 'NOT_FOUND', 'Carpenter profile not found.');
+        }
+
+        await client.query(
+          `UPDATE carpenter_profiles
+           SET approval_status = 'approved', is_admin_verified = true, approved_by = $1, approval_note = $2, approved_at = NOW(), updated_at = NOW()
+           WHERE user_id = $3`,
+          [adminId, note || null, resolvedUserId]
+        );
+
+        await this.logAudit(client, {
+          actorId: adminId,
+          action: 'APPROVE_CARPENTER',
+          entityType: 'carpenter_profile',
+          entityId: resolvedUserId,
+          prevState: prev.rows[0],
+          newState: { approval_status: 'approved', note },
+        });
+
+        // In-dashboard notification to carpenter
+        notificationsService.dispatch({
+          userId: resolvedUserId,
+          category: 'verification',
+          title_en: 'Carpenter Account Approved',
+          title_ml: 'ആശാരി അക്കൗണ്ട് അംഗീകരിച്ചു',
+          body_en: note || 'Your carpenter registration has been approved. You can now showcase your portfolio and receive work orders.',
+          body_ml: note || 'നിങ്ങളുടെ ആശാരി അക്കൗണ്ട് അംഗീകരിച്ചു. ഇനി ജോലികൾ സ്വീകരിക്കാം.',
+          action_url: '/dashboard/carpenter',
+        }).catch(() => {});
+
+        return { success: true, message: 'Carpenter approved successfully.' };
+      } else if (role === 'transport') {
+        const prev = await client.query(
+          `SELECT approval_status FROM transport_owner_profiles WHERE user_id = $1`,
+          [resolvedUserId]
+        );
+        if (prev.rows.length === 0) {
+          throw new AppError(404, 'NOT_FOUND', 'Transport owner profile not found.');
+        }
+
+        await client.query(
+          `UPDATE transport_owner_profiles
+           SET approval_status = 'approved', approved_by = $1, approval_note = $2, approved_at = NOW(), updated_at = NOW()
+           WHERE user_id = $3`,
+          [adminId, note || null, resolvedUserId]
+        );
+
+        await this.logAudit(client, {
+          actorId: adminId,
+          action: 'APPROVE_TRANSPORT',
+          entityType: 'transport_owner_profile',
+          entityId: resolvedUserId,
+          prevState: prev.rows[0],
+          newState: { approval_status: 'approved', note },
+        });
+
+        // In-dashboard notification to transport owner
+        notificationsService.dispatch({
+          userId: resolvedUserId,
+          category: 'verification',
+          title_en: 'Transport Partner Account Approved',
+          title_ml: 'ട്രാൻസ്പോർട്ട് അക്കൗണ്ട് അംഗീകരിച്ചു',
+          body_en: note || 'Your transport partner registration has been approved. You can now view and bid on transit jobs.',
+          body_ml: note || 'നിങ്ങളുടെ ട്രാൻസ്പോർട്ട് അക്കൗണ്ട് അംഗീകരിച്ചു. ഇനി ട്രിപ്പുകൾ ഏറ്റെടുക്കാം.',
+          action_url: '/dashboard/transport',
+        }).catch(() => {});
+
+        return { success: true, message: 'Transport owner approved successfully.' };
+      } else {
+        throw new AppError(400, 'INVALID_ROLE', `User with role "${role}" is not a pending business account.`);
+      }
     });
   }
 
   /**
-   * Reject a seller account
+   * Reject a business account (Seller, Mill, Carpenter, Transport)
    */
   async rejectSeller(adminId: string, sellerId: string, reason: string) {
     return await withTransaction(async (client) => {
-      const prev = await client.query(
-        `SELECT approval_status FROM seller_profiles WHERE user_id = $1`,
-        [sellerId]
+      // 1. Look up user to check role, or check if ID is a timber mill ID
+      let resolvedUserId = sellerId;
+      let userRes = await client.query(
+        `SELECT id, role FROM users WHERE id = $1`,
+        [resolvedUserId]
       );
-      if (prev.rows.length === 0) throw new AppError(404, 'NOT_FOUND', 'Seller profile not found.');
+      if (userRes.rows.length === 0) {
+        // Check if ID was a timber mill ID
+        const millRes = await client.query(
+          `SELECT owner_id FROM timber_mills WHERE id = $1`,
+          [sellerId]
+        );
+        if (millRes.rows.length > 0) {
+          resolvedUserId = millRes.rows[0].owner_id;
+          userRes = await client.query(
+            `SELECT id, role FROM users WHERE id = $1`,
+            [resolvedUserId]
+          );
+        }
+      }
 
-      await client.query(
-        `UPDATE seller_profiles
-         SET approval_status = 'rejected', approved_by = $1, approval_note = $2, updated_at = NOW()
-         WHERE user_id = $3`,
-        [adminId, reason, sellerId]
-      );
+      if (userRes.rows.length === 0) {
+        throw new AppError(404, 'NOT_FOUND', 'User record not found.');
+      }
 
-      await this.logAudit(client, {
-        actorId: adminId,
-        action: 'REJECT_SELLER',
-        entityType: 'seller_profile',
-        entityId: sellerId,
-        prevState: prev.rows[0],
-        newState: { approval_status: 'rejected' },
-        reason,
-      });
+      const user = userRes.rows[0];
+      const role = user.role;
 
-      // In-dashboard notification to seller
-      notificationsService.dispatch({
-        userId: sellerId,
-        category: 'verification',
-        title_en: 'Seller Registration Not Approved',
-        title_ml: 'കച്ചവട അപേക്ഷ നിരസിച്ചു',
-        body_en: `Your seller registration was rejected. Reason: ${reason}`,
-        body_ml: `നിങ്ങളുടെ അപേക്ഷ നിരസിക്കപ്പെട്ടു. കാരണം: ${reason}`,
-        action_url: '/dashboard/seller',
-      }).catch(() => {});
+      if (role === 'seller') {
+        const prev = await client.query(
+          `SELECT approval_status FROM seller_profiles WHERE user_id = $1`,
+          [resolvedUserId]
+        );
+        if (prev.rows.length === 0) {
+          throw new AppError(404, 'NOT_FOUND', 'Seller profile not found.');
+        }
 
-      return { success: true, message: 'Seller registration rejected.' };
+        await client.query(
+          `UPDATE seller_profiles
+           SET approval_status = 'rejected', approved_by = $1, approval_note = $2, updated_at = NOW()
+           WHERE user_id = $3`,
+          [adminId, reason, resolvedUserId]
+        );
+
+        // Also update timber_mills if associated with this seller
+        await client.query(
+          `UPDATE timber_mills
+           SET approval_status = 'rejected', approved_by = $1, approval_note = $2, updated_at = NOW()
+           WHERE owner_id = $3`,
+          [adminId, reason, resolvedUserId]
+        );
+
+        await this.logAudit(client, {
+          actorId: adminId,
+          action: 'REJECT_SELLER',
+          entityType: 'seller_profile',
+          entityId: resolvedUserId,
+          prevState: prev.rows[0],
+          newState: { approval_status: 'rejected' },
+          reason,
+        });
+
+        // In-dashboard notification to seller
+        notificationsService.dispatch({
+          userId: resolvedUserId,
+          category: 'verification',
+          title_en: 'Seller Registration Not Approved',
+          title_ml: 'കച്ചവട അപേക്ഷ നിരസിച്ചു',
+          body_en: `Your seller registration was rejected. Reason: ${reason}`,
+          body_ml: `നിങ്ങളുടെ അപേക്ഷ നിരസിക്കപ്പെട്ടു. കാരണം: ${reason}`,
+          action_url: '/dashboard/seller',
+        }).catch(() => {});
+
+        return { success: true, message: 'Seller registration rejected.' };
+      } else if (role === 'carpenter') {
+        const prev = await client.query(
+          `SELECT approval_status FROM carpenter_profiles WHERE user_id = $1`,
+          [resolvedUserId]
+        );
+        if (prev.rows.length === 0) {
+          throw new AppError(404, 'NOT_FOUND', 'Carpenter profile not found.');
+        }
+
+        await client.query(
+          `UPDATE carpenter_profiles
+           SET approval_status = 'rejected', is_admin_verified = false, approved_by = $1, approval_note = $2, updated_at = NOW()
+           WHERE user_id = $3`,
+          [adminId, reason, resolvedUserId]
+        );
+
+        await this.logAudit(client, {
+          actorId: adminId,
+          action: 'REJECT_CARPENTER',
+          entityType: 'carpenter_profile',
+          entityId: resolvedUserId,
+          prevState: prev.rows[0],
+          newState: { approval_status: 'rejected' },
+          reason,
+        });
+
+        // In-dashboard notification to carpenter
+        notificationsService.dispatch({
+          userId: resolvedUserId,
+          category: 'verification',
+          title_en: 'Carpenter Registration Not Approved',
+          title_ml: 'ആശാരി അപേക്ഷ നിരസിച്ചു',
+          body_en: `Your carpenter registration was rejected. Reason: ${reason}`,
+          body_ml: `നിങ്ങളുടെ അപേക്ഷ നിരസിക്കപ്പെട്ടു. കാരണം: ${reason}`,
+          action_url: '/dashboard/carpenter',
+        }).catch(() => {});
+
+        return { success: true, message: 'Carpenter registration rejected.' };
+      } else if (role === 'transport') {
+        const prev = await client.query(
+          `SELECT approval_status FROM transport_owner_profiles WHERE user_id = $1`,
+          [resolvedUserId]
+        );
+        if (prev.rows.length === 0) {
+          throw new AppError(404, 'NOT_FOUND', 'Transport owner profile not found.');
+        }
+
+        await client.query(
+          `UPDATE transport_owner_profiles
+           SET approval_status = 'rejected', approved_by = $1, approval_note = $2, updated_at = NOW()
+           WHERE user_id = $3`,
+          [adminId, reason, resolvedUserId]
+        );
+
+        await this.logAudit(client, {
+          actorId: adminId,
+          action: 'REJECT_TRANSPORT',
+          entityType: 'transport_owner_profile',
+          entityId: resolvedUserId,
+          prevState: prev.rows[0],
+          newState: { approval_status: 'rejected' },
+          reason,
+        });
+
+        // In-dashboard notification to transport owner
+        notificationsService.dispatch({
+          userId: resolvedUserId,
+          category: 'verification',
+          title_en: 'Transport Partner Registration Not Approved',
+          title_ml: 'ട്രാൻസ്പോർട്ട് അപേക്ഷ നിരസിച്ചു',
+          body_en: `Your transport partner registration was rejected. Reason: ${reason}`,
+          body_ml: `നിങ്ങളുടെ അപേക്ഷ നിരസിക്കപ്പെട്ടു. കാരണം: ${reason}`,
+          action_url: '/dashboard/transport',
+        }).catch(() => {});
+
+        return { success: true, message: 'Transport owner registration rejected.' };
+      } else {
+        throw new AppError(400, 'INVALID_ROLE', `User with role "${role}" is not a pending business account.`);
+      }
     });
   }
 

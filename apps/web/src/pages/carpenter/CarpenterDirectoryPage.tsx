@@ -1,5 +1,17 @@
-import React, { useState } from 'react';
-import { Hammer, MapPin, Award, Phone, Star, CheckCircle, ShieldCheck, Lock, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Hammer,
+  MapPin,
+  Award,
+  Phone,
+  Star,
+  CheckCircle,
+  ShieldCheck,
+  Lock,
+  MessageSquare,
+  AlertCircle,
+  RefreshCw,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { LoginAlertModal } from '../../components/LoginAlertModal';
 import { BackButton } from '../../components/BackButton';
@@ -31,124 +43,52 @@ export interface CarpenterItem {
   reviews: CarpenterReview[];
 }
 
-const INITIAL_CARPENTERS: CarpenterItem[] = [
-  {
-    id: 'c1',
-    name: 'K. R. Mohanan Achari',
-    district: 'Kottayam (കോട്ടയം)',
-    locality: 'Changanassery',
-    experience_yrs: 28,
-    specializations: ['Traditional Wooden Doors (വാതിലുകൾ)', 'Roof Truss Framing (മേൽക്കൂര തട്ടിടൽ)', 'Window Casements'],
-    rating: 4.9,
-    rating_count: 34,
-    is_verified: true,
-    phone: '+919447300101',
-    timber_pref: 'Nilambur Teak & Anjili',
-    reviews: [
-      {
-        id: 'rev-c1-1',
-        author: 'Dr. Joseph Kurian',
-        role: 'Verified Homeowner',
-        rating: 5,
-        date: '2 weeks ago',
-        comment: 'Mohanan Achari did our complete house roof trusses using Anjili wood. Zero joint gaps and flawless alignment.',
-        commentMl: 'ഞങ്ങളുടെ വീടിന്റെ മേൽക്കൂര തട്ടിടൽ വളരെ കൃത്യതയോടെ ചെയ്തു തന്നു. നല്ല ആത്മാർത്ഥതയുള്ള പണി.',
-        isVerified: true,
-      },
-      {
-        id: 'rev-c1-2',
-        author: 'Mathew Varghese',
-        role: 'Verified Buyer',
-        rating: 4.8,
-        date: '1 month ago',
-        comment: 'Traditional teak front door carving was done with authentic Kerala temple motifs. Highly recommended master craftsman.',
-        commentMl: 'പരമ്പരാഗത ശൈലിയിലുള്ള തേക്ക് വാതിലുകൾ വളരെ ഭംഗിയായി പണിതു നൽകി.',
-        isVerified: true,
-      },
-    ],
-  },
-  {
-    id: 'c2',
-    name: 'Babu Master Wood Joinery',
-    district: 'Thrissur (തൃശ്ശൂർ)',
-    locality: 'Irinjalakuda',
-    experience_yrs: 22,
-    specializations: ['Teak Carving & Door Frames', 'Structural Timber Beams'],
-    rating: 4.8,
-    rating_count: 27,
-    is_verified: true,
-    phone: '+919447300102',
-    timber_pref: 'African Mahogany & Teak',
-    reviews: [
-      {
-        id: 'rev-c2-1',
-        author: 'Harikrishnan Namboodiri',
-        role: 'Verified Client',
-        rating: 5,
-        date: '3 weeks ago',
-        comment: 'High precision mortise and tenon joinery. Sturdy beams and fair labor charges.',
-        commentMl: 'കട്ടിളകളും ബീമുകളും നല്ല ഉറപ്പോടെ കൃത്യമായ അളവിൽ പണിതു.',
-        isVerified: true,
-      },
-    ],
-  },
-  {
-    id: 'c3',
-    name: 'Santhosh Kumar',
-    district: 'Ernakulam (എറണാകുളം)',
-    locality: 'Muvattupuzha',
-    experience_yrs: 15,
-    specializations: ['Wooden Ceilings & Paneling', 'Door Fitting & Finishing'],
-    rating: 4.7,
-    rating_count: 19,
-    is_verified: true,
-    phone: '+919447300103',
-    timber_pref: 'Rubberwood & Anjili',
-    reviews: [
-      {
-        id: 'rev-c3-1',
-        author: 'Saji George',
-        role: 'Verified Client',
-        rating: 4.7,
-        date: '1 month ago',
-        comment: 'Neat ceiling paneling with seasoned Anjili planks. Prompt completion.',
-        commentMl: 'തട്ടിടൽ പണി കൃത്യസമയത്ത് വൃത്തിയായി പൂർത്തിയാക്കി തന്നു.',
-        isVerified: true,
-      },
-    ],
-  },
-  {
-    id: 'c4',
-    name: 'Vijayan & Sons Carpentry',
-    district: 'Kozhikode (കോഴിക്കോട്)',
-    locality: 'Vadakara',
-    experience_yrs: 30,
-    specializations: ['Temple & Heritage Woodwork', 'Traditional Nilambur Teak Joinery'],
-    rating: 5.0,
-    rating_count: 42,
-    is_verified: true,
-    phone: '+919447300104',
-    timber_pref: 'Heritage Teak & Rosewood',
-    reviews: [
-      {
-        id: 'rev-c4-1',
-        author: 'Gopalan Nair',
-        role: 'Verified Client',
-        rating: 5,
-        date: '5 days ago',
-        comment: 'Master craftsman with deep knowledge of traditional Kerala Thachu Shasthra. Unmatched wood carving quality.',
-        commentMl: 'പരമ്പരാഗത തച്ചുശാസ്ത്ര വിധിപ്രകാരം ക്ഷേത്ര മാതൃകയിൽ പണിതു നൽകി. അതിശയകരമായ കൊത്തുപണി.',
-        isVerified: true,
-      },
-    ],
-  },
-];
-
 export function CarpenterDirectoryPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { isAuthenticated } = useAuth();
-  const [carpenters, setCarpenters] = useState<CarpenterItem[]>(INITIAL_CARPENTERS);
+  const [carpenters, setCarpenters] = useState<CarpenterItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
   const [expandedReviews, setExpandedReviews] = useState<Record<string, boolean>>({});
+
+  const fetchCarpenters = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { api } = await import('../../lib/api');
+      const res = await api.get('/carpenters');
+      if (res.data?.success && Array.isArray(res.data?.data)) {
+        const mapped: CarpenterItem[] = res.data.data.map((item: any) => ({
+          id: String(item.id),
+          name: item.name || item.personalName || 'Master Carpenter',
+          district: item.district || 'Kerala',
+          locality: item.locality || '',
+          experience_yrs: Number(item.experience_yrs) || 10,
+          specializations: Array.isArray(item.specializations) && item.specializations.length > 0
+            ? item.specializations
+            : ['Traditional Wooden Doors (വാതിലുകൾ)', 'Roof Truss Framing (മേൽക്കൂര തട്ടിടൽ)'],
+          rating: Number(item.rating) || 5.0,
+          rating_count: Number(item.rating_count) || 0,
+          is_verified: item.is_verified !== false,
+          phone: item.phone || '',
+          timber_pref: item.timber_pref || 'Nilambur Teak & Anjili',
+          reviews: item.reviews || [],
+        }));
+        setCarpenters(mapped);
+      } else {
+        setCarpenters([]);
+      }
+    } catch (err: any) {
+      console.error('Failed to load carpenters directory:', err);
+      setError(err?.response?.data?.message || err?.message || 'Failed to load carpenters directory');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCarpenters();
+  }, [fetchCarpenters, isAuthenticated]);
   const [alertModal, setAlertModal] = useState<{ isOpen: boolean; carpenterName?: string }>({
     isOpen: false,
   });
@@ -252,164 +192,216 @@ export function CarpenterDirectoryPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) 
       </div>
 
       {/* Carpenter Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filtered.map((c) => (
-          <div
-            key={c.id}
-            className="bg-white rounded-3xl border border-stone-300/80 p-6 shadow-xs hover:border-stone-400 hover:shadow-lg transition-all duration-300 flex flex-col justify-between space-y-4 group"
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse" data-testid="carpenters-loading">
+          {[1, 2, 3, 4].map((n) => (
+            <div key={n} className="bg-white rounded-3xl border border-stone-300/80 p-6 space-y-4">
+              <div className="flex justify-between items-start">
+                <div className="space-y-2 w-3/4">
+                  <div className="h-6 bg-stone-200 rounded-md w-3/4" />
+                  <div className="h-4 bg-stone-200 rounded-md w-1/2" />
+                </div>
+                <div className="h-8 w-14 bg-stone-200 rounded-xl" />
+              </div>
+              <div className="h-10 bg-stone-100 rounded-xl" />
+              <div className="h-14 bg-stone-100 rounded-2xl" />
+              <div className="h-10 bg-stone-200 rounded-xl" />
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center space-y-3" role="alert">
+          <div className="flex items-center justify-center gap-2 text-red-700 font-bold">
+            <AlertCircle className="w-5 h-5 text-red-600" />
+            <span>
+              {lang === 'en'
+                ? 'Unable to load carpenter directory'
+                : 'ആശാരിമാരുടെ വിവരങ്ങൾ ലഭ്യമാക്കാൻ സാധിച്ചില്ല'}
+            </span>
+          </div>
+          <p className="text-xs text-red-600">{error}</p>
+          <button
+            onClick={() => fetchCarpenters()}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#5B6147] text-white text-xs font-bold hover:bg-[#3F452F] transition"
           >
-            <div>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="font-extrabold text-[#4A3626] text-lg group-hover:text-[#5B6147] transition font-serif">
-                    {c.name}
-                  </h3>
-                  <div className="flex items-center gap-2 text-xs text-stone-600 mt-1">
-                    <MapPin className="w-3.5 h-3.5 text-[#5B6147]" />
-                    <span>{c.locality}, {c.district}</span>
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>{lang === 'en' ? 'Retry' : 'വീണ്ടും ശ്രമിക്കുക'}</span>
+          </button>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-stone-50 border border-stone-200 rounded-2xl p-8 text-center space-y-2">
+          <Hammer className="w-8 h-8 text-stone-400 mx-auto" />
+          <h3 className="font-bold text-stone-700">
+            {lang === 'en'
+              ? 'No verified carpenters found in this district'
+              : 'ഈ ജില്ലയിൽ ആശാരിമാർ ലഭ്യമായിട്ടില്ല'}
+          </h3>
+          <p className="text-xs text-stone-500">
+            {lang === 'en'
+              ? 'Try selecting All Districts to see master carpenters across Kerala'
+              : 'മറ്റു ജില്ലകളിലെ വിദഗ്ദ്ധരായ ആശാരിമാരെ കാണാൻ എല്ലാ ജില്ലകളും തെരഞ്ഞെടുക്കുക'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filtered.map((c) => (
+            <div
+              key={c.id}
+              className="bg-white rounded-3xl border border-stone-300/80 p-6 shadow-xs hover:border-stone-400 hover:shadow-lg transition-all duration-300 flex flex-col justify-between space-y-4 group"
+            >
+              <div>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-extrabold text-[#4A3626] text-lg group-hover:text-[#5B6147] transition font-serif">
+                      {c.name}
+                    </h3>
+                    <div className="flex items-center gap-2 text-xs text-stone-600 mt-1">
+                      <MapPin className="w-3.5 h-3.5 text-[#5B6147]" />
+                      <span>{c.locality ? `${c.locality}, ` : ''}{c.district}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-stone-100 text-[#4A3626] border border-stone-300 text-xs font-bold">
+                    <Star className="w-3.5 h-3.5 fill-stone-1000 text-stone-1000" />
+                    <span>{c.rating}</span>
+                    <span className="text-stone-400 font-normal">({c.rating_count})</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-stone-100 text-[#4A3626] border border-stone-300 text-xs font-bold">
-                  <Star className="w-3.5 h-3.5 fill-stone-1000 text-stone-1000" />
-                  <span>{c.rating}</span>
-                  <span className="text-stone-400 font-normal">({c.rating_count})</span>
-                </div>
-              </div>
-
-              <div className="mt-3 flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-lg bg-[#E7E1D6] text-[#4A3626] border border-stone-300/60 text-xs font-bold">
-                  {c.experience_yrs} {lang === 'en' ? 'Years Experience' : 'വർഷത്തെ പരിചയം'}
-                </span>
-                {c.is_verified && (
-                  <span className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>{lang === 'en' ? 'Verified Carpenter' : 'വെരിഫൈഡ്'}</span>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-lg bg-[#E7E1D6] text-[#4A3626] border border-stone-300/60 text-xs font-bold">
+                    {c.experience_yrs} {lang === 'en' ? 'Years Experience' : 'വർഷത്തെ പരിചയം'}
                   </span>
-                )}
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-stone-200">
-                <span className="text-[10px] uppercase font-bold text-stone-400">
-                  {lang === 'en' ? 'Specialized Woodwork' : 'പ്രത്യേക മേഖലകൾ'}
-                </span>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {c.specializations.map((spec, i) => (
-                    <span
-                      key={i}
-                      className="px-2.5 py-1 rounded-lg bg-[#fbf7f0] text-[#4A3626] text-xs font-semibold border border-stone-300/60"
-                    >
-                      {spec}
+                  {c.is_verified && (
+                    <span className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>{lang === 'en' ? 'Verified Carpenter' : 'വെരിഫൈഡ്'}</span>
                     </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-3 text-xs text-stone-500">
-                <span className="font-semibold text-stone-700">{lang === 'en' ? 'Timber Worked: ' : 'ഉപയോഗിക്കുന്ന തടി: '}</span>
-                <span>{c.timber_pref}</span>
-              </div>
-
-              {/* Verified Client Reviews Section */}
-              <div className="mt-4 pt-3 border-t border-stone-200">
-                <div className="flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => toggleReviews(c.id)}
-                    className="text-xs font-bold text-[#5B6147] hover:underline flex items-center gap-1.5"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    <span>
-                      {expandedReviews[c.id]
-                        ? (lang === 'en' ? 'Hide Verified Reviews' : 'റിവ്യൂകൾ മറയ്ക്കുക')
-                        : (lang === 'en' ? `View ${c.reviews.length} Verified Reviews` : `റിവ്യൂകൾ കാണുക (${c.reviews.length})`)}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setReviewModal({
-                        isOpen: true,
-                        carpenterId: c.id,
-                        carpenterName: c.name,
-                      })
-                    }
-                    className="text-[11px] font-bold text-[#4A3626] hover:text-[#5B6147] transition flex items-center gap-1"
-                  >
-                    <Star className="w-3 h-3 text-amber-500 fill-amber-400" />
-                    <span>{lang === 'en' ? 'Rate & Review' : 'റേറ്റിംഗ് നൽകുക'}</span>
-                  </button>
+                  )}
                 </div>
 
-                {/* Expanded Reviews Accordion */}
-                {expandedReviews[c.id] && (
-                  <div className="mt-3 space-y-2.5 animate-fadeIn">
-                    {c.reviews.map((rev) => (
-                      <div
-                        key={rev.id}
-                        className="p-3 rounded-2xl bg-[#FAF8F5] border border-stone-200 text-xs space-y-1"
+                <div className="mt-4 pt-3 border-t border-stone-200">
+                  <span className="text-[10px] uppercase font-bold text-stone-400">
+                    {lang === 'en' ? 'Specialized Woodwork' : 'പ്രത്യേക മേഖലകൾ'}
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {c.specializations.map((spec, i) => (
+                      <span
+                        key={i}
+                        className="px-2.5 py-1 rounded-lg bg-[#fbf7f0] text-[#4A3626] text-xs font-semibold border border-stone-300/60"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-[#4A3626]">{rev.author}</span>
-                            <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[9px] font-bold flex items-center gap-0.5">
-                              <ShieldCheck className="w-2.5 h-2.5" />
-                              <span>{rev.role}</span>
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-stone-400 font-medium">{rev.date}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            <Star
-                              key={s}
-                              className={`w-3 h-3 ${
-                                s <= rev.rating ? 'fill-amber-400 text-amber-500' : 'fill-stone-100 text-stone-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <p className="text-stone-600 leading-relaxed text-[11px] font-normal">
-                          {lang === 'en' ? rev.comment : (rev.commentMl || rev.comment)}
-                        </p>
-                      </div>
+                        {spec}
+                      </span>
                     ))}
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
 
-            <div className="pt-4 border-t border-stone-200 flex items-center justify-between">
-              <div>
-                <span className="block text-[10px] font-bold text-stone-400 uppercase">
-                  {lang === 'en' ? 'Contact' : 'ഫോൺ'}
-                </span>
-                <span className="font-mono text-xs font-bold text-stone-900">
-                  {isAuthenticated ? c.phone : '+91 9447••••••'}
-                </span>
+                <div className="mt-3 text-xs text-stone-500">
+                  <span className="font-semibold text-stone-700">{lang === 'en' ? 'Timber Worked: ' : 'ഉപയോഗിക്കുന്ന തടി: '}</span>
+                  <span>{c.timber_pref}</span>
+                </div>
+
+                {/* Verified Client Reviews Section */}
+                <div className="mt-4 pt-3 border-t border-stone-200">
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => toggleReviews(c.id)}
+                      className="text-xs font-bold text-[#5B6147] hover:underline flex items-center gap-1.5"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>
+                        {expandedReviews[c.id]
+                          ? (lang === 'en' ? 'Hide Verified Reviews' : 'റിവ്യൂകൾ മറയ്ക്കുക')
+                          : (lang === 'en' ? `View ${c.reviews.length} Verified Reviews` : `റിവ്യൂകൾ കാണുക (${c.reviews.length})`)}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setReviewModal({
+                          isOpen: true,
+                          carpenterId: c.id,
+                          carpenterName: c.name,
+                        })
+                      }
+                      className="text-[11px] font-bold text-[#4A3626] hover:text-[#5B6147] transition flex items-center gap-1"
+                    >
+                      <Star className="w-3 h-3 text-amber-500 fill-amber-400" />
+                      <span>{lang === 'en' ? 'Rate & Review' : 'റേറ്റിംഗ് നൽകുക'}</span>
+                    </button>
+                  </div>
+
+                  {/* Expanded Reviews Accordion */}
+                  {expandedReviews[c.id] && (
+                    <div className="mt-3 space-y-2.5 animate-fadeIn">
+                      {c.reviews.map((rev) => (
+                        <div
+                          key={rev.id}
+                          className="p-3 rounded-2xl bg-[#FAF8F5] border border-stone-200 text-xs space-y-1"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-[#4A3626]">{rev.author}</span>
+                              <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[9px] font-bold flex items-center gap-0.5">
+                                <ShieldCheck className="w-2.5 h-2.5" />
+                                <span>{rev.role}</span>
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-stone-400 font-medium">{rev.date}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star
+                                key={s}
+                                className={`w-3 h-3 ${
+                                  s <= rev.rating ? 'fill-amber-400 text-amber-500' : 'fill-stone-100 text-stone-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <p className="text-stone-600 leading-relaxed text-[11px] font-normal">
+                            {lang === 'en' ? rev.comment : (rev.commentMl || rev.comment)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => handleContactClick(c.name, c.phone)}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs font-bold shadow-xs transition"
-              >
-                {isAuthenticated ? (
-                  <>
-                    <Phone className="w-3.5 h-3.5" />
-                    <span>{lang === 'en' ? 'Call Master Craftsman' : 'വിളിക്കുക'}</span>
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-3.5 h-3.5 text-white/80" />
-                    <span>{lang === 'en' ? 'Sign in to Contact' : 'ബന്ധപ്പെടാൻ ലോഗിൻ'}</span>
-                  </>
-                )}
-              </button>
+
+              <div className="pt-4 border-t border-stone-200 flex items-center justify-between">
+                <div>
+                  <span className="block text-[10px] font-bold text-stone-400 uppercase">
+                    {lang === 'en' ? 'Contact' : 'ഫോൺ'}
+                  </span>
+                  <span className="font-mono text-xs font-bold text-stone-900">
+                    {c.phone || '+91 9447••••••'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleContactClick(c.name, c.phone)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs font-bold shadow-xs transition"
+                >
+                  {isAuthenticated ? (
+                    <>
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>{lang === 'en' ? 'Call Master Craftsman' : 'വിളിക്കുക'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-3.5 h-3.5 text-white/80" />
+                      <span>{lang === 'en' ? 'Sign in to Contact' : 'ബന്ധപ്പെടാൻ ലോഗിൻ'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Context-Aware Minimal Login Alert Modal */}
       <LoginAlertModal

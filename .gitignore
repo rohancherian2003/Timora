@@ -8,3 +8,8 @@ build
 *.log
 coverage
 .turbo
+
+# Local patch and release archives
+*.patch
+*.zip
+

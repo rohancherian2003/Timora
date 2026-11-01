@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Factory,
@@ -17,7 +17,9 @@ import {
   Wrench,
   Clock,
   UserCheck,
-  ArrowRight
+  ArrowRight,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { LoginAlertModal } from '../../components/LoginAlertModal';
@@ -55,263 +57,6 @@ export interface TimberMill {
   reviews: TimberMillReview[];
 }
 
-const DEMO_TIMBER_MILLS: TimberMill[] = [
-  {
-    id: 'mill-ekm-1',
-    name: 'Periyar Sawmills & Wood Processing Industries',
-    nameMl: 'പെരിയാർ സോമിൽ & വുഡ് പ്രോസസ്സിംഗ് ഇൻഡസ്ട്രീസ്',
-    ownerName: 'Mathew Varghese & Brothers',
-    ownerNameMl: 'മാത്യു വർഗീസ് & ബ്രദേഴ്സ്',
-    licenseNo: 'KL-SAW-EKM-4402/2012',
-    district: 'Ernakulam (എറണാകുളം)',
-    locality: 'Perumbavoor Timber Zone (പെരുമ്പാവൂർ)',
-    phone: '+919447101234',
-    whatsapp: '919447101234',
-    established: 1994,
-    rating: 4.9,
-    ratingCount: 64,
-    isVerified: true,
-    availableSpecies: ['Nilambur Teak (തേക്ക്)', 'Anjili Wild Jack (ആഞ്ഞിലി)', 'African Mahogany (മഹാഗണി)', 'Rubberwood (റബർ)'],
-    services: [
-      { en: 'Horizontal Bandsaw Heavy Log Resawing', ml: 'ഹൊറിസോണ്ടൽ ബാൻഡ്‌സോ തടി അറുക്കൽ' },
-      { en: 'Roof Truss & Rafter Precision Sizing', ml: 'മേൽക്കൂര കഴുക്കോൽ കൃത്യമായ അളവിൽ അറുക്കൽ' },
-      { en: 'Plank Thickness Planing & Sanding', ml: 'പലക മിനുക്കൽ & പ്ലാനിംഗ്' },
-      { en: 'Govt Form IV Transit Pass Logistics', ml: 'ഫോറസ്റ്റ് ഫോം IV ട്രാൻസിറ്റ് പാസ്സ് സൗകര്യം' },
-    ],
-    sawingRatePerCft: '₹65 - ₹80 / CFT',
-    seasoningAvailable: true,
-    reviews: [
-      {
-        id: 'rev-1',
-        author: 'Saji K. George',
-        role: 'House Owner, Kakkanad Kochi',
-        rating: 5,
-        date: '10 days ago',
-        comment: 'Got 420 CFT of Anjili and Teak sawed for my new 2-storey house roofing. Zero wood wastage, sharp blades and Mathew chettan personally guided us on the grain cuts.',
-        commentMl: 'കാക്കനാട് പുതിയ വീടിന്റെ മേൽക്കൂരയ്ക്ക് 420 CFT ആഞ്ഞിലിയും തേക്കും അറുത്തെടുത്തു. ഒരു തടിയും വേസ്റ്റ് ആയില്ല, വളരെ മാന്യമായ പെരുമാറ്റം.',
-      },
-      {
-        id: 'rev-2',
-        author: 'Anoop Thomas (Civil Contractor)',
-        role: 'Building Contractor',
-        rating: 4.8,
-        date: '3 weeks ago',
-        comment: 'Fast processing for large commercial timber batches. Their crane log lifting setup saves tons of loading time.',
-        commentMl: 'വലിയ ഓർഡറുകൾ കൃത്യസമയത്ത് അറുത്തു നൽകുന്നു. ക്രെയിൻ സൗകര്യം ഉള്ളതിനാൽ ലോഡിംഗ് വേഗത്തിൽ നടക്കും.',
-      },
-    ],
-  },
-  {
-    id: 'mill-pta-1',
-    name: 'Pathanamthitta Central Timber Mills & Sawing Complex',
-    nameMl: 'പത്തനംതിട്ട സെൻട്രൽ ടിംബർ മിൽസ് & സോയിംഗ് കോംപ്ലക്സ്',
-    ownerName: 'K. R. Radhakrishnan Achari',
-    ownerNameMl: 'കെ. ആർ. രാധാകൃഷ്ണൻ ആശാരി',
-    licenseNo: 'KL-SAW-PTA-1820/2008',
-    district: 'Pathanamthitta (പത്തനംതിട്ട)',
-    locality: 'Adoor Bypass Junction (അടൂർ ബൈപ്പാസ്)',
-    phone: '+919447202345',
-    whatsapp: '919447202345',
-    established: 1998,
-    rating: 4.8,
-    ratingCount: 47,
-    isVerified: true,
-    availableSpecies: ['Heritage Teak (തേക്ക്)', 'Anjili (ആഞ്ഞിലി)', 'Jackfruit Tree Wood (പ്ലാവ്)', 'Rosewood (ഈട്ടി)'],
-    services: [
-      { en: 'Traditional Temple & House Timber Sawing', ml: 'പരമ്പരാഗത വീട് / അമ്പല ആവശ്യങ്ങൾക്കുള്ള തടി അറുക്കൽ' },
-      { en: 'Custom Door Frame & Window Beam Sizing', ml: 'കട്ടിള, ജനൽ ഫ്രെയിം ബീമുകൾ' },
-      { en: 'Teak Log Girth Verification & Sorting', ml: 'തേക്ക് തടി വണ്ണം തിരിച്ച് സി.എഫ്.ടി കണക്കാക്കൽ' },
-    ],
-    sawingRatePerCft: '₹70 - ₹85 / CFT',
-    seasoningAvailable: false,
-    reviews: [
-      {
-        id: 'rev-3',
-        author: 'Adv. Suresh Nair',
-        role: 'House Builder, Thiruvalla',
-        rating: 5,
-        date: '2 weeks ago',
-        comment: 'Very honest measurements in CFT. Radhakrishnan chettan gives genuine advice on which timber to use for door frames vs roof purlins.',
-        commentMl: 'കണക്കിൽ ഒരു കൃത്രിമവുമില്ലാത്ത നല്ല മില്ല്. വാതിലുകൾക്കും ജനലുകൾക്കും ഏറ്റവും നല്ല തടികൾ തെരഞ്ഞെടുക്കാൻ സഹായിച്ചു.',
-      },
-    ],
-  },
-  {
-    id: 'mill-pta-2',
-    name: 'Konni Forest Valley Sawmill & Wood Seasoning Plant',
-    nameMl: 'കോന്നി ഫോറസ്റ്റ് വാലി സോമിൽ & വുഡ് പ്ലാന്റ്',
-    ownerName: 'Shaji V. Koshy',
-    ownerNameMl: 'ഷാജി വി. കോശി',
-    licenseNo: 'KL-SAW-PTA-2104/2015',
-    district: 'Pathanamthitta (പത്തനംതിട്ട)',
-    locality: 'Konni Depot Road (കോന്നി)',
-    phone: '+919447303456',
-    whatsapp: '919447303456',
-    established: 2004,
-    rating: 4.9,
-    ratingCount: 38,
-    isVerified: true,
-    availableSpecies: ['Konni Teak Logs (കോന്നി തേക്ക്)', 'Anjili (ആഞ്ഞിലി)', 'Mahogany (മഹാഗണി)'],
-    services: [
-      { en: 'Kiln Seasoning & Wood Moisture Reduction', ml: 'തടി ഈർപ്പം കുറയ്ക്കാനുള്ള കിൽൻ സീസണിംഗ്' },
-      { en: 'Square Purlin & Rafter Resawing', ml: 'കഴുക്കോലുകളും പലകകളും' },
-      { en: 'Forest Timber Auction Transit Escort', ml: 'ഫോറസ്റ്റ് ഡിപ്പോ ലേലം തടികൾ എത്തിച്ചു നൽകൽ' },
-    ],
-    sawingRatePerCft: '₹75 - ₹90 / CFT',
-    seasoningAvailable: true,
-    reviews: [
-      {
-        id: 'rev-4',
-        author: 'Dr. Renjith Philip',
-        role: 'House Owner, Kozhencherry',
-        rating: 5,
-        date: '1 month ago',
-        comment: 'Their kiln drying prevented any warping in my teak doors during the rainy season. Excellent facility in Pathanamthitta.',
-        commentMl: 'തടി കൃത്യമായി ഉണക്കി തന്നതിനാൽ മഴക്കാലത്തും വാതിലുകൾക്ക് യാതൊരു വളവോ വിള്ളലോ വന്നില്ല. കോന്നിയിലെ മികച്ച മിൽ.',
-      },
-    ],
-  },
-  {
-    id: 'mill-ekm-2',
-    name: 'Muvattupuzha River Valley Wood Industries & Sawing',
-    nameMl: 'മൂവാറ്റുപുഴ റിവർ വാലി വുഡ് ഇൻഡസ്ട്രീസ് & സോയിംഗ്',
-    ownerName: 'C. P. Eldho & Sons',
-    ownerNameMl: 'സി. പി. എൽദോ & സൺസ്',
-    licenseNo: 'KL-SAW-EKM-3981/2005',
-    district: 'Ernakulam (എറണാകുളം)',
-    locality: 'Muvattupuzha Industrial Area (മൂവാറ്റുപുഴ)',
-    phone: '+919447404567',
-    whatsapp: '919447404567',
-    established: 1991,
-    rating: 4.7,
-    ratingCount: 52,
-    isVerified: true,
-    availableSpecies: ['Rubberwood Hardwood (റബർ)', 'Anjili (ആഞ്ഞിലി)', 'Mahogany (മഹാഗണി)', 'Teak (തേക്ക്)'],
-    services: [
-      { en: 'Heavy Timber Planing & Dressing', ml: 'തടി പ്ലാനിംഗ് & ഡ്രെസ്സിംഗ്' },
-      { en: 'Rubberwood Chemical Treatment & Sizing', ml: 'റബർ തടി പ്രിസർവേറ്റീവ് ട്രീറ്റ്മെന്റ്' },
-      { en: 'Bulk Sawing for Residential Housing', ml: 'ഭവനനിർമ്മാണത്തിനുള്ള തടി അറുക്കൽ' },
-    ],
-    sawingRatePerCft: '₹60 - ₹75 / CFT',
-    seasoningAvailable: true,
-    reviews: [
-      {
-        id: 'rev-5',
-        author: 'Binu Jacob',
-        role: 'Architectural Joiner, Piravom',
-        rating: 4.7,
-        date: '2 months ago',
-        comment: 'Very competitive sawing rates and great handling of Rubberwood and Anjili logs.',
-        commentMl: 'മിതമായ നിരക്കിൽ കൃത്യമായി അറുത്തു തരുന്ന മികച്ച മില്ല്.',
-      },
-    ],
-  },
-  {
-    id: 'mill-ktm-1',
-    name: 'Meenachil Timber Mart & High-Tech Sawmills',
-    nameMl: 'മീനച്ചിൽ ടിംബർ മാർട്ട് & ഹൈ-ടെക് സോമിൽസ്',
-    ownerName: 'P. J. Joseph (Babychan)',
-    ownerNameMl: 'പി. ജെ. ജോസഫ് (ബേബിച്ചൻ)',
-    licenseNo: 'KL-SAW-KTM-5012/2010',
-    district: 'Kottayam (കോട്ടയം)',
-    locality: 'Pala Bypass (പാലാ ബൈപ്പാസ്)',
-    phone: '+919447505678',
-    whatsapp: '919447505678',
-    established: 1996,
-    rating: 4.9,
-    ratingCount: 71,
-    isVerified: true,
-    availableSpecies: ['Pala Anjili (ആഞ്ഞിലി)', 'Teak Planks (തേക്ക്)', 'Mahogany Beams (മഹാഗണി)'],
-    services: [
-      { en: 'Precision Computerized Band Sawing', ml: 'കൃത്യതയുള്ള ബാൻഡ്‌സോ അറുക്കൽ' },
-      { en: 'Home Construction Wood Lot Bundling', ml: 'വീടുപണിക്കുള്ള തടികൾ ക്രമപ്പെടുത്തി നൽകൽ' },
-      { en: 'Direct Forest Form IV Logistics', ml: 'ഫോറസ്റ്റ് പാസ്സ് അനുബന്ധ സേവനങ്ങൾ' },
-    ],
-    sawingRatePerCft: '₹65 - ₹80 / CFT',
-    seasoningAvailable: true,
-    reviews: [
-      {
-        id: 'rev-6',
-        author: 'Thomas Kurian',
-        role: 'House Builder, Pala',
-        rating: 5,
-        date: '3 weeks ago',
-        comment: 'Best sawmill in Kottayam district. Babychan gave us clear calculations and our carpenter was very happy with the smooth cuts.',
-        commentMl: 'കോട്ടയം ജില്ലയിലെ ഏറ്റവും വിശ്വസനീയമായ തടി മില്ല്. തടി ആശാരിമാർക്ക് പണി ചെയ്യാൻ പാകത്തിൽ വളരെ വൃത്തിയായി അറുത്തു തന്നു.',
-      },
-    ],
-  },
-  {
-    id: 'mill-tsr-1',
-    name: 'Chalakudy River Basin Sawmill & Timber Depot',
-    nameMl: 'ചാലക്കുടി റിവർ ബേസിൻ സോമിൽ & ടിംബർ ഡിപ്പോ',
-    ownerName: 'V. S. Jayaprakash',
-    ownerNameMl: 'വി. എസ്. ജയപ്രകാശ്',
-    licenseNo: 'KL-SAW-TSR-2890/2003',
-    district: 'Thrissur (തൃശ്ശൂർ)',
-    locality: 'Chalakudy Main Road (ചാലക്കുടി)',
-    phone: '+919447606789',
-    whatsapp: '919447606789',
-    established: 2001,
-    rating: 4.8,
-    ratingCount: 43,
-    isVerified: true,
-    availableSpecies: ['Teak (തേക്ക്)', 'Mahogany (മഹാഗണി)', 'Anjili (ആഞ്ഞിലി)', 'Jackfruit (പ്ലാവ്)'],
-    services: [
-      { en: 'Heavy Round Log Sawing', ml: 'വലിയ ഉരുണ്ട തടികൾ അറുക്കൽ' },
-      { en: 'Door & Window Plank Ready Sizing', ml: 'വാതിൽ, ജനൽ പലകകൾ' },
-    ],
-    sawingRatePerCft: '₹68 - ₹82 / CFT',
-    seasoningAvailable: false,
-    reviews: [
-      {
-        id: 'rev-7',
-        author: 'Mani Menon',
-        role: 'House Owner, Irinjalakuda',
-        rating: 4.8,
-        date: '1 month ago',
-        comment: 'Reliable service and experienced saw operators. Handled our old-growth teak logs with immense care.',
-        commentMl: 'വർഷങ്ങളുടെ പരിചയമുള്ള തടി അറുപ്പുകാർ. പഴയ തേക്ക് തടികൾ യാതൊരു കേടുപാടും കൂടാതെ അറുത്തെടുത്തു.',
-      },
-    ],
-  },
-  {
-    id: 'mill-clt-1',
-    name: 'Kallai Heritage Timber Processing Mills',
-    nameMl: 'കല്ലായി ഹെറിറ്റേജ് ടിംബർ പ്രോസസ്സിംഗ് മിൽസ്',
-    ownerName: 'M. P. Abdul Razak',
-    ownerNameMl: 'എം. പി. അബ്ദുൾ റസാഖ്',
-    licenseNo: 'KL-SAW-CLT-1102/1986',
-    district: 'Kozhikode (കോഴിക്കോട്)',
-    locality: 'Kallai Timber Basin (കല്ലായി)',
-    phone: '+919447707890',
-    whatsapp: '919447707890',
-    established: 1986,
-    rating: 5.0,
-    ratingCount: 89,
-    isVerified: true,
-    availableSpecies: ['Nilambur Teak (നിലമ്പൂർ തേക്ക്)', 'Rosewood / Veetti (ഈട്ടി)', 'Mahogany (മഹാഗണി)'],
-    services: [
-      { en: 'Heritage Kallai Log Sawing Legacy', ml: 'പ്രശസ്തമായ കല്ലായി തടി അറുക്കൽ' },
-      { en: 'Export-Grade Timber Sizing & Seasoning', ml: 'ഉയർന്ന ഗ്രേഡ് തടി സീസണിംഗ്' },
-      { en: 'Transit Pass & Forest Documentation', ml: 'ഫോറസ്റ്റ് ഡോക്യുമെന്റേഷൻ' },
-    ],
-    sawingRatePerCft: '₹75 - ₹95 / CFT',
-    seasoningAvailable: true,
-    reviews: [
-      {
-        id: 'rev-8',
-        author: 'Farook C. K.',
-        role: 'Architect, Kozhikode',
-        rating: 5,
-        date: '2 weeks ago',
-        comment: 'The legendary Kallai woodcraft precision. Razakikka provides the finest seasoned Teak and Rosewood for high-end luxury villas.',
-        commentMl: 'കല്ലായിയുടെ തനിമയുള്ള തടി അറുക്കൽ കേന്ദ്രം. വീടുകൾക്ക് ആവശ്യമായ ഏറ്റവും മികച്ച തടി ലഭിക്കുന്നു.',
-      },
-    ],
-  },
-];
-
 export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { user, isAuthenticated, loginAsDemo } = useAuth();
   const navigate = useNavigate();
@@ -319,6 +64,64 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
   const [selectedSpecies, setSelectedSpecies] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Directory Data & Loading State
+  const [mills, setMills] = useState<TimberMill[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchMills = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { api } = await import('../../lib/api');
+      const res = await api.get('/mills');
+      if (res.data?.success && Array.isArray(res.data?.data)) {
+        const mapped: TimberMill[] = res.data.data.map((item: any) => ({
+          id: String(item.id),
+          name: item.name || '',
+          nameMl: item.nameMl || item.name || '',
+          ownerName: item.ownerName || '',
+          ownerNameMl: item.ownerNameMl || item.ownerName || '',
+          licenseNo: item.licenseNo || '',
+          district: item.district || '',
+          locality: item.locality || '',
+          phone: item.phone || '',
+          whatsapp: item.phone ? item.phone.replace(/[^0-9]/g, '') : '',
+          established: item.established || 2010,
+          rating: item.rating || 4.8,
+          ratingCount: item.ratingCount || 12,
+          isVerified: item.isVerified !== false,
+          availableSpecies: Array.isArray(item.availableSpecies) && item.availableSpecies.length > 0
+            ? item.availableSpecies
+            : ['Nilambur Teak (തേക്ക്)', 'Anjili Wild Jack (ആഞ്ഞിലി)', 'African Mahogany (മഹാഗണി)', 'Rubberwood (റബർ)'],
+          services: Array.isArray(item.services) && item.services.length > 0
+            ? item.services
+            : (Array.isArray(item.sawTypes) && item.sawTypes.length > 0
+                ? item.sawTypes.map((st: string) => ({ en: st, ml: st }))
+                : [
+                    { en: 'Horizontal Bandsaw Heavy Log Resawing', ml: 'ഹൊറിസോണ്ടൽ ബാൻഡ്‌സോ തടി അറുക്കൽ' },
+                    { en: 'Roof Truss & Rafter Precision Sizing', ml: 'മേൽക്കൂര കഴുക്കോൽ കൃത്യമായ അളവിൽ അറുക്കൽ' },
+                  ]),
+          sawingRatePerCft: item.sawingRatePerCft || '₹65 - ₹85 / CFT',
+          seasoningAvailable: item.seasoningAvailable !== false,
+          reviews: item.reviews || [],
+        }));
+        setMills(mapped);
+      } else {
+        setMills([]);
+      }
+    } catch (err: any) {
+      console.error('Failed to load timber mills:', err);
+      setError(err?.response?.data?.message || err?.message || 'Failed to load timber mills directory');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMills();
+  }, [fetchMills, isAuthenticated]);
 
   // Login Alert Modal State
   const [loginAlertMill, setLoginAlertMill] = useState<TimberMill | null>(null);
@@ -335,7 +138,6 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [quoteSubmitted, setQuoteSubmitted] = useState<boolean>(false);
 
   // Review Modal State
-  const [mills, setMills] = useState<TimberMill[]>(DEMO_TIMBER_MILLS);
   const [reviewModalMill, setReviewModalMill] = useState<TimberMill | null>(null);
   const [reviewStars, setReviewStars] = useState<number>(5);
   const [reviewText, setReviewText] = useState<string>('');
@@ -650,202 +452,254 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredMills.map((mill) => (
-            <div
-              key={mill.id}
-              className="bg-white rounded-3xl border border-stone-300/80 p-6 shadow-xs hover:border-stone-400 hover:shadow-md transition space-y-5 flex flex-col justify-between"
+        {isLoading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse" data-testid="timber-mills-loading">
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="bg-white rounded-3xl border border-stone-300/80 p-6 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-2 w-3/4">
+                    <div className="h-5 bg-stone-200 rounded-md w-1/3" />
+                    <div className="h-6 bg-stone-200 rounded-md w-3/4" />
+                    <div className="h-4 bg-stone-200 rounded-md w-1/2" />
+                  </div>
+                  <div className="h-8 w-12 bg-stone-200 rounded-xl" />
+                </div>
+                <div className="h-16 bg-stone-100 rounded-2xl" />
+                <div className="h-10 bg-stone-200 rounded-xl" />
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center space-y-3" role="alert">
+            <div className="flex items-center justify-center gap-2 text-red-700 font-bold">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              <span>
+                {lang === 'en'
+                  ? 'Unable to load timber mills directory'
+                  : 'തടി മില്ലുകളുടെ വിവരങ്ങൾ ലഭ്യമാക്കാൻ സാധിച്ചില്ല'}
+              </span>
+            </div>
+            <p className="text-xs text-red-600">{error}</p>
+            <button
+              onClick={() => fetchMills()}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#5B6147] text-white text-xs font-bold hover:bg-[#3F452F] transition"
             >
-              {/* Mill Header */}
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                        <ShieldCheck className="w-3 h-3 text-emerald-700" />
-                        {mill.licenseNo}
-                      </span>
-                      <span className="text-[11px] text-stone-500 font-semibold">
-                        Est. {mill.established}
-                      </span>
-                    </div>
-
-                    <h3 className="text-lg sm:text-xl font-extrabold font-serif text-[#4A3626] leading-snug">
-                      {lang === 'en' ? mill.name : mill.nameMl}
-                    </h3>
-
-                    <div className="text-xs text-stone-600 flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-[#5B6147] flex-shrink-0" />
-                      <span className="font-medium">{mill.locality}</span>
-                    </div>
-
-                    <div className="text-xs text-[#4A3626] font-semibold flex items-center gap-1 pt-0.5">
-                      <UserCheck className="w-3.5 h-3.5 text-[#5B6147]" />
-                      <span>
-                        {lang === 'en' ? 'Proprietor / Owner:' : 'ഉടമസ്ഥൻ:'}{' '}
-                        <strong>{lang === 'en' ? mill.ownerName : mill.ownerNameMl}</strong>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Rating Badge */}
-                  <div className="flex flex-col items-end flex-shrink-0">
-                    <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-stone-200 text-[#4A3626] border border-stone-300/80 font-black text-sm">
-                      <Star className="w-4 h-4 fill-stone-1000 text-stone-1000" />
-                      <span>{mill.rating}</span>
-                    </div>
-                    <span className="text-[10px] text-stone-400 mt-0.5">
-                      {mill.ratingCount} {lang === 'en' ? 'reviews' : 'റിവ്യൂസ്'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Available Species Pills */}
-                <div className="space-y-1.5 pt-2 border-t border-stone-100">
-                  <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
-                    {lang === 'en' ? 'Available Timber Species at Mill:' : 'ലഭ്യമായ തടികൾ:'}
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {mill.availableSpecies.map((sp, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2.5 py-0.5 rounded-lg bg-[#E7E1D6] text-[#4A3626] border border-stone-300/80 text-[11px] font-semibold"
-                      >
-                        🪵 {sp}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Mill Services & Machinery */}
-                <div className="space-y-1.5 pt-2">
-                  <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
-                    {lang === 'en' ? 'Services & Processing Facilities:' : 'സേവനങ്ങൾ:'}
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
-                    {mill.services.map((srv, idx) => (
-                      <div key={idx} className="flex items-center gap-1.5 text-stone-700">
-                        <CheckCircle className="w-3 h-3 text-emerald-600 flex-shrink-0" />
-                        <span className="text-[11px] leading-tight">
-                          {lang === 'en' ? srv.en : srv.ml}
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>{lang === 'en' ? 'Retry' : 'വീണ്ടും ശ്രമിക്കുക'}</span>
+            </button>
+          </div>
+        ) : filteredMills.length === 0 ? (
+          <div className="bg-stone-50 border border-stone-200 rounded-2xl p-8 text-center space-y-2">
+            <Factory className="w-8 h-8 text-stone-400 mx-auto" />
+            <h3 className="font-bold text-stone-700">
+              {lang === 'en'
+                ? 'No licensed timber mills match your criteria'
+                : 'നിങ്ങൾ തിരഞ്ഞ മാനദണ്ഡങ്ങൾക്കൊത്ത മില്ലുകൾ കണ്ടെത്തിയില്ല'}
+            </h3>
+            <p className="text-xs text-stone-500">
+              {lang === 'en'
+                ? 'Try adjusting your district or timber species filter'
+                : 'ജില്ലയോ തടിയുടെ ഇനമോ മാറ്റി വീണ്ടും ശ്രമിക്കുക'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredMills.map((mill) => (
+              <div
+                key={mill.id}
+                className="bg-white rounded-3xl border border-stone-300/80 p-6 shadow-xs hover:border-stone-400 hover:shadow-md transition space-y-5 flex flex-col justify-between"
+              >
+                {/* Mill Header */}
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3 text-emerald-700" />
+                          {mill.licenseNo}
+                        </span>
+                        <span className="text-[11px] text-stone-500 font-semibold">
+                          Est. {mill.established}
                         </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Sawing Rate & Seasoning */}
-                <div className="p-3 rounded-2xl bg-[#E7E1D6] border border-stone-300/80 flex items-center justify-between text-xs">
-                  <div>
-                    <span className="text-stone-500 text-[10px] uppercase font-bold block">
-                      {lang === 'en' ? 'Standard Sawing Charge' : 'അറുപ്പ് നിരക്ക്'}
-                    </span>
-                    <span className="font-extrabold text-[#4A3626] text-sm">
-                      {mill.sawingRatePerCft}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-stone-500 text-[10px] uppercase font-bold block text-right">
-                      {lang === 'en' ? 'Kiln Seasoning' : 'കിൽൻ സീസണിംഗ്'}
-                    </span>
-                    <span
-                      className={`font-bold text-xs ${
-                        mill.seasoningAvailable ? 'text-emerald-700' : 'text-stone-400'
-                      }`}
-                    >
-                      {mill.seasoningAvailable
-                        ? lang === 'en'
-                          ? '✓ Available'
-                          : '✓ ലഭ്യമാണ്'
-                        : lang === 'en'
-                        ? 'Not Available'
-                        : 'ലഭ്യമല്ല'}
-                    </span>
-                  </div>
-                </div>
+                      <h3 className="text-lg sm:text-xl font-extrabold font-serif text-[#4A3626] leading-snug">
+                        {lang === 'en' ? mill.name : mill.nameMl}
+                      </h3>
 
-                {/* Customer Reviews Spotlight */}
-                <div className="space-y-2 pt-2 border-t border-stone-100">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-stone-700 flex items-center gap-1">
-                      <MessageSquare className="w-3.5 h-3.5 text-[#5B6147]" />
-                      {lang === 'en' ? 'Recent House Owner Reviews:' : 'ഉപഭോക്താക്കളുടെ അഭിപ്രായങ്ങൾ:'}
-                    </span>
-                    <button
-                      onClick={() =>
-                        handleProtectedAction('Write a Review', mill, () => {
-                          setReviewModalMill(mill);
-                        })
-                      }
-                      className="text-[11px] text-[#5B6147] hover:underline font-bold"
-                    >
-                      + {lang === 'en' ? 'Add Review' : 'റിവ്യൂ നൽകുക'}
-                    </button>
-                  </div>
-
-                  <div className="space-y-2">
-                    {mill.reviews.map((rev) => (
-                      <div
-                        key={rev.id}
-                        className="p-3 rounded-xl bg-stone-50/70 border border-stone-200/80 text-xs space-y-1"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-stone-800">{rev.author}</span>
-                          <div className="flex items-center gap-1 text-stone-1000">
-                            {'★'.repeat(Math.floor(rev.rating))}
-                            <span className="text-[10px] text-stone-400 ml-1">{rev.date}</span>
-                          </div>
-                        </div>
-                        <p className="text-stone-600 text-[11px] leading-relaxed italic">
-                          "{lang === 'en' ? rev.comment : rev.commentMl}"
-                        </p>
+                      <div className="text-xs text-stone-600 flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-[#5B6147] flex-shrink-0" />
+                        <span className="font-medium">{mill.locality}</span>
                       </div>
-                    ))}
+
+                      <div className="text-xs text-[#4A3626] font-semibold flex items-center gap-1 pt-0.5">
+                        <UserCheck className="w-3.5 h-3.5 text-[#5B6147]" />
+                        <span>
+                          {lang === 'en' ? 'Proprietor / Owner:' : 'ഉടമസ്ഥൻ:'}{' '}
+                          <strong>{lang === 'en' ? mill.ownerName : mill.ownerNameMl}</strong>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Rating Badge */}
+                    <div className="flex flex-col items-end flex-shrink-0">
+                      <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-stone-200 text-[#4A3626] border border-stone-300/80 font-black text-sm">
+                        <Star className="w-4 h-4 fill-stone-1000 text-stone-1000" />
+                        <span>{mill.rating}</span>
+                      </div>
+                      <span className="text-[10px] text-stone-400 mt-0.5">
+                        {mill.ratingCount} {lang === 'en' ? 'reviews' : 'റിവ്യൂസ്'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Available Species Pills */}
+                  <div className="space-y-1.5 pt-2 border-t border-stone-100">
+                    <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
+                      {lang === 'en' ? 'Available Timber Species at Mill:' : 'ലഭ്യമായ തടികൾ:'}
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {mill.availableSpecies.map((sp, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2.5 py-0.5 rounded-lg bg-[#E7E1D6] text-[#4A3626] border border-stone-300/80 text-[11px] font-semibold"
+                        >
+                          🪵 {sp}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Mill Services & Machinery */}
+                  <div className="space-y-1.5 pt-2">
+                    <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
+                      {lang === 'en' ? 'Services & Processing Facilities:' : 'സേവനങ്ങൾ:'}
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
+                      {mill.services.map((srv, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5 text-stone-700">
+                          <CheckCircle className="w-3 h-3 text-emerald-600 flex-shrink-0" />
+                          <span className="text-[11px] leading-tight">
+                            {lang === 'en' ? srv.en : srv.ml}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Sawing Rate & Seasoning */}
+                  <div className="p-3 rounded-2xl bg-[#E7E1D6] border border-stone-300/80 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-stone-500 text-[10px] uppercase font-bold block">
+                        {lang === 'en' ? 'Standard Sawing Charge' : 'അറുപ്പ് നിരക്ക്'}
+                      </span>
+                      <span className="font-extrabold text-[#4A3626] text-sm">
+                        {mill.sawingRatePerCft}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-stone-500 text-[10px] uppercase font-bold block text-right">
+                        {lang === 'en' ? 'Kiln Seasoning' : 'കിൽൻ സീസണിംഗ്'}
+                      </span>
+                      <span
+                        className={`font-bold text-xs ${
+                          mill.seasoningAvailable ? 'text-emerald-700' : 'text-stone-400'
+                        }`}
+                      >
+                        {mill.seasoningAvailable
+                          ? lang === 'en'
+                            ? '✓ Available'
+                            : '✓ ലഭ്യമാണ്'
+                          : lang === 'en'
+                          ? 'Not Available'
+                          : 'ലഭ്യമല്ല'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Customer Reviews Spotlight */}
+                  <div className="space-y-2 pt-2 border-t border-stone-100">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-stone-700 flex items-center gap-1">
+                        <MessageSquare className="w-3.5 h-3.5 text-[#5B6147]" />
+                        {lang === 'en' ? 'Recent House Owner Reviews:' : 'ഉപഭോക്താക്കളുടെ അഭിപ്രായങ്ങൾ:'}
+                      </span>
+                      <button
+                        onClick={() =>
+                          handleProtectedAction('Write a Review', mill, () => {
+                            setReviewModalMill(mill);
+                          })
+                        }
+                        className="text-[11px] text-[#5B6147] hover:underline font-bold"
+                      >
+                        + {lang === 'en' ? 'Add Review' : 'റിവ്യൂ നൽകുക'}
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {mill.reviews.map((rev) => (
+                        <div
+                          key={rev.id}
+                          className="p-3 rounded-xl bg-stone-50/70 border border-stone-200/80 text-xs space-y-1"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-stone-800">{rev.author}</span>
+                            <div className="flex items-center gap-1 text-stone-1000">
+                              {'★'.repeat(Math.floor(rev.rating))}
+                              <span className="text-[10px] text-stone-400 ml-1">{rev.date}</span>
+                            </div>
+                          </div>
+                          <p className="text-stone-600 text-[11px] leading-relaxed italic">
+                            "{lang === 'en' ? rev.comment : rev.commentMl}"
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Action Buttons: Phone & Quote Modal (Protected with Login) */}
-              <div className="pt-4 border-t border-stone-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                {/* Contact Phone Button */}
-                <button
-                  onClick={() =>
-                    handleProtectedAction('Call Mill Owner', mill, () => {
-                      window.location.href = `tel:${mill.phone}`;
-                    })
-                  }
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition"
-                >
-                  <Phone className="w-3.5 h-3.5" />
-                  <span>
-                    {isAuthenticated
-                      ? lang === 'en'
-                        ? `Call ${mill.phone}`
-                        : `വിളിക്കുക: ${mill.phone}`
-                      : lang === 'en'
-                      ? 'Call Mill Owner (Login)'
-                      : 'വിളിക്കാൻ ലോഗിൻ ചെയ്യുക'}
-                  </span>
-                </button>
+                {/* Action Buttons: Phone & Quote Modal (Protected with Login) */}
+                <div className="pt-4 border-t border-stone-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  {/* Contact Phone Button */}
+                  <button
+                    onClick={() =>
+                      handleProtectedAction('Call Mill Owner', mill, () => {
+                        window.location.href = `tel:${mill.phone}`;
+                      })
+                    }
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>
+                      {isAuthenticated
+                        ? lang === 'en'
+                          ? `Call ${mill.phone}`
+                          : `വിളിക്കുക: ${mill.phone}`
+                        : lang === 'en'
+                        ? 'Call Mill Owner (Login)'
+                        : 'വിളിക്കാൻ ലോഗിൻ ചെയ്യുക'}
+                    </span>
+                  </button>
 
-                {/* Direct Quote Request Modal Trigger */}
-                <button
-                  onClick={() =>
-                    handleProtectedAction('Request Sizing Quote', mill, () => {
-                      setQuoteModalMill(mill);
-                    })
-                  }
-                  className="py-2.5 px-4 rounded-xl bg-white border border-stone-300 text-[#4A3626] hover:bg-[#E7E1D6] text-xs font-bold flex items-center justify-center gap-1.5 transition"
-                >
-                  <Send className="w-3.5 h-3.5 text-[#5B6147]" />
-                  <span>
-                    {lang === 'en' ? 'Get Sawing Quote' : 'കോട്ടേഷൻ ആവശ്യപ്പെടുക'}
-                  </span>
-                </button>
+                  {/* Direct Quote Request Modal Trigger */}
+                  <button
+                    onClick={() =>
+                      handleProtectedAction('Request Sizing Quote', mill, () => {
+                        setQuoteModalMill(mill);
+                      })
+                    }
+                    className="py-2.5 px-4 rounded-xl bg-white border border-stone-300 text-[#4A3626] hover:bg-[#E7E1D6] text-xs font-bold flex items-center justify-center gap-1.5 transition"
+                  >
+                    <Send className="w-3.5 h-3.5 text-[#5B6147]" />
+                    <span>
+                      {lang === 'en' ? 'Get Sawing Quote' : 'കോട്ടേഷൻ ആവശ്യപ്പെടുക'}
+                    </span>
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 4. AUTHENTICATION GATE MODAL (നിർബന്ധമായും ലോഗിൻ ചെയ്യണം എന്ന് ആവശ്യപ്പെടുന്നത്) */}

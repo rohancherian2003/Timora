@@ -13,6 +13,7 @@ import { ordersRouter } from './modules/orders/orders.routes.js';
 import { disputesRouter } from './modules/disputes/disputes.routes.js';
 import { transportRouter } from './modules/transport/transport.routes.js';
 import { supportRouter } from './modules/support/support.routes.js';
+import { millsRouter, carpentersRouter } from './modules/directory/directory.routes.js';
 import { query } from './config/database.js';
 
 export function createApp(): express.Application {
@@ -76,8 +77,15 @@ export function createApp(): express.Application {
   // Transport Directory routes
   app.use('/api/v1/transport', transportRouter);
 
-  // Support & Notification routes
+  // Sawmills and Carpenters Directory routes
+  app.use('/api/v1/mills', millsRouter);
+  app.use('/api/v1/directory/mills', millsRouter);
+  app.use('/api/v1/carpenters', carpentersRouter);
+  app.use('/api/v1/directory/carpenters', carpentersRouter);
+
+  // Support & Notification routes (supports both legacy /api/v1/* and frontend /api/v1/support/*)
   app.use('/api/v1', supportRouter);
+  app.use('/api/v1/support', supportRouter);
 
   // Super Admin routes
   app.use('/api/v1/admin', adminRouter);

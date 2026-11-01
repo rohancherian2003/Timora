@@ -130,8 +130,8 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     if (otp !== '123456' && otp.length !== 6) {
       setError(
         lang === 'en'
-          ? 'Invalid verification code. Use demo code 123456.'
-          : 'അസാധുവായ OTP. ഡെമോ കോഡ് 123456 ഉപയോഗിക്കുക.'
+          ? 'Invalid verification code. Demo-only verification code is 123456.'
+          : 'അസാധുവായ OTP. ഡെമോ കോഡ് 123456 ആണ്.'
       );
       return;
     }
@@ -198,43 +198,86 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       const cleanPhone = phone.replace(/\D/g, '');
       const isBusinessRole = role !== 'buyer';
 
-      // Persist newly registered user to local storage for testing
-      const newUser: UserProfile = {
-        id: `usr-${role}-${Date.now()}`,
-        name: name.trim(),
-        phone: cleanPhone,
-        role,
-        sellerSubtype: role === 'seller' ? sellerSubtype : undefined,
-        businessName: role === 'seller' && sellerSubtype === 'mill_owner'
+      const businessNameField =
+        role === 'seller' && sellerSubtype === 'mill_owner'
           ? millName.trim()
-          : (businessName.trim() || `${name.trim()} Timber Enterprise`),
-        millName: role === 'seller' && sellerSubtype === 'mill_owner' ? millName.trim() : undefined,
-        district: selectedDistrict,
-        approvalStatus: isBusinessRole ? 'PENDING_APPROVAL' : 'APPROVED',
+          : (businessName.trim() || undefined);
+
+      const payload = {
+        phone: cleanPhone,
+        pin,
+        pin_confirm: pinConfirm,
+        role,
+        name: name.trim(),
+        district_id: districtId,
+        language_pref: lang,
+        business_name: businessNameField,
       };
 
       try {
-        const storedUsers = JSON.parse(localStorage.getItem('timora_registered_users') || '[]');
-        storedUsers.push(newUser);
-        localStorage.setItem('timora_registered_users', JSON.stringify(storedUsers));
-      } catch {
-        // ignore
+        const { api } = await import('../../lib/api');
+        const res = await api.post('/auth/register', payload);
+
+        if (res.data?.success) {
+          setSuccess(true);
+          setTimeout(() => {
+            navigate('/login', {
+              state: {
+                registered: true,
+                pendingApproval: isBusinessRole,
+                phone: cleanPhone,
+                role,
+                subtype: role === 'seller' ? sellerSubtype : undefined,
+              },
+            });
+          }, 700);
+          return;
+        }
+      } catch (apiErr: any) {
+        // If the backend responded with an HTTP status error (e.g. 409 USER_EXISTS or 400 validation)
+        if (apiErr.response) {
+          const errMsg =
+            apiErr.response.data?.error?.message ||
+            apiErr.response.data?.message ||
+            'Registration failed. Please check details.';
+          setError(errMsg);
+          setLoading(false);
+          return;
+        }
+
+        // Only when backend is unreachable (offline demo fallback):
+        const newUser: UserProfile = {
+          id: `usr-${role}-${Date.now()}`,
+          name: name.trim(),
+          phone: cleanPhone,
+          role,
+          sellerSubtype: role === 'seller' ? sellerSubtype : undefined,
+          businessName: businessNameField || `${name.trim()} Timber Enterprise`,
+          millName: role === 'seller' && sellerSubtype === 'mill_owner' ? millName.trim() : undefined,
+          district: selectedDistrict,
+          approvalStatus: isBusinessRole ? 'PENDING_APPROVAL' : 'APPROVED',
+        };
+
+        try {
+          const storedUsers = JSON.parse(localStorage.getItem('timora_registered_users') || '[]');
+          storedUsers.push(newUser);
+          localStorage.setItem('timora_registered_users', JSON.stringify(storedUsers));
+        } catch {}
+
+        setSuccess(true);
+        setTimeout(() => {
+          navigate('/login', {
+            state: {
+              registered: true,
+              pendingApproval: isBusinessRole,
+              phone: cleanPhone,
+              role,
+              subtype: role === 'seller' ? sellerSubtype : undefined,
+            },
+          });
+        }, 700);
+        return;
       }
-
-      setSuccess(true);
-
-      // Clean redirect to Login Page with Pending Approval state
-      setTimeout(() => {
-        navigate('/login', {
-          state: {
-            registered: true,
-            pendingApproval: isBusinessRole,
-            phone: cleanPhone,
-            role,
-            subtype: role === 'seller' ? sellerSubtype : undefined,
-          },
-        });
-      }, 700);
     } catch (err: any) {
       setError(err?.message || (lang === 'en' ? 'Registration failed.' : 'രജിസ്ട്രേഷൻ പരാജയപ്പെട്ടു.'));
       setLoading(false);
@@ -396,15 +439,25 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             {/* STEP 2: Demo OTP */}
             {step === 2 && (
               <form onSubmit={handleStep2} className="space-y-4">
-                <div className="p-3 bg-[#E7E1D6]/80 rounded-2xl border border-[#8E7F6B]/30 text-center space-y-1">
-                  <span className="text-xs text-[#7A5A3A] block">
-                    {lang === 'en'
-                      ? `OTP sent to +91 ${phone} (Demo Mode)`
-                      : `+91 ${phone} എന്ന നമ്പറിലേക്ക് OTP അയച്ചിരിക്കുന്നു`}
-                  </span>
-                  <div className="text-sm font-mono font-black text-[#4A3626]">
-                    Demo OTP: <span className="underline tracking-widest text-[#5B6147]">123456</span>
+                <div className="p-3.5 bg-[#FAF8F5] rounded-2xl border border-[#8E7F6B]/35 text-center space-y-1.5">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E7E1D6] text-[11px] font-bold text-[#4A3626]">
+                    <Sparkles className="w-3 h-3 text-[#5B6147]" />
+                    <span>{lang === 'en' ? 'Demonstration Verification' : 'ഡെമോ വെരിഫിക്കേഷൻ'}</span>
                   </div>
+                  <p className="text-xs text-[#7A5A3A]">
+                    {lang === 'en'
+                      ? 'No real SMS has been sent. For demo and evaluation purposes, use the fixed verification code below:'
+                      : 'യഥാർത്ഥ SMS അയച്ചിട്ടില്ല. ഡെമോ ആവശ്യങ്ങൾക്കായി താഴെ കാണുന്ന നിശ്ചിത കോഡ് ഉപയോഗിക്കുക:'}
+                  </p>
+                  <div className="text-base font-mono font-black text-[#4A3626] bg-white py-1.5 px-3 rounded-xl border border-[#8E7F6B]/20 inline-block">
+                    {lang === 'en' ? 'Demo OTP: ' : 'ഡെമോ OTP: '}
+                    <span className="tracking-widest text-[#5B6147]">123456</span>
+                  </div>
+                  <p className="text-[10px] text-[#8E7F6B] italic">
+                    {lang === 'en'
+                      ? '(Simulated SMS verification for demonstration)'
+                      : '(ഡെമോൺസ്ട്രേഷനായുള്ള സിമുലേറ്റഡ് വെരിഫിക്കേഷൻ)'}
+                  </p>
                 </div>
 
                 <div>

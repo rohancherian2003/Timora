@@ -8,7 +8,7 @@ import { notificationsService } from '../notifications/notifications.service.js'
 
 export const supportRouter = Router();
 
-supportRouter.use(authenticate);
+supportRouter.use(['/notifications', '/tickets'], authenticate);
 
 // Get user notification preferences
 supportRouter.get('/notifications/preferences', async (req, res, next) => {

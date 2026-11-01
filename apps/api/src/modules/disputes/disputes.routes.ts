@@ -18,17 +18,17 @@ disputesRouter.get(
   disputesController.getReviewsForEntity.bind(disputesController)
 );
 
-disputesRouter.use(authenticate);
-
 // Disputes
 disputesRouter.post(
   '/disputes',
+  authenticate,
   validate(createDisputeSchema),
   disputesController.createDispute.bind(disputesController)
 );
 
 disputesRouter.patch(
   '/admin/disputes/:id',
+  authenticate,
   requireRole('admin'),
   validate(resolveDisputeSchema),
   disputesController.resolveDispute.bind(disputesController)
@@ -37,6 +37,7 @@ disputesRouter.patch(
 // Verified Reviews
 disputesRouter.post(
   '/reviews',
+  authenticate,
   validate(createReviewSchema),
   disputesController.createReview.bind(disputesController)
 );
@@ -44,6 +45,7 @@ disputesRouter.post(
 // Moderation Reports
 disputesRouter.post(
   '/reports',
+  authenticate,
   validate(createReportSchema),
   disputesController.submitReport.bind(disputesController)
 );

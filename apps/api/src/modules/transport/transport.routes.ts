@@ -1,28 +1,42 @@
 import { Router } from 'express';
 import { query } from '../../config/database.js';
+import { optionalAuthenticate } from '../../middleware/auth.js';
 import type { ApiSuccessResponse } from '@timora/shared';
 
 export const transportRouter = Router();
 
-// Public: Get all active transport providers
-transportRouter.get('/providers', async (_req, res, next) => {
+function maskContact(contact: string | null | undefined): string | null {
+  if (!contact) return null;
+  const clean = contact.trim();
+  if (clean.length <= 6) return '+91 9447••••••';
+  return clean.slice(0, 7) + '••••••';
+}
+
+// Public: Get all active transport providers (with server-side contact privacy for guests)
+transportRouter.get('/providers', optionalAuthenticate, async (req, res, next) => {
   try {
+    const isGuest = !req.user;
     const result = await query(
       `SELECT id, name, contact, service_areas, notes
        FROM transport_providers
        WHERE is_active = true
        ORDER BY name ASC`
     );
-    const response: ApiSuccessResponse = { success: true, data: result.rows };
+    const rows = result.rows.map((row: any) => ({
+      ...row,
+      contact: isGuest ? maskContact(row.contact) : row.contact,
+    }));
+    const response: ApiSuccessResponse = { success: true, data: rows };
     res.status(200).json(response);
   } catch (err) {
     next(err);
   }
 });
 
-// Public: Get transport quote benchmarks
-transportRouter.get('/quotes', async (req, res, next) => {
+// Public: Get transport quote benchmarks (with server-side contact privacy for guests)
+transportRouter.get('/quotes', optionalAuthenticate, async (req, res, next) => {
   try {
+    const isGuest = !req.user;
     const { from_district, to_district } = req.query;
     const conditions: string[] = [];
     const params: unknown[] = [];
@@ -48,7 +62,12 @@ transportRouter.get('/quotes', async (req, res, next) => {
       params
     );
 
-    const response: ApiSuccessResponse = { success: true, data: result.rows };
+    const rows = result.rows.map((row: any) => ({
+      ...row,
+      provider_contact: isGuest ? maskContact(row.provider_contact) : row.provider_contact,
+    }));
+
+    const response: ApiSuccessResponse = { success: true, data: rows };
     res.status(200).json(response);
   } catch (err) {
     next(err);

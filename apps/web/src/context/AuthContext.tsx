@@ -3,6 +3,7 @@ import type { ApprovalStatus } from '@timora/shared';
 
 export type UserRole = 'buyer' | 'seller' | 'carpenter' | 'transport' | 'admin';
 export type SellerSubtype = 'individual' | 'mill_owner';
+export type SessionMode = 'unauthenticated' | 'demo' | 'authenticated';
 
 export interface UserProfile {
   id: string;
@@ -24,6 +25,7 @@ export interface UserProfile {
 interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
+  sessionMode: SessionMode;
   isAuthenticated: boolean;
   isSessionTimedOut: boolean;
   dismissTimeoutModal: () => void;
@@ -132,11 +134,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   });
 
+  const [sessionMode, setSessionMode] = useState<SessionMode>(() => {
+    try {
+      const savedToken = localStorage.getItem(TOKEN_KEY);
+      if (!savedToken) return 'unauthenticated';
+      return savedToken.startsWith('demo-') ? 'demo' : 'authenticated';
+    } catch {
+      return 'unauthenticated';
+    }
+  });
+
   const sessionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastStorageWriteRef = useRef<number>(0);
 
   const doLogout = useCallback((timedOut: boolean = false) => {
     setUser(null);
     setToken(null);
+    setSessionMode('unauthenticated');
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem('timora_access_token');
@@ -151,10 +165,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const resetSessionTimer = useCallback(() => {
-    localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
+    const now = Date.now();
+    // Throttle localStorage writes to at most once every 10 seconds to avoid flooding storage events
+    if (now - lastStorageWriteRef.current > 10000) {
+      localStorage.setItem(LAST_ACTIVE_KEY, String(now));
+      lastStorageWriteRef.current = now;
+    }
     if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
     sessionTimerRef.current = setTimeout(() => {
-      doLogout(true);
+      // Re-verify against shared localStorage timestamp across tabs
+      const lastActive = localStorage.getItem(LAST_ACTIVE_KEY);
+      const latestTime = lastActive ? parseInt(lastActive, 10) : now;
+      const elapsed = Date.now() - latestTime;
+      if (elapsed >= SESSION_TIMEOUT_MS) {
+        doLogout(true);
+      } else {
+        const remaining = SESSION_TIMEOUT_MS - elapsed;
+        sessionTimerRef.current = setTimeout(() => {
+          doLogout(true);
+        }, remaining);
+      }
     }, SESSION_TIMEOUT_MS);
   }, [doLogout]);
 
@@ -162,7 +192,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsSessionTimedOut(false);
   }, []);
 
-  // Monitor user activity and reset inactivity timer
+  // Multi-tab synchronization: listen for storage events and unauthorized API events
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === LAST_ACTIVE_KEY) {
+        if (!e.newValue) return;
+        const peerLastActive = parseInt(e.newValue, 10);
+        if (!isNaN(peerLastActive)) {
+          const elapsed = Date.now() - peerLastActive;
+          if (elapsed >= SESSION_TIMEOUT_MS) {
+            doLogout(true);
+          } else {
+            // Activity occurred in another tab: reschedule local timer
+            if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
+            const remaining = SESSION_TIMEOUT_MS - elapsed;
+            sessionTimerRef.current = setTimeout(() => {
+              doLogout(true);
+            }, remaining);
+          }
+        }
+      } else if (e.key === TOKEN_KEY || e.key === STORAGE_KEY) {
+        if (!e.newValue) {
+          // Logged out in another tab
+          setUser(null);
+          setToken(null);
+          setSessionMode('unauthenticated');
+          if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
+        } else if (e.key === STORAGE_KEY && e.newValue) {
+          // Logged in in another tab
+          try {
+            const newUser = JSON.parse(e.newValue);
+            setUser(newUser);
+            const currentToken = localStorage.getItem(TOKEN_KEY);
+            setToken(currentToken);
+            setSessionMode(currentToken?.startsWith('demo-') ? 'demo' : 'authenticated');
+            resetSessionTimer();
+          } catch {}
+        }
+      }
+    };
+
+    const handleUnauthorizedEvent = () => {
+      doLogout(false);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('timora:auth:unauthorized', handleUnauthorizedEvent);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('timora:auth:unauthorized', handleUnauthorizedEvent);
+    };
+  }, [doLogout, resetSessionTimer]);
+
+  // Monitor active user interactions to refresh inactivity timer
   useEffect(() => {
     if (user) {
       resetSessionTimer();
@@ -189,9 +272,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(demoProfile);
     const mockToken = `demo-token-${key}-${Date.now()}`;
     setToken(mockToken);
+    setSessionMode('demo');
     localStorage.setItem(STORAGE_KEY, JSON.stringify(demoProfile));
     localStorage.setItem(TOKEN_KEY, mockToken);
     localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
+    lastStorageWriteRef.current = Date.now();
+    resetSessionTimer();
     return demoProfile.role;
   };
 
@@ -204,53 +290,97 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsSessionTimedOut(false);
     const cleanPhone = phone.replace(/\D/g, '');
 
-    // Check against pre-seeded demo phone numbers first
-    let matchedProfile: UserProfile | null = null;
-    if (cleanPhone === '9847120002') matchedProfile = DEMO_PROFILES.seller_mill ?? null;
-    else if (cleanPhone === '9847120001') matchedProfile = DEMO_PROFILES.seller_individual ?? null;
-    else if (cleanPhone === '9847330001') matchedProfile = DEMO_PROFILES.carpenter ?? null;
-    else if (cleanPhone === '9847440001') matchedProfile = DEMO_PROFILES.transport ?? null;
-    else if (cleanPhone === '9847000000') matchedProfile = DEMO_PROFILES.admin ?? null;
-    else if (cleanPhone === '9847987654') matchedProfile = DEMO_PROFILES.buyer ?? null;
+    // 1. Attempt Real Backend API Authentication
+    try {
+      const { api } = await import('../lib/api');
+      const res = await api.post('/auth/login', { phone: cleanPhone, pin });
+      if (res.data?.success && res.data?.data) {
+        const { user: apiUser, accessToken } = res.data.data;
+        const profile: UserProfile = {
+          id: apiUser.id,
+          name: apiUser.name || 'Timora Member',
+          phone: apiUser.phone,
+          role: apiUser.role,
+          sellerSubtype: apiUser.seller_subtype || undefined,
+          district: apiUser.district || undefined,
+          approvalStatus: apiUser.approval_status,
+          businessName: apiUser.business_name || apiUser.seller_business,
+        };
 
-    // Check self-registered accounts in localStorage
-    if (!matchedProfile) {
-      try {
-        const storedCustomUsers = JSON.parse(localStorage.getItem('timora_registered_users') || '[]');
-        const found = storedCustomUsers.find((u: UserProfile) => u.phone.replace(/\D/g, '') === cleanPhone);
-        if (found) {
-          matchedProfile = found;
-        }
-      } catch {
-        // ignore
+        setUser(profile);
+        setToken(accessToken);
+        setSessionMode('authenticated');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+        localStorage.setItem(TOKEN_KEY, accessToken);
+        localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
+        lastStorageWriteRef.current = Date.now();
+        resetSessionTimer();
+
+        return {
+          success: true,
+          role: profile.role,
+          subtype: profile.sellerSubtype,
+        };
       }
-    }
+    } catch (err: any) {
+      // If server returned an HTTP error response (e.g. 401 INVALID_CREDENTIALS, 403 SUSPENDED, 400),
+      // strictly display the server's error message directly on the form without fallback
+      if (err.response) {
+        const message =
+          err.response.data?.error?.message ||
+          err.response.data?.message ||
+          'Invalid phone number or PIN.';
+        return { success: false, error: message };
+      }
 
-    // Fallback based on requested role
-    if (!matchedProfile) {
-      const targetRole = requestedRole || 'buyer';
-      matchedProfile = {
-        id: `usr-${Date.now()}`,
-        name: 'Timora Member',
-        phone: cleanPhone,
-        role: targetRole,
-        sellerSubtype: targetRole === 'seller' ? (requestedSubtype || 'individual') : undefined,
-        district: 'Kerala (കേരളം)',
-        approvalStatus: targetRole === 'buyer' ? 'APPROVED' : 'PENDING_APPROVAL',
+      // Only when backend is unreachable (offline demo mode or network failure):
+      // Fallback to demo profiles if credentials match a known demo user
+      let matchedProfile: UserProfile | null = null;
+      if (cleanPhone === '9847120002') matchedProfile = DEMO_PROFILES.seller_mill ?? null;
+      else if (cleanPhone === '9847120001') matchedProfile = DEMO_PROFILES.seller_individual ?? null;
+      else if (cleanPhone === '9847330001') matchedProfile = DEMO_PROFILES.carpenter ?? null;
+      else if (cleanPhone === '9847440001') matchedProfile = DEMO_PROFILES.transport ?? null;
+      else if (cleanPhone === '9847000000') matchedProfile = DEMO_PROFILES.admin ?? null;
+      else if (cleanPhone === '9847987654') matchedProfile = DEMO_PROFILES.buyer ?? null;
+
+      // Check self-registered accounts in localStorage
+      if (!matchedProfile) {
+        try {
+          const storedCustomUsers = JSON.parse(localStorage.getItem('timora_registered_users') || '[]');
+          const found = storedCustomUsers.find((u: UserProfile) => u.phone.replace(/\D/g, '') === cleanPhone);
+          if (found) {
+            matchedProfile = found;
+          }
+        } catch {}
+      }
+
+      if (matchedProfile) {
+        setUser(matchedProfile);
+        const mockJwt = `demo-token-${matchedProfile.role}-${Date.now()}`;
+        setToken(mockJwt);
+        setSessionMode('demo');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(matchedProfile));
+        localStorage.setItem(TOKEN_KEY, mockJwt);
+        localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
+        lastStorageWriteRef.current = Date.now();
+        resetSessionTimer();
+
+        return {
+          success: true,
+          role: matchedProfile.role,
+          subtype: matchedProfile.sellerSubtype,
+        };
+      }
+
+      return {
+        success: false,
+        error: 'Unable to connect to authentication server. Please check your connection.',
       };
     }
 
-    setUser(matchedProfile);
-    const mockJwt = `jwt-token-${matchedProfile.role}-${Date.now()}`;
-    setToken(mockJwt);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(matchedProfile));
-    localStorage.setItem(TOKEN_KEY, mockJwt);
-    localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
-
     return {
-      success: true,
-      role: matchedProfile.role,
-      subtype: matchedProfile.sellerSubtype,
+      success: false,
+      error: 'Authentication failed. Please verify credentials.',
     };
   };
 
@@ -285,18 +415,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch {}
 
-    // Attempt backend sync
-    try {
-      const { api } = await import('../lib/api');
-      await api.patch('/auth/profile', safeData);
-    } catch {
-      // Gracefully persist locally in offline / demo mode
+    // Attempt backend sync if authenticated
+    const currentToken = localStorage.getItem(TOKEN_KEY);
+    if (currentToken && !currentToken.startsWith('demo-')) {
+      try {
+        const { api } = await import('../lib/api');
+        await api.patch('/auth/profile', safeData);
+      } catch (err: any) {
+        const msg = err?.response?.data?.error?.message || err?.message || 'Failed to update profile.';
+        throw new Error(msg);
+      }
     }
 
     return true;
   };
 
   const refreshUser = useCallback(async (): Promise<UserProfile | null> => {
+    const currentToken = localStorage.getItem(TOKEN_KEY);
+    if (!currentToken || currentToken.startsWith('demo-')) {
+      return null;
+    }
+
     try {
       const { api } = await import('../lib/api');
       const res = await api.get('/auth/me');
@@ -313,6 +452,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             businessName: backendUser.businessName || prev.businessName,
             millName: backendUser.millName || prev.millName,
             sellerSubtype: backendUser.sellerSubtype || prev.sellerSubtype,
+            district: backendUser.district || prev.district,
           };
           try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));
@@ -332,6 +472,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         token,
+        sessionMode,
         isAuthenticated: !!user,
         isSessionTimedOut,
         dismissTimeoutModal,

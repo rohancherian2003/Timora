@@ -165,12 +165,12 @@ export class AuthService {
         [user.id, params.name, params.district_id || null, params.language_pref || 'en']
       );
 
-      // Create role-specific profile with PENDING_APPROVAL for business roles
+      // Create role-specific profile with pending status for business roles
       if (params.role === 'seller') {
         const subtype = params.seller_subtype || 'individual';
         await client.query(
           `INSERT INTO seller_profiles (user_id, seller_subtype, business_name, district_id, locality, approval_status)
-           VALUES ($1, $2, $3, $4, $5, 'PENDING_APPROVAL')`,
+           VALUES ($1, $2, $3, $4, $5, 'pending')`,
           [user.id, subtype, params.business_name || null, params.district_id || null, params.locality || null]
         );
 
@@ -294,9 +294,17 @@ export class AuthService {
     );
 
     let approvalStatus = 'APPROVED';
-    if (user.role === 'seller') approvalStatus = user.seller_approval_status || 'PENDING_APPROVAL';
-    else if (user.role === 'carpenter') approvalStatus = user.carpenter_approval_status || 'PENDING_APPROVAL';
-    else if (user.role === 'transport') approvalStatus = user.transport_approval_status || 'PENDING_APPROVAL';
+    if (user.role === 'seller') {
+      const raw = user.seller_approval_status;
+      if (raw === 'approved' || raw === 'APPROVED') approvalStatus = 'APPROVED';
+      else if (raw === 'rejected' || raw === 'REJECTED') approvalStatus = 'REJECTED';
+      else if (raw === 'suspended' || raw === 'SUSPENDED') approvalStatus = 'SUSPENDED';
+      else approvalStatus = 'PENDING_APPROVAL';
+    } else if (user.role === 'carpenter') {
+      approvalStatus = user.carpenter_approval_status || 'PENDING_APPROVAL';
+    } else if (user.role === 'transport') {
+      approvalStatus = user.transport_approval_status || 'PENDING_APPROVAL';
+    }
 
     const accessToken = jwt.sign(
       { id: user.id, phone: user.phone, role: user.role },
@@ -329,26 +337,69 @@ export class AuthService {
 
   /**
    * Update authenticated user profile fields
-   * Strictly prevents modifying role, id, or approval_status
+   * Strictly prevents modifying role, id, phone, is_active, or approval_status
    */
   async updateProfile(userId: string, role: string, data: any) {
-    const { name, businessName, millName, skills, experience, vehicleDetails, tonnageCapacity, district } = data;
+    const {
+      name,
+      businessName,
+      business_name,
+      millName,
+      mill_name,
+      skills,
+      experience,
+      vehicleDetails,
+      vehicle_details,
+      tonnageCapacity,
+      tonnage_capacity,
+      district,
+      district_id,
+      locality,
+    } = data;
+
+    const effectiveBusinessName = businessName !== undefined ? businessName : business_name;
+    const effectiveMillName = millName !== undefined ? millName : mill_name;
+    const effectiveVehicleDetails = vehicleDetails !== undefined ? vehicleDetails : vehicle_details;
+    const effectiveTonnageCapacity = tonnageCapacity !== undefined ? tonnageCapacity : tonnage_capacity;
 
     let districtId: number | null = null;
-    if (district && typeof district === 'string') {
-      const distMatch = district.split(' ')[0]?.replace(/[^a-zA-Z]/g, '');
-      if (distMatch) {
+    if (district !== undefined && district !== null) {
+      if (typeof district === 'number') {
+        if (district < 1 || district > 14) {
+          throw new AppError(400, 'INVALID_DISTRICT', 'District ID must be between 1 and 14.');
+        }
+        districtId = district;
+      } else if (typeof district === 'string') {
+        const trimmedDist = district.trim();
+        if (trimmedDist.length === 0) {
+          throw new AppError(400, 'INVALID_DISTRICT', 'District name cannot be empty.');
+        }
+        const distMatch = trimmedDist.split(' ')[0]?.replace(/[^a-zA-Z]/g, '');
         const distRes = await query(
           `SELECT id FROM kerala_districts WHERE name_en ILIKE $1 OR name_ml ILIKE $2 LIMIT 1`,
-          [`%${distMatch}%`, `%${district}%`]
+          [`%${distMatch || trimmedDist}%`, `%${trimmedDist}%`]
         );
-        if (distRes.rows.length > 0 && distRes.rows[0]) {
-          districtId = distRes.rows[0].id;
+        const matchedDistrict = distRes.rows[0];
+        if (!matchedDistrict) {
+          throw new AppError(400, 'INVALID_DISTRICT', `"${trimmedDist}" is not a recognized Kerala district.`);
         }
+        districtId = matchedDistrict.id;
       }
+    } else if (district_id !== undefined && district_id !== null) {
+      const dId = Number(district_id);
+      if (isNaN(dId) || dId < 1 || dId > 14) {
+        throw new AppError(400, 'INVALID_DISTRICT', 'District ID must be between 1 and 14.');
+      }
+      districtId = dId;
     }
 
-    if (name && typeof name === 'string') {
+    if (name !== undefined && name !== null) {
+      if (typeof name !== 'string' || name.trim().length < 2) {
+        throw new AppError(400, 'INVALID_NAME', 'Name must be at least 2 characters.');
+      }
+      if (name.trim().length > 100) {
+        throw new AppError(400, 'INVALID_NAME', 'Name must not exceed 100 characters.');
+      }
       await query(
         `UPDATE user_profiles 
          SET name = $1, 
@@ -365,28 +416,39 @@ export class AuthService {
     }
 
     if (role === 'seller') {
-      if (businessName && typeof businessName === 'string') {
+      const trimmedBusiness = typeof effectiveBusinessName === 'string' ? effectiveBusinessName.trim() : null;
+      const trimmedLocality = typeof locality === 'string' ? locality.trim() : null;
+
+      if (trimmedBusiness || districtId || trimmedLocality) {
         await query(
           `UPDATE seller_profiles 
-           SET business_name = $1,
+           SET business_name = COALESCE($1, business_name),
                district_id = COALESCE($2, district_id),
+               locality = COALESCE($3, locality),
                updated_at = NOW()
-           WHERE user_id = $3`,
-          [businessName.trim(), districtId, userId]
+           WHERE user_id = $4`,
+          [trimmedBusiness, districtId, trimmedLocality, userId]
         );
       }
-      if (millName && typeof millName === 'string') {
+      if (effectiveMillName && typeof effectiveMillName === 'string') {
         await query(
           `UPDATE timber_mills 
            SET mill_name = $1,
                district_id = COALESCE($2, district_id),
+               locality = COALESCE($3, locality),
                updated_at = NOW()
-           WHERE owner_id = $3`,
-          [millName.trim(), districtId, userId]
+           WHERE owner_id = $4`,
+          [effectiveMillName.trim(), districtId, trimmedLocality, userId]
         );
       }
     } else if (role === 'carpenter') {
-      if (skills || experience != null || businessName || districtId) {
+      if (skills || experience != null || effectiveBusinessName || districtId) {
+        if (experience != null) {
+          const exp = Number(experience);
+          if (isNaN(exp) || exp < 0 || exp > 70) {
+            throw new AppError(400, 'INVALID_INPUT', 'Experience must be a number between 0 and 70.');
+          }
+        }
         const specializationsArr = skills
           ? (Array.isArray(skills) ? skills : String(skills).split(',').map((s) => s.trim()).filter(Boolean))
           : null;
@@ -400,17 +462,23 @@ export class AuthService {
            WHERE user_id = $5`,
           [
             specializationsArr,
-            experience ? parseInt(String(experience), 10) : null,
-            businessName ? String(businessName).trim() : null,
+            experience != null ? parseInt(String(experience), 10) : null,
+            effectiveBusinessName ? String(effectiveBusinessName).trim() : null,
             districtId,
             userId,
           ]
         );
       }
     } else if (role === 'transport') {
-      if (vehicleDetails || tonnageCapacity != null || businessName || districtId) {
-        const vehicleArr = vehicleDetails
-          ? (Array.isArray(vehicleDetails) ? vehicleDetails : [String(vehicleDetails).trim()])
+      if (effectiveVehicleDetails || effectiveTonnageCapacity != null || effectiveBusinessName || districtId) {
+        if (effectiveTonnageCapacity != null) {
+          const ton = Number(effectiveTonnageCapacity);
+          if (isNaN(ton) || ton <= 0 || ton > 100) {
+            throw new AppError(400, 'INVALID_INPUT', 'Tonnage capacity must be a positive number up to 100.');
+          }
+        }
+        const vehicleArr = effectiveVehicleDetails
+          ? (Array.isArray(effectiveVehicleDetails) ? effectiveVehicleDetails : [String(effectiveVehicleDetails).trim()])
           : null;
         await query(
           `UPDATE transport_owner_profiles
@@ -422,8 +490,8 @@ export class AuthService {
            WHERE user_id = $5`,
           [
             vehicleArr,
-            tonnageCapacity ? parseFloat(String(tonnageCapacity)) : null,
-            businessName ? String(businessName).trim() : null,
+            effectiveTonnageCapacity != null ? parseFloat(String(effectiveTonnageCapacity)) : null,
+            effectiveBusinessName ? String(effectiveBusinessName).trim() : null,
             districtId,
             userId,
           ]
@@ -578,13 +646,17 @@ export class AuthService {
     let approvalNote: string | undefined = undefined;
 
     if (user.role === 'seller') {
-      if (user.seller_subtype === 'mill_owner') {
-        approvalStatus = user.mill_approval_status || user.seller_approval_status || 'PENDING_APPROVAL';
-        approvalNote = user.mill_approval_note || user.seller_approval_note || undefined;
-      } else {
-        approvalStatus = user.seller_approval_status || 'PENDING_APPROVAL';
-        approvalNote = user.seller_approval_note || undefined;
-      }
+      const raw = user.seller_subtype === 'mill_owner'
+        ? (user.mill_approval_status || user.seller_approval_status)
+        : user.seller_approval_status;
+      if (raw === 'approved' || raw === 'APPROVED') approvalStatus = 'APPROVED';
+      else if (raw === 'rejected' || raw === 'REJECTED') approvalStatus = 'REJECTED';
+      else if (raw === 'suspended' || raw === 'SUSPENDED') approvalStatus = 'SUSPENDED';
+      else approvalStatus = 'PENDING_APPROVAL';
+
+      approvalNote = user.seller_subtype === 'mill_owner'
+        ? (user.mill_approval_note || user.seller_approval_note || undefined)
+        : (user.seller_approval_note || undefined);
     } else if (user.role === 'carpenter') {
       approvalStatus = user.carpenter_approval_status || 'PENDING_APPROVAL';
       approvalNote = user.carpenter_approval_note || undefined;

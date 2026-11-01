@@ -8,6 +8,7 @@ import {
   verifyOtpSchema,
   registerSchema,
   loginSchema,
+  updateProfileSchema,
 } from './auth.schema.js';
 
 export const authRouter = Router();
@@ -47,6 +48,7 @@ authRouter.get(
 authRouter.patch(
   '/profile',
   authenticate,
+  validate(updateProfileSchema, 400),
   authController.updateProfile.bind(authController)
 );
 
