@@ -18,6 +18,7 @@ import { query } from './config/database.js';
 
 export function createApp(): express.Application {
   const app = express();
+  app.set('trust proxy', 1);
 
   // Security headers & CORS
   app.use(helmet());
