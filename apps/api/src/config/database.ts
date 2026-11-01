@@ -4,12 +4,22 @@ import { logger } from '../utils/logger.js';
 
 const { Pool } = pg;
 
+const connectionString = process.env.TEST_DATABASE_URL || env.DATABASE_URL;
+
+// Automatically enable SSL if connecting to remote databases (e.g. Supabase, Neon, AWS)
+// or if DATABASE_SSL is explicitly enabled, or if in production/serverless environments.
+const isRemoteOrProduction =
+  Boolean(env.DATABASE_SSL) ||
+  env.NODE_ENV === 'production' ||
+  process.env.VERCEL === '1' ||
+  (connectionString && !connectionString.includes('localhost') && !connectionString.includes('127.0.0.1'));
+
 export let pool = new Pool({
-  connectionString: process.env.TEST_DATABASE_URL || env.DATABASE_URL,
-  ssl: env.DATABASE_SSL ? { rejectUnauthorized: false } : false,
-  max: 20,
+  connectionString,
+  ssl: isRemoteOrProduction ? { rejectUnauthorized: false } : false,
+  max: process.env.VERCEL ? 5 : 20, // Lower pool size to prevent connection exhaustion in serverless lambdas
   idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 5_000,
+  connectionTimeoutMillis: 10_000, // Increased from 5s to 10s to accommodate cold-start latency
 });
 
 export function setPoolForTesting(newPool: pg.Pool): void {
