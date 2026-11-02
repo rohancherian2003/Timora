@@ -59,6 +59,7 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     return null;
   });
   const [loading, setLoading] = useState(false);
+  const [loadingDemoRole, setLoadingDemoRole] = useState<string | null>(null);
 
   // Forgot PIN Modal state
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -111,6 +112,7 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setError(null);
     setLoading(true);
     const key = role === 'seller' ? `seller_${subtype || 'individual'}` : role;
+    setLoadingDemoRole(key);
     const demoPhone = DEMO_PHONE_MAP[key] || '9847987654';
 
     try {
@@ -127,6 +129,8 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     loginAsDemo(role, subtype);
     const dest = getDestination(role, subtype);
     navigate(dest, { replace: true });
+    setLoading(false);
+    setLoadingDemoRole(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -283,12 +287,19 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 {/* Buyer */}
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => handleQuickDemo('buyer')}
-                  className="p-2 rounded-xl bg-[#E7E1D6]/70 hover:bg-[#E7E1D6] border border-[#8E7F6B]/30 text-left transition flex items-center gap-2"
+                  className={`p-2 rounded-xl bg-[#E7E1D6]/70 hover:bg-[#E7E1D6] border border-[#8E7F6B]/30 text-left transition flex items-center gap-2 ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
-                  <ShoppingBag className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
+                  {loadingDemoRole === 'buyer' ? (
+                    <Loader2 className="w-4 h-4 text-[#5B6147] animate-spin flex-shrink-0" />
+                  ) : (
+                    <ShoppingBag className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
+                  )}
                   <div className="truncate">
-                    <div className="font-bold text-[#4A3626] text-[11px] truncate">Buyer</div>
+                    <div className="font-bold text-[#4A3626] text-[11px] truncate">
+                      {loadingDemoRole === 'buyer' ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...') : 'Buyer'}
+                    </div>
                     <div className="text-[10px] text-[#8E7F6B] truncate">Suresh Kumar</div>
                   </div>
                 </button>
@@ -296,12 +307,19 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 {/* Individual Timber Seller */}
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => handleQuickDemo('seller', 'individual')}
-                  className="p-2 rounded-xl bg-[#E7E1D6]/70 hover:bg-[#E7E1D6] border border-[#8E7F6B]/30 text-left transition flex items-center gap-2"
+                  className={`p-2 rounded-xl bg-[#E7E1D6]/70 hover:bg-[#E7E1D6] border border-[#8E7F6B]/30 text-left transition flex items-center gap-2 ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
-                  <Store className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
+                  {loadingDemoRole === 'seller_individual' ? (
+                    <Loader2 className="w-4 h-4 text-[#5B6147] animate-spin flex-shrink-0" />
+                  ) : (
+                    <Store className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
+                  )}
                   <div className="truncate">
-                    <div className="font-bold text-[#4A3626] text-[11px] truncate">Individual Seller</div>
+                    <div className="font-bold text-[#4A3626] text-[11px] truncate">
+                      {loadingDemoRole === 'seller_individual' ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...') : 'Individual Seller'}
+                    </div>
                     <div className="text-[10px] text-[#8E7F6B] truncate">K. R. Madhavan</div>
                   </div>
                 </button>
@@ -309,12 +327,19 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 {/* Timber Mill Owner */}
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => handleQuickDemo('seller', 'mill_owner')}
-                  className="p-2 rounded-xl bg-[#E7E1D6]/70 hover:bg-[#E7E1D6] border border-[#8E7F6B]/30 text-left transition flex items-center gap-2"
+                  className={`p-2 rounded-xl bg-[#E7E1D6]/70 hover:bg-[#E7E1D6] border border-[#8E7F6B]/30 text-left transition flex items-center gap-2 ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
-                  <Factory className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
+                  {loadingDemoRole === 'seller_mill_owner' ? (
+                    <Loader2 className="w-4 h-4 text-[#5B6147] animate-spin flex-shrink-0" />
+                  ) : (
+                    <Factory className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
+                  )}
                   <div className="truncate">
-                    <div className="font-bold text-[#4A3626] text-[11px] truncate">Mill Owner</div>
+                    <div className="font-bold text-[#4A3626] text-[11px] truncate">
+                      {loadingDemoRole === 'seller_mill_owner' ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...') : 'Mill Owner'}
+                    </div>
                     <div className="text-[10px] text-[#8E7F6B] truncate">Perumbavoor Sawmill</div>
                   </div>
                 </button>
@@ -322,12 +347,19 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 {/* Carpenter */}
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => handleQuickDemo('carpenter')}
-                  className="p-2 rounded-xl bg-[#E7E1D6]/70 hover:bg-[#E7E1D6] border border-[#8E7F6B]/30 text-left transition flex items-center gap-2"
+                  className={`p-2 rounded-xl bg-[#E7E1D6]/70 hover:bg-[#E7E1D6] border border-[#8E7F6B]/30 text-left transition flex items-center gap-2 ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
-                  <Hammer className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
+                  {loadingDemoRole === 'carpenter' ? (
+                    <Loader2 className="w-4 h-4 text-[#5B6147] animate-spin flex-shrink-0" />
+                  ) : (
+                    <Hammer className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
+                  )}
                   <div className="truncate">
-                    <div className="font-bold text-[#4A3626] text-[11px] truncate">Carpenter</div>
+                    <div className="font-bold text-[#4A3626] text-[11px] truncate">
+                      {loadingDemoRole === 'carpenter' ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...') : 'Carpenter'}
+                    </div>
                     <div className="text-[10px] text-[#8E7F6B] truncate">Master Binu Achari</div>
                   </div>
                 </button>
@@ -335,12 +367,19 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 {/* Transport Owner */}
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => handleQuickDemo('transport')}
-                  className="p-2 rounded-xl bg-[#E7E1D6]/70 hover:bg-[#E7E1D6] border border-[#8E7F6B]/30 text-left transition flex items-center gap-2"
+                  className={`p-2 rounded-xl bg-[#E7E1D6]/70 hover:bg-[#E7E1D6] border border-[#8E7F6B]/30 text-left transition flex items-center gap-2 ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
-                  <Truck className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
+                  {loadingDemoRole === 'transport' ? (
+                    <Loader2 className="w-4 h-4 text-[#5B6147] animate-spin flex-shrink-0" />
+                  ) : (
+                    <Truck className="w-4 h-4 text-[#5B6147] flex-shrink-0" />
+                  )}
                   <div className="truncate">
-                    <div className="font-bold text-[#4A3626] text-[11px] truncate">Transport Owner</div>
+                    <div className="font-bold text-[#4A3626] text-[11px] truncate">
+                      {loadingDemoRole === 'transport' ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...') : 'Transport Owner'}
+                    </div>
                     <div className="text-[10px] text-[#8E7F6B] truncate">Malabar Haulage</div>
                   </div>
                 </button>
@@ -348,12 +387,19 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 {/* Admin */}
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => handleQuickDemo('admin')}
-                  className="p-2 rounded-xl bg-stone-200 hover:bg-stone-300 border border-stone-300 text-left transition flex items-center gap-2"
+                  className={`p-2 rounded-xl bg-stone-200 hover:bg-stone-300 border border-stone-300 text-left transition flex items-center gap-2 ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
-                  <Shield className="w-4 h-4 text-[#4A3626] flex-shrink-0" />
+                  {loadingDemoRole === 'admin' ? (
+                    <Loader2 className="w-4 h-4 text-[#4A3626] animate-spin flex-shrink-0" />
+                  ) : (
+                    <Shield className="w-4 h-4 text-[#4A3626] flex-shrink-0" />
+                  )}
                   <div className="truncate">
-                    <div className="font-bold text-[#4A3626] text-[11px] truncate">Admin Cell</div>
+                    <div className="font-bold text-[#4A3626] text-[11px] truncate">
+                      {loadingDemoRole === 'admin' ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...') : 'Admin Cell'}
+                    </div>
                     <div className="text-[10px] text-[#8E7F6B] truncate">Chief Moderator</div>
                   </div>
                 </button>
@@ -444,10 +490,13 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 mt-2"
+            className={`w-full py-3 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 mt-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
             {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>{lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...'}</span>
+              </>
             ) : (
               <>
                 <span>{lang === 'en' ? 'Sign In to Dashboard' : 'ഡാഷ്‌ബോർഡിൽ പ്രവേശിക്കുക'}</span>
