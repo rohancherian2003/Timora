@@ -13,7 +13,8 @@ import {
   ShieldCheck,
   AlertCircle,
   Plus,
-  Star
+  Star,
+  Loader2,
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
@@ -22,6 +23,7 @@ import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
 import { SubmitReviewModal } from '../../components/SubmitReviewModal';
 import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
+import { api } from '../../lib/api';
 
 const DEMO_BUYER_ORDERS = [
   {
@@ -68,6 +70,8 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [dismissedResolvedId, setDismissedResolvedId] = useState<string | null>(null);
   const [liveOrders, setLiveOrders] = useState<any[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+  const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
   const [selectedReviewOrder, setSelectedReviewOrder] = useState<{
     id: string;
     sellerId: string;
@@ -78,7 +82,7 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     let isMounted = true;
     async function fetchOrders() {
       try {
-        const { api } = await import('../../lib/api');
+        setIsLoadingOrders(true);
         const res = await api.get('/orders');
         if (isMounted && res.data?.success && Array.isArray(res.data?.data) && res.data.data.length > 0) {
           const mapped = res.data.data.map((o: any) => ({
@@ -96,6 +100,8 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         }
       } catch {
         // Fall back gracefully to DEMO_BUYER_ORDERS
+      } finally {
+        if (isMounted) setIsLoadingOrders(false);
       }
     }
     fetchOrders();
@@ -105,11 +111,13 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   }, [user?.id]);
 
   const handleConfirmDelivery = async (orderId: string) => {
+    setConfirmingOrderId(orderId);
     try {
-      const { api } = await import('../../lib/api');
       await api.patch(`/orders/${orderId}/confirm-delivery`);
     } catch {
       // Local fallback
+    } finally {
+      setConfirmingOrderId(null);
     }
     setLiveOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status: 'completed' } : o))
@@ -200,8 +208,10 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             </div>
 
             <button
+              type="button"
               onClick={() => setDismissedResolvedId(latestResolvedTicket.id)}
-              className="text-stone-400 hover:text-stone-700 font-bold p-1 text-xs"
+              aria-label={lang === 'en' ? 'Dismiss notification' : 'അറിയിപ്പ് ഒഴിവാക്കുക'}
+              className="text-stone-400 hover:text-stone-700 font-bold p-1 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 rounded-lg"
               title="Dismiss"
             >
               ✕
@@ -281,56 +291,82 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       {/* Orders Tab */}
       {activeTab === 'orders' && (
         <div className="space-y-4">
-          {(liveOrders.length > 0 ? liveOrders : DEMO_BUYER_ORDERS).map((order) => (
-            <div
-              key={order.id}
-              className="bg-white rounded-3xl border border-stone-300/80 p-6 shadow-xs hover:border-stone-400 hover:shadow-md transition flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-extrabold font-serif text-[#4A3626] text-base">{order.listing_title}</h3>
-                  <span className="text-xs text-stone-400 font-mono">({order.id})</span>
-                </div>
-                <div className="text-xs text-stone-600 mt-1 font-medium">
-                  {lang === 'en' ? 'Seller:' : 'വിൽക്കുന്നയാൾ:'} {order.seller_name} · {order.agreed_qty} {order.unit} · {formatINR(order.agreed_price)}
-                </div>
-                <div className="text-[11px] text-stone-400 mt-0.5">
-                  Ordered on {order.ordered_at}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                {order.status === 'delivered_pending' ? (
-                  <button
-                    onClick={() => handleConfirmDelivery(order.id)}
-                    className="px-4 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs font-bold shadow-sm transition"
-                  >
-                    {lang === 'en' ? 'Confirm Delivery Received' : 'ഡെലിവറി ലഭിച്ചതായി സ്ഥിരീകരിക്കുക'}
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      {lang === 'en' ? 'Completed & Delivered' : 'പൂർത്തിയായി'}
-                    </span>
-                    <button
-                      onClick={() =>
-                        setSelectedReviewOrder({
-                          id: order.id,
-                          sellerId: order.seller_id || '',
-                          sellerName: order.seller_name || 'Timber Merchant',
-                        })
-                      }
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#8E7F6B]/40 hover:bg-[#E7E1D6]/50 text-[#4A3626] text-xs font-bold transition"
-                    >
-                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-                      <span>{lang === 'en' ? 'Review Seller' : 'റിവ്യൂ'}</span>
-                    </button>
+          {isLoadingOrders ? (
+            <div className="space-y-4 animate-pulse" data-testid="orders-loading">
+              {[1, 2].map((n) => (
+                <div
+                  key={n}
+                  className="bg-white rounded-3xl border border-stone-300/80 p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
+                  <div className="space-y-2 w-2/3">
+                    <div className="h-5 bg-stone-200 rounded-md w-3/4" />
+                    <div className="h-4 bg-stone-200 rounded-md w-1/2" />
+                    <div className="h-3 bg-stone-100 rounded-md w-1/4" />
                   </div>
-                )}
-              </div>
+                  <div className="h-9 w-36 bg-stone-200 rounded-xl" />
+                </div>
+              ))}
             </div>
-          ))}
+          ) : (
+            (liveOrders.length > 0 ? liveOrders : DEMO_BUYER_ORDERS).map((order) => (
+              <div
+                key={order.id}
+                className="bg-white rounded-3xl border border-stone-300/80 p-6 shadow-xs hover:border-stone-400 hover:shadow-md transition flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold font-serif text-[#4A3626] text-base">{order.listing_title}</h3>
+                    <span className="text-xs text-stone-400 font-mono">({order.id})</span>
+                  </div>
+                  <div className="text-xs text-stone-600 mt-1 font-medium">
+                    {lang === 'en' ? 'Seller:' : 'വിൽക്കുന്നയാൾ:'} {order.seller_name} · {order.agreed_qty} {order.unit} · {formatINR(order.agreed_price)}
+                  </div>
+                  <div className="text-[11px] text-stone-400 mt-0.5">
+                    Ordered on {order.ordered_at}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {order.status === 'delivered_pending' ? (
+                    <button
+                      disabled={confirmingOrderId === order.id}
+                      onClick={() => handleConfirmDelivery(order.id)}
+                      className="px-4 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 disabled:opacity-60"
+                    >
+                      {confirmingOrderId === order.id ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>{lang === 'en' ? 'Confirming...' : 'സ്ഥിരീകരിക്കുന്നു...'}</span>
+                        </>
+                      ) : (
+                        <span>{lang === 'en' ? 'Confirm Delivery Received' : 'ഡെലിവറി ലഭിച്ചതായി സ്ഥിരീകരിക്കുക'}</span>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        {lang === 'en' ? 'Completed & Delivered' : 'പൂർത്തിയായി'}
+                      </span>
+                      <button
+                        onClick={() =>
+                          setSelectedReviewOrder({
+                            id: order.id,
+                            sellerId: order.seller_id || '',
+                            sellerName: order.seller_name || 'Timber Merchant',
+                          })
+                        }
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#8E7F6B]/40 hover:bg-[#E7E1D6]/50 text-[#4A3626] text-xs font-bold transition"
+                      >
+                        <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                        <span>{lang === 'en' ? 'Review Seller' : 'റിവ്യൂ'}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
 

@@ -16,6 +16,7 @@ import {
   Hammer,
   Truck,
   TrendingUp,
+  Loader2,
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
@@ -23,6 +24,7 @@ import { VerificationStatusBanner } from '../../components/VerificationStatusBan
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
 import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
+import { api } from '../../lib/api';
 
 interface SawnBatch {
   id: string;
@@ -86,9 +88,11 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
   const [dimensions, setDimensions] = useState('2" x 6" x 12ft');
   const [quantityCft, setQuantityCft] = useState(50);
   const [ratePerCft, setRatePerCft] = useState(2500);
+  const [isSubmittingBatch, setIsSubmittingBatch] = useState(false);
 
   const handleCreateBatch = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmittingBatch(true);
     const newBatch: SawnBatch = {
       id: `mill-b-${Date.now()}`,
       title: title.trim(),
@@ -99,9 +103,7 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
       ratePerCft,
       status: 'available',
     };
-    setBatches([newBatch, ...batches]);
     try {
-      const { api } = await import('../../lib/api');
       await api.post('/listings', {
         title: title.trim(),
         species_id: 1,
@@ -114,7 +116,10 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
       });
     } catch {
       // Graceful offline fallback
+    } finally {
+      setIsSubmittingBatch(false);
     }
+    setBatches([newBatch, ...batches]);
     setTitle('');
     setShowAddBatch(false);
   };
@@ -268,8 +273,10 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
               {lang === 'en' ? 'List Sawn Timber or Squared Beams from Mill' : 'മില്ലിൽ നിന്നുള്ള തടി ലിസ്റ്റ് ചെയ്യുക'}
             </h3>
             <button
+              type="button"
               onClick={() => setShowAddBatch(false)}
-              className="text-stone-400 hover:text-stone-700 font-bold"
+              aria-label={lang === 'en' ? 'Close dialog' : 'ഡയലോഗ് അടയ്ക്കുക'}
+              className="text-stone-400 hover:text-stone-700 font-bold focus:outline-none focus:ring-2 focus:ring-[#5B6147] rounded-lg p-1 text-sm"
             >
               ✕
             </button>
@@ -372,9 +379,17 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
               <div className="flex items-end">
                 <button
                   type="submit"
-                  className="w-full py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm transition shadow-xs"
+                  disabled={isSubmittingBatch}
+                  className="w-full py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm transition shadow-xs flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  {lang === 'en' ? 'Save & Publish to Mill Catalog' : 'മില്ല് കാറ്റലോഗിൽ ചേർക്കുക'}
+                  {isSubmittingBatch ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{lang === 'en' ? 'Publishing...' : 'ചേർക്കുന്നു...'}</span>
+                    </>
+                  ) : (
+                    <span>{lang === 'en' ? 'Save & Publish to Mill Catalog' : 'മില്ല് കാറ്റലോഗിൽ ചേർക്കുക'}</span>
+                  )}
                 </button>
               </div>
             </div>

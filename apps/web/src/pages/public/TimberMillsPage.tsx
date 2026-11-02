@@ -20,9 +20,11 @@ import {
   ArrowRight,
   AlertCircle,
   RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { LoginAlertModal } from '../../components/LoginAlertModal';
+import { api } from '../../lib/api';
 import { BackButton } from '../../components/BackButton';
 
 export interface TimberMillReview {
@@ -74,7 +76,6 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setIsLoading(true);
     setError(null);
     try {
-      const { api } = await import('../../lib/api');
       const res = await api.get('/mills');
       if (res.data?.success && Array.isArray(res.data?.data)) {
         const mapped: TimberMill[] = res.data.data.map((item: any) => ({
@@ -125,8 +126,6 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
   // Login Alert Modal State
   const [loginAlertMill, setLoginAlertMill] = useState<TimberMill | null>(null);
-  const [showAuthGate, setShowAuthGate] = useState(false);
-  const [gateActionName, setGateActionName] = useState<string>('');
 
   // Quote Request Modal State (for authenticated users)
   const [quoteModalMill, setQuoteModalMill] = useState<TimberMill | null>(null);
@@ -136,12 +135,14 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [quoteDeliveryLocation, setQuoteDeliveryLocation] = useState<string>('');
   const [quoteNote, setQuoteNote] = useState<string>('');
   const [quoteSubmitted, setQuoteSubmitted] = useState<boolean>(false);
+  const [isSubmittingQuote, setIsSubmittingQuote] = useState<boolean>(false);
 
   // Review Modal State
   const [reviewModalMill, setReviewModalMill] = useState<TimberMill | null>(null);
   const [reviewStars, setReviewStars] = useState<number>(5);
   const [reviewText, setReviewText] = useState<string>('');
   const [reviewSubmitted, setReviewSubmitted] = useState<boolean>(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState<boolean>(false);
 
   // Filter logic
   const filteredMills = mills.filter((mill) => {
@@ -168,7 +169,7 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   });
 
   // Action guard: Requires Login!
-  const handleProtectedAction = (actionName: string, mill: TimberMill, callback: () => void) => {
+  const handleProtectedAction = (_actionName: string, mill: TimberMill, callback: () => void) => {
     if (!isAuthenticated) {
       setLoginAlertMill(mill);
       return;
@@ -176,60 +177,62 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     callback();
   };
 
-  // Instant demo login helper for convenience
-  const handleQuickDemoLogin = () => {
-    loginAsDemo('buyer');
-    setShowAuthGate(false);
-  };
-
   const handleSendQuote = (e: React.FormEvent) => {
     e.preventDefault();
-    setQuoteSubmitted(true);
+    setIsSubmittingQuote(true);
     setTimeout(() => {
-      setQuoteSubmitted(false);
-      setQuoteModalMill(null);
-      setQuoteDeliveryLocation('');
-      setQuoteNote('');
-    }, 2400);
+      setIsSubmittingQuote(false);
+      setQuoteSubmitted(true);
+      setTimeout(() => {
+        setQuoteSubmitted(false);
+        setQuoteModalMill(null);
+        setQuoteDeliveryLocation('');
+        setQuoteNote('');
+      }, 2000);
+    }, 400);
   };
 
   const handleSendReview = (e: React.FormEvent) => {
     e.preventDefault();
     if (!reviewModalMill || !reviewText.trim()) return;
 
-    const newRev: TimberMillReview = {
-      id: `rev-mill-${Date.now()}`,
-      author: user?.name || (lang === 'en' ? 'Verified Client' : 'ഉപഭോക്താവ്'),
-      role: lang === 'en' ? 'Verified Client' : 'ഉപഭോക്താവ്',
-      rating: reviewStars,
-      date: lang === 'en' ? 'Just now' : 'ഇപ്പോൾ',
-      comment: reviewText.trim(),
-      commentMl: reviewText.trim(),
-    };
-
-    setMills((prev) =>
-      prev.map((m) => {
-        if (m.id === reviewModalMill.id) {
-          const updatedReviews = [newRev, ...m.reviews];
-          const totalStars = updatedReviews.reduce((sum, r) => sum + r.rating, 0);
-          const newAvg = parseFloat((totalStars / updatedReviews.length).toFixed(1));
-          return {
-            ...m,
-            rating: newAvg,
-            ratingCount: m.ratingCount + 1,
-            reviews: updatedReviews,
-          };
-        }
-        return m;
-      })
-    );
-
-    setReviewSubmitted(true);
+    setIsSubmittingReview(true);
     setTimeout(() => {
-      setReviewSubmitted(false);
-      setReviewModalMill(null);
-      setReviewText('');
-    }, 1800);
+      const newRev: TimberMillReview = {
+        id: `rev-mill-${Date.now()}`,
+        author: user?.name || (lang === 'en' ? 'Verified Client' : 'ഉപഭോക്താവ്'),
+        role: lang === 'en' ? 'Verified Client' : 'ഉപഭോക്താവ്',
+        rating: reviewStars,
+        date: lang === 'en' ? 'Just now' : 'ഇപ്പോൾ',
+        comment: reviewText.trim(),
+        commentMl: reviewText.trim(),
+      };
+
+      setMills((prev) =>
+        prev.map((m) => {
+          if (m.id === reviewModalMill.id) {
+            const updatedReviews = [newRev, ...m.reviews];
+            const totalStars = updatedReviews.reduce((sum, r) => sum + r.rating, 0);
+            const newAvg = parseFloat((totalStars / updatedReviews.length).toFixed(1));
+            return {
+              ...m,
+              rating: newAvg,
+              ratingCount: m.ratingCount + 1,
+              reviews: updatedReviews,
+            };
+          }
+          return m;
+        })
+      );
+
+      setIsSubmittingReview(false);
+      setReviewSubmitted(true);
+      setTimeout(() => {
+        setReviewSubmitted(false);
+        setReviewModalMill(null);
+        setReviewText('');
+      }, 1800);
+    }, 400);
   };
 
   return (
@@ -702,73 +705,7 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         )}
       </div>
 
-      {/* 4. AUTHENTICATION GATE MODAL (നിർബന്ധമായും ലോഗിൻ ചെയ്യണം എന്ന് ആവശ്യപ്പെടുന്നത്) */}
-      {showAuthGate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl border border-stone-300/80 shadow-2xl max-w-md w-full p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-stone-200 text-[#4A3626] flex items-center justify-center font-bold">
-                  <Lock className="w-4 h-4 text-[#5B6147]" />
-                </div>
-                <h3 className="font-extrabold font-serif text-[#4A3626] text-base">
-                  {lang === 'en' ? 'Buyer / House Owner Login Required' : 'ലോഗിൻ ആവശ്യമാണ്'}
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowAuthGate(false)}
-                className="text-stone-400 hover:text-stone-700 font-bold p-1 text-sm"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-2 text-xs text-stone-600">
-              <p className="font-semibold text-stone-900 text-sm">
-                {lang === 'en'
-                  ? `Please sign in to ${gateActionName.toLowerCase()} and interact with timber mills.`
-                  : `മില്ലുകളുമായി നേരിട്ട് സംസാരിക്കാനും കോട്ടേഷൻ ചോദിക്കാനും ദയവായി ലോഗിൻ ചെയ്യുക.`}
-              </p>
-              <p className="text-stone-500">
-                {lang === 'en'
-                  ? 'To prevent spam and protect timber sawmill owners, direct phone calls and price negotiation quotes are reserved for verified registered buyers and house builders.'
-                  : 'തടി മില്ലുകളുടെ സുരക്ഷയ്ക്കും അനാവശ്യ കോളുകൾ തടയുന്നതിനുമായി രജിസ്റ്റർ ചെയ്ത ഉപഭോക്താക്കൾക്കും വീടുപണിയുന്നവർക്കും മാത്രമാണ് ഈ സേവനം ലഭ്യമാക്കിയിട്ടുള്ളത്.'}
-              </p>
-            </div>
-
-            <div className="space-y-2.5 pt-2">
-              <Link
-                to="/login"
-                className="w-full py-3 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>{lang === 'en' ? 'Sign In As Buyer / House Owner' : 'ഉപഭോക്താവായി ലോഗിൻ ചെയ്യുക'}</span>
-              </Link>
-
-              <Link
-                to="/register"
-                className="w-full py-2.5 rounded-xl border border-stone-300 text-[#4A3626] hover:bg-stone-100 font-bold text-xs flex items-center justify-center gap-2 transition"
-              >
-                <UserCheck className="w-4 h-4" />
-                <span>{lang === 'en' ? 'Create Free Buyer Account' : 'സൗജന്യ അക്കൗണ്ട് ഉണ്ടാക്കുക'}</span>
-              </Link>
-
-              {/* 1-Click Quick Demo Login for instant testing */}
-              <div className="pt-2 border-t border-stone-100 text-center">
-                <button
-                  type="button"
-                  onClick={handleQuickDemoLogin}
-                  className="text-xs text-[#5B6147] hover:text-[#3F452F] font-bold underline decoration-stone-400 underline-offset-2"
-                >
-                  ⚡ {lang === 'en' ? 'Quick Demo Login (Suresh Kumar, Buyer)' : 'ടെസ്റ്റിംഗിനായി ഉടൻ ബയറായി ലോഗിൻ ചെയ്യുക'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 5. REQUEST SAWING / TIMBER QUOTE MODAL (FOR AUTHENTICATED BUYERS) */}
+      {/* 4. REQUEST SAWING / TIMBER QUOTE MODAL (FOR AUTHENTICATED BUYERS) */}
       {quoteModalMill && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
           <div className="bg-white rounded-3xl border border-stone-300/80 shadow-2xl max-w-lg w-full p-6 space-y-4">
@@ -782,8 +719,10 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setQuoteModalMill(null)}
-                className="text-stone-400 hover:text-stone-700 font-bold p-1 text-sm"
+                aria-label={lang === 'en' ? 'Close dialog' : 'ഡയലോഗ് അടയ്ക്കുക'}
+                className="text-stone-400 hover:text-stone-700 font-bold p-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#5B6147] rounded-lg"
               >
                 ✕
               </button>
@@ -894,10 +833,20 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold flex items-center gap-1.5 shadow-sm transition"
+                    disabled={isSubmittingQuote}
+                    className="px-5 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold flex items-center gap-1.5 shadow-sm transition disabled:opacity-60"
                   >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>{lang === 'en' ? 'Submit Quote Request' : 'കോട്ടേഷൻ അയക്കുക'}</span>
+                    {isSubmittingQuote ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>{lang === 'en' ? 'Submitting...' : 'സമർപ്പിക്കുന്നു...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>{lang === 'en' ? 'Submit Quote Request' : 'കോട്ടേഷൻ അയക്കുക'}</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
@@ -915,8 +864,10 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 {lang === 'en' ? 'Review & Rate Mill' : 'മില്ലിന് റിവ്യൂ നൽകുക'}
               </h3>
               <button
+                type="button"
                 onClick={() => setReviewModalMill(null)}
-                className="text-stone-400 hover:text-stone-700 font-bold p-1 text-sm"
+                aria-label={lang === 'en' ? 'Close dialog' : 'ഡയലോഗ് അടയ്ക്കുക'}
+                className="text-stone-400 hover:text-stone-700 font-bold p-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#5B6147] rounded-lg"
               >
                 ✕
               </button>
@@ -976,9 +927,17 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold"
+                    disabled={isSubmittingReview}
+                    className="px-5 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold flex items-center gap-1.5 transition disabled:opacity-60"
                   >
-                    {lang === 'en' ? 'Post Review' : 'സമർപ്പിക്കുക'}
+                    {isSubmittingReview ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>{lang === 'en' ? 'Posting...' : 'സമർപ്പിക്കുന്നു...'}</span>
+                      </>
+                    ) : (
+                      <span>{lang === 'en' ? 'Post Review' : 'സമർപ്പിക്കുക'}</span>
+                    )}
                   </button>
                 </div>
               </form>

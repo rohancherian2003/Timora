@@ -37,3 +37,16 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* iOS & Mobile Safe Area Inset Utilities */
+.pb-safe {
+  padding-bottom: calc(0.375rem + env(safe-area-inset-bottom, 0px));
+}
+
+.pt-safe {
+  padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+}
+
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}

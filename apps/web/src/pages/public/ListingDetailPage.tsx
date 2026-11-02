@@ -17,6 +17,7 @@ import {
   Truck,
   Star,
   MessageSquare,
+  Loader2,
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
@@ -44,6 +45,7 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { isAuthenticated } = useAuth();
 
   const [liveListing, setLiveListing] = useState<TimberListingItem | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(() => Boolean(id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)));
 
   useEffect(() => {
     let isMounted = true;
@@ -52,15 +54,19 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
       if (!isUuid) {
         // Fallback demo listing IDs (e.g. '1', '2', etc.) are resolved directly from local catalog
+        setIsLoadingDetail(false);
         return;
       }
       try {
+        setIsLoadingDetail(true);
         const res = await api.get(`/listings/${id}`);
         if (isMounted && res.data?.success && res.data?.data) {
           setLiveListing(mapApiListingToItem(res.data.data));
         }
       } catch {
         // Fall back gracefully to getTimberListingById(id)
+      } finally {
+        if (isMounted) setIsLoadingDetail(false);
       }
     }
     fetchLiveDetail();
@@ -86,6 +92,7 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [proposedPrice, setProposedPrice] = useState(listing.price_per_cft);
   const [message, setMessage] = useState('');
   const [sent, setSent] = useState(false);
+  const [isSubmittingEnquiry, setIsSubmittingEnquiry] = useState(false);
 
   // Verified Seller Reviews State
   const [sellerRating, setSellerRating] = useState<number>(4.9);
@@ -169,7 +176,7 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
   const handleSendEnquiry = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSent(true);
+    setIsSubmittingEnquiry(true);
     try {
       if (listing.seller_id) {
         await api.post('/enquiries', {
@@ -179,8 +186,12 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           message: message.trim() || undefined,
         });
       }
+      setSent(true);
     } catch {
       // Graceful completion for demo listings or offline preview
+      setSent(true);
+    } finally {
+      setIsSubmittingEnquiry(false);
     }
     setTimeout(() => {
       setShowEnquiryModal(false);
@@ -200,7 +211,25 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         lang={lang}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {isLoadingDetail && !liveListing ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-pulse" data-testid="listing-detail-loading">
+          <div className="space-y-4">
+            <div className="aspect-[4/3] w-full rounded-3xl bg-stone-200" />
+            <div className="grid grid-cols-3 gap-3">
+              <div className="aspect-[16/10] rounded-2xl bg-stone-200" />
+              <div className="aspect-[16/10] rounded-2xl bg-stone-200" />
+              <div className="aspect-[16/10] rounded-2xl bg-stone-200" />
+            </div>
+          </div>
+          <div className="space-y-6">
+            <div className="h-8 bg-stone-200 rounded-xl w-3/4" />
+            <div className="h-6 bg-stone-200 rounded-md w-1/3" />
+            <div className="h-24 bg-stone-100 rounded-2xl" />
+            <div className="h-32 bg-stone-100 rounded-2xl" />
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Images Gallery with Reserved Aspect Ratio */}
         <div className="space-y-4">
           <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden bg-[#E7E1D6] border-2 border-[#8E7F6B]/30 shadow-md">
@@ -436,6 +465,7 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </div>
         </div>
       </div>
+      )}
 
       {/* Enquiry Modal */}
       {showEnquiryModal && (
@@ -526,9 +556,17 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-sm shadow-md transition"
+                  disabled={isSubmittingEnquiry}
+                  className={`w-full py-3.5 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2 ${isSubmittingEnquiry ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  {lang === 'en' ? 'Submit Enquiry & Offer' : 'ഓഫർ സമർപ്പിക്കുക'}
+                  {isSubmittingEnquiry ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{lang === 'en' ? 'Submitting Enquiry...' : 'സമർപ്പിക്കുന്നു...'}</span>
+                    </>
+                  ) : (
+                    <span>{lang === 'en' ? 'Submit Enquiry & Offer' : 'ഓഫർ സമർപ്പിക്കുക'}</span>
+                  )}
                 </button>
               </form>
             )}

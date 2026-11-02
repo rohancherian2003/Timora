@@ -21,11 +21,13 @@ import {
   Hammer,
   Truck,
   RotateCcw,
+  Loader2,
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { getStoredTickets, resolveTicket, SupportTicket } from '../../utils/ticketService';
 import { EditProfileModal } from '../../components/EditProfileModal';
+import { api } from '../../lib/api';
 
 interface PendingBusiness {
   id: string;
@@ -144,10 +146,16 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     app: PendingBusiness;
   } | null>(null);
   const [actionInput, setActionInput] = useState('');
+  const [isSubmittingActionModal, setIsSubmittingActionModal] = useState(false);
 
   // Ticket reply modal state
   const [replyTicket, setReplyTicket] = useState<SupportTicket | null>(null);
   const [replyText, setReplyText] = useState<string>('');
+  const [isResolvingTicket, setIsResolvingTicket] = useState(false);
+
+  // Per-action loading state for approving applications
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [isLoadingApps, setIsLoadingApps] = useState(true);
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -161,7 +169,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     let isMounted = true;
     async function fetchPendingApps() {
       try {
-        const { api } = await import('../../lib/api');
+        setIsLoadingApps(true);
         const res = await api.get('/admin/sellers/pending');
         if (isMounted && res.data?.success && Array.isArray(res.data?.data) && res.data.data.length > 0) {
           const liveApps: PendingBusiness[] = res.data.data.map((s: any) => ({
@@ -183,6 +191,8 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         }
       } catch {
         // Fall back gracefully to INITIAL_PENDING_APPLICATIONS
+      } finally {
+        if (isMounted) setIsLoadingApps(false);
       }
     }
     fetchPendingApps();
@@ -206,18 +216,21 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   };
 
   const handleApproveApp = async (app: PendingBusiness) => {
-    setApplications(applications.filter((a) => a.id !== app.id));
+    setActionLoadingId(app.id);
     addAudit(`APPROVE_${app.role.toUpperCase()}`, `${app.businessName} (${app.name})`);
     
     // Attempt backend sync
     try {
-      const { api } = await import('../../lib/api');
       await api.patch(`/admin/sellers/${app.id}/approve`, {
         note: `Approved by ${user?.name || 'Admin'}`,
       });
     } catch {
       // Graceful local approval
+    } finally {
+      setActionLoadingId(null);
     }
+
+    setApplications((prev) => prev.filter((a) => a.id !== app.id));
 
     setMessage(
       lang === 'en'
@@ -226,18 +239,18 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     );
   };
 
-  const handleConfirmActionModal = (e: React.FormEvent) => {
+  const handleConfirmActionModal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!actionModal || !actionInput.trim()) return;
 
+    setIsSubmittingActionModal(true);
     const { type, app } = actionModal;
-    setApplications(applications.filter((a) => a.id !== app.id));
 
     if (type === 'action_required') {
       addAudit(`REQUEST_INFO_${app.role.toUpperCase()}`, `${app.businessName}`, actionInput.trim());
-      import('../../lib/api').then(({ api }) => {
-        api.patch(`/admin/sellers/${app.id}/reject`, { reason: actionInput.trim() }).catch(() => {});
-      });
+      try {
+        await api.patch(`/admin/sellers/${app.id}/reject`, { reason: actionInput.trim() });
+      } catch {}
       setMessage(
         lang === 'en'
           ? `Requested additional documents from ${app.name}.`
@@ -245,9 +258,9 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       );
     } else {
       addAudit(`REJECT_${app.role.toUpperCase()}`, `${app.businessName}`, actionInput.trim());
-      import('../../lib/api').then(({ api }) => {
-        api.patch(`/admin/sellers/${app.id}/reject`, { reason: actionInput.trim() }).catch(() => {});
-      });
+      try {
+        await api.patch(`/admin/sellers/${app.id}/reject`, { reason: actionInput.trim() });
+      } catch {}
       setMessage(
         lang === 'en'
           ? `Application rejected with recorded reason.`
@@ -255,6 +268,8 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       );
     }
 
+    setApplications((prev) => prev.filter((a) => a.id !== app.id));
+    setIsSubmittingActionModal(false);
     setActionModal(null);
     setActionInput('');
   };
@@ -263,16 +278,20 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     e.preventDefault();
     if (!replyTicket || !replyText.trim()) return;
 
-    resolveTicket(replyTicket.id, replyText.trim());
-    setTickets(getStoredTickets());
-    addAudit('RESOLVE_TICKET', `Ticket #${replyTicket.id}`, replyText.trim());
-    setMessage(
-      lang === 'en'
-        ? `Ticket ${replyTicket.id} resolved and solution reply sent to user dashboard!`
-        : `ടിക്കറ്റ് ${replyTicket.id} പരിഹരിച്ച് ഉപഭോക്താവിന്റെ ഡാഷ്‌ബോർഡിലേക്ക് അയച്ചു!`
-    );
-    setReplyTicket(null);
-    setReplyText('');
+    setIsResolvingTicket(true);
+    setTimeout(() => {
+      resolveTicket(replyTicket.id, replyText.trim());
+      setTickets(getStoredTickets());
+      addAudit('RESOLVE_TICKET', `Ticket #${replyTicket.id}`, replyText.trim());
+      setMessage(
+        lang === 'en'
+          ? `Ticket ${replyTicket.id} resolved and solution reply sent to user dashboard!`
+          : `ടിക്കറ്റ് ${replyTicket.id} പരിഹരിച്ച് ഉപഭോക്താവിന്റെ ഡാഷ്‌ബോർഡിലേക്ക് അയച്ചു!`
+      );
+      setIsResolvingTicket(false);
+      setReplyTicket(null);
+      setReplyText('');
+    }, 400);
   };
 
   const filteredApps = applications.filter((app) => {
@@ -324,7 +343,12 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
             <span>{message}</span>
           </div>
-          <button onClick={() => setMessage(null)} className="text-emerald-700 hover:text-emerald-950 font-bold">
+          <button
+            type="button"
+            onClick={() => setMessage(null)}
+            aria-label={lang === 'en' ? 'Dismiss message' : 'അറിയിപ്പ് ഒഴിവാക്കുക'}
+            className="text-emerald-700 hover:text-emerald-950 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-700 rounded-lg p-1"
+          >
             ✕
           </button>
         </div>
@@ -429,7 +453,22 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </div>
 
           <div className="bg-white rounded-3xl border border-stone-300 overflow-hidden shadow-xs divide-y divide-stone-200">
-            {filteredApps.length === 0 ? (
+            {isLoadingApps ? (
+              <div className="p-6 space-y-4 animate-pulse" data-testid="admin-apps-loading">
+                {[1, 2, 3].map((n) => (
+                  <div key={n} className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-2">
+                    <div className="space-y-2 w-1/2">
+                      <div className="h-5 bg-stone-200 rounded-md w-3/4" />
+                      <div className="h-4 bg-stone-200 rounded-md w-1/2" />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="h-8 w-24 bg-stone-200 rounded-xl" />
+                      <div className="h-8 w-24 bg-stone-200 rounded-xl" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredApps.length === 0 ? (
               <div className="p-8 text-center text-stone-500 text-xs">
                 {lang === 'en' ? 'No pending applications in this category.' : 'ഈ വിഭാഗത്തിൽ പരിശോധിക്കാനുള്ള അപേക്ഷകൾ ഇല്ല.'}
               </div>
@@ -469,11 +508,20 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   <div className="flex items-center gap-2 flex-wrap md:flex-nowrap">
                     <button
                       type="button"
+                      disabled={actionLoadingId === app.id}
                       onClick={() => handleApproveApp(app)}
-                      className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition"
+                      className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition disabled:opacity-60"
                     >
-                      <Check className="w-3.5 h-3.5" />
-                      <span>{lang === 'en' ? 'Approve' : 'അംഗീകരിക്കുക'}</span>
+                      {actionLoadingId === app.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Check className="w-3.5 h-3.5" />
+                      )}
+                      <span>
+                        {actionLoadingId === app.id
+                          ? (lang === 'en' ? 'Approving...' : 'അംഗീകരിക്കുന്നു...')
+                          : (lang === 'en' ? 'Approve' : 'അംഗീകരിക്കുക')}
+                      </span>
                     </button>
 
                     <button
@@ -667,7 +715,12 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   ? (lang === 'en' ? 'Request Additional Info' : 'കൂടുതൽ വിവരങ്ങൾ ആവശ്യപ്പെടുക')
                   : (lang === 'en' ? 'Reject Application' : 'അപേക്ഷ നിരസിക്കുക')}
               </h3>
-              <button onClick={() => setActionModal(null)} className="text-stone-400 hover:text-stone-700 font-bold">
+              <button
+                type="button"
+                onClick={() => setActionModal(null)}
+                aria-label={lang === 'en' ? 'Close dialog' : 'ഡയലോഗ് അടയ്ക്കുക'}
+                className="text-stone-400 hover:text-stone-700 font-bold focus:outline-none focus:ring-2 focus:ring-[#5B6147] rounded-lg p-1 text-sm"
+              >
                 ✕
               </button>
             </div>
@@ -696,13 +749,21 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 </button>
                 <button
                   type="submit"
-                  className={`px-5 py-2 rounded-xl text-white font-bold text-xs shadow-xs ${
+                  disabled={isSubmittingActionModal}
+                  className={`px-5 py-2 rounded-xl text-white font-bold text-xs shadow-xs flex items-center gap-1.5 disabled:opacity-60 ${
                     actionModal.type === 'action_required'
                       ? 'bg-amber-600 hover:bg-amber-700'
                       : 'bg-rose-600 hover:bg-rose-700'
                   }`}
                 >
-                  Confirm & Notify User
+                  {isSubmittingActionModal ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>{lang === 'en' ? 'Updating...' : 'പ്രോസസ്സ് ചെയ്യുന്നു...'}</span>
+                    </>
+                  ) : (
+                    <span>Confirm & Notify User</span>
+                  )}
                 </button>
               </div>
             </form>
@@ -723,7 +784,12 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   Ticket {replyTicket.id} · {replyTicket.name}
                 </h3>
               </div>
-              <button onClick={() => setReplyTicket(null)} className="text-stone-400 hover:text-stone-700 font-bold">
+              <button
+                type="button"
+                onClick={() => setReplyTicket(null)}
+                aria-label={lang === 'en' ? 'Close dialog' : 'ഡയലോഗ് അടയ്ക്കുക'}
+                className="text-stone-400 hover:text-stone-700 font-bold focus:outline-none focus:ring-2 focus:ring-[#5B6147] rounded-lg p-1 text-sm"
+              >
                 ✕
               </button>
             </div>
@@ -746,10 +812,20 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold flex items-center gap-1.5 shadow-xs"
+                  disabled={isResolvingTicket}
+                  className="px-5 py-2 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-60"
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Send Solution & Resolve</span>
+                  {isResolvingTicket ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>{lang === 'en' ? 'Resolving...' : 'പരിഹരിക്കുന്നു...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Send Solution & Resolve</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

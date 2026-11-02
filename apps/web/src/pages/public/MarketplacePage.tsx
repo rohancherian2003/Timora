@@ -20,6 +20,7 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
@@ -81,7 +82,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [isRaiseTicketOpen, setIsRaiseTicketOpen] = useState(false);
   const [liveListings, setLiveListings] = useState<TimberListingItem[] | null>(null);
-  const [isLoadingLive, setIsLoadingLive] = useState(false);
+  const [isLoadingLive, setIsLoadingLive] = useState(true);
   const [validationAlert, setValidationAlert] = useState<{
     type: 'warning' | 'info';
     title: string;
@@ -469,7 +470,8 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
         {/* Active Results Summary */}
         <div className="flex items-center justify-between text-xs text-[#7A5A3A] px-1 font-medium">
-          <span>
+          <span className="flex items-center gap-1.5">
+            {isLoadingLive && <Loader2 className="w-3.5 h-3.5 text-[#5B6147] animate-spin" />}
             {lang === 'en'
               ? `Showing ${filteredListings.length} verified timber lots`
               : `${filteredListings.length} തടി ലോറ്റുകൾ ലഭ്യമാണ്`}
@@ -486,7 +488,32 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         </div>
 
         {/* 3. TIMBER CARDS GRID WITH 6-POINT VISUAL HIERARCHY */}
-        {filteredListings.length === 0 ? (
+        {isLoadingLive && !liveListings ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-pulse" data-testid="marketplace-loading">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <div
+                key={n}
+                className="bg-white rounded-3xl border border-[#8E7F6B]/30 overflow-hidden flex flex-col justify-between shadow-xs"
+              >
+                <div>
+                  <div className="aspect-[4/3] w-full bg-stone-200" />
+                  <div className="p-4 sm:p-5 space-y-3">
+                    <div className="flex gap-2">
+                      <div className="h-5 bg-stone-200 rounded-full w-20" />
+                      <div className="h-5 bg-stone-200 rounded-md w-28" />
+                    </div>
+                    <div className="h-6 bg-stone-200 rounded-md w-3/4" />
+                    <div className="h-4 bg-stone-200 rounded-md w-1/2" />
+                    <div className="h-8 bg-stone-100 rounded-xl" />
+                  </div>
+                </div>
+                <div className="p-4 sm:p-5 pt-0">
+                  <div className="h-10 bg-stone-200 rounded-xl w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredListings.length === 0 ? (
           <div className="p-12 text-center bg-white rounded-3xl border border-stone-300 space-y-3">
             <Trees className="w-10 h-10 text-stone-300 mx-auto" />
             <h3 className="font-serif font-bold text-base text-[#4A3626]">

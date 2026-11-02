@@ -10,7 +10,8 @@ import {
   MessageSquare,
   FileCheck,
   X,
-  ExternalLink
+  ExternalLink,
+  Loader2,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -193,7 +194,14 @@ export function NotificationBell({ lang = 'en' }: NotificationBellProps) {
 
             {/* List */}
             <div className="max-h-[60vh] sm:max-h-[380px] overflow-y-auto divide-y divide-stone-100">
-            {notifications.length === 0 ? (
+            {loading && notifications.length === 0 ? (
+              <div className="p-8 text-center text-stone-500 space-y-2">
+                <Loader2 className="w-6 h-6 mx-auto text-[#5B6147] animate-spin" />
+                <p className="text-xs font-semibold">
+                  {lang === 'en' ? 'Loading notifications...' : 'അറിയിപ്പുകൾ ലഭ്യമാക്കുന്നു...'}
+                </p>
+              </div>
+            ) : notifications.length === 0 ? (
               <div className="p-6 text-center text-stone-400 space-y-1">
                 <Bell className="w-8 h-8 mx-auto text-stone-300 stroke-[1.5]" />
                 <p className="text-xs font-medium">

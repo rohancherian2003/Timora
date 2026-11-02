@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Star, X, CheckCircle2, AlertCircle, ShieldCheck, Lock, Send } from 'lucide-react';
+import { Star, X, CheckCircle2, AlertCircle, ShieldCheck, Lock, Send, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { api } from '../lib/api';
 
 export interface SubmitReviewModalProps {
   isOpen: boolean;
@@ -59,7 +60,6 @@ export function SubmitReviewModal({
     async function checkCompletedOrders() {
       setIsCheckingOrders(true);
       try {
-        const { api } = await import('../lib/api');
         const res = await api.get('/orders');
         if (isMounted && res.data?.success && Array.isArray(res.data?.data)) {
           const eligible = res.data.data.find(
@@ -119,7 +119,6 @@ export function SubmitReviewModal({
     setIsSubmitting(true);
 
     try {
-      const { api } = await import('../lib/api');
       const res = await api.post('/reviews', {
         order_id: targetOrderId,
         rating,
@@ -197,8 +196,10 @@ export function SubmitReviewModal({
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
+            aria-label={lang === 'en' ? 'Close dialog' : 'ഡയലോഗ് അടയ്ക്കുക'}
+            className="p-1.5 rounded-xl hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition focus:outline-none focus:ring-2 focus:ring-[#5B6147]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -254,6 +255,15 @@ export function SubmitReviewModal({
               <div className="p-3 rounded-2xl bg-rose-50 border border-rose-300 text-rose-900 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
                 <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {isCheckingOrders && (
+              <div className="p-3 rounded-2xl bg-[#E7E1D6]/40 border border-[#8E7F6B]/30 text-[#4A3626] flex items-center gap-2">
+                <Loader2 className="w-4 h-4 text-[#5B6147] animate-spin flex-shrink-0" />
+                <span className="font-semibold text-xs">
+                  {lang === 'en' ? 'Verifying completed transactions...' : 'ഇടപാടുകൾ പരിശോധിക്കുന്നു...'}
+                </span>
               </div>
             )}
 
@@ -343,7 +353,11 @@ export function SubmitReviewModal({
                 disabled={isSubmitting || (!hasEligibleOrder && !isCheckingOrders)}
                 className="px-4 py-2 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] disabled:opacity-50 text-white font-bold transition flex items-center gap-1.5 shadow-xs text-xs"
               >
-                <Send className="w-3.5 h-3.5" />
+                {isSubmitting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5" />
+                )}
                 <span>
                   {isSubmitting
                     ? (lang === 'en' ? 'Submitting...' : 'സമർപ്പിക്കുന്നു...')

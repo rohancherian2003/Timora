@@ -11,10 +11,12 @@ import {
   User,
   ShieldAlert,
   ShieldCheck,
-  Lock
+  Lock,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { createTicket, SupportTicket, TicketRole } from '../utils/ticketService';
+import { api } from '../lib/api';
 
 interface RaiseTicketModalProps {
   isOpen: boolean;
@@ -88,6 +90,7 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
 
   // Success state with created ticket details
   const [submittedTicket, setSubmittedTicket] = useState<SupportTicket | null>(null);
+  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
 
   if (!isOpen) return null;
 
@@ -130,12 +133,12 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
     e.preventDefault();
     if (!validate()) return;
 
+    setIsSubmittingTicket(true);
     const matchedCat = CATEGORIES.find((c) => c.key === categoryKey) || CATEGORIES[0]!;
     let backendReference: string | undefined;
 
     // Create support ticket on backend to obtain authoritative TKT-YYYY-NNNN reference
     try {
-      const { api } = await import('../lib/api');
       const res = await api.post('/support/tickets', {
         category: matchedCat.en,
         description: description.trim(),
@@ -145,6 +148,8 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
       }
     } catch {
       // Graceful offline fallback
+    } finally {
+      setIsSubmittingTicket(false);
     }
 
     const ticket = createTicket({
@@ -196,8 +201,10 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
             </div>
           </div>
           <button
+            type="button"
             onClick={handleResetAndClose}
-            className="text-[#8E7F6B] hover:text-[#4A3626] p-1.5 rounded-xl hover:bg-[#E7E1D6]/50 transition"
+            aria-label={lang === 'en' ? 'Close dialog' : 'ഡയലോഗ് അടയ്ക്കുക'}
+            className="text-[#8E7F6B] hover:text-[#4A3626] p-1.5 rounded-xl hover:bg-[#E7E1D6]/50 transition focus:outline-none focus:ring-2 focus:ring-[#5B6147]"
             title="Close"
           >
             <X className="w-5 h-5" />
@@ -470,10 +477,20 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold flex items-center gap-2 shadow-md shadow-amber-950/10 transition"
+                disabled={isSubmittingTicket}
+                className="px-6 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold flex items-center gap-2 shadow-md shadow-amber-950/10 transition disabled:opacity-60"
               >
-                <Send className="w-3.5 h-3.5" />
-                <span>{lang === 'en' ? 'Submit to Admin' : 'അഡ്മിന് അയക്കുക'}</span>
+                {isSubmittingTicket ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>{lang === 'en' ? 'Submitting...' : 'സമർപ്പിക്കുന്നു...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{lang === 'en' ? 'Submit to Admin' : 'അഡ്മിന് അയക്കുക'}</span>
+                  </>
+                )}
               </button>
             </div>
           </form>

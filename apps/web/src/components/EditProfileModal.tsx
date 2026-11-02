@@ -15,6 +15,7 @@ import {
   KeyRound,
   ShieldCheck,
   RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { useAuth, UserProfile } from '../context/AuthContext';
 import { validateIndianPhone } from '@timora/shared';
@@ -456,9 +457,10 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
                       type="button"
                       onClick={handleVerifyPhoneChange}
                       disabled={phoneUpdating || phoneOtp.length < 4}
-                      className="px-3 py-2 rounded-xl bg-[#4A3626] hover:bg-[#36271c] text-white font-bold text-[11px] transition disabled:opacity-50"
+                      className="px-3 py-2 rounded-xl bg-[#4A3626] hover:bg-[#36271c] text-white font-bold text-[11px] transition disabled:opacity-50 flex items-center gap-1.5"
                     >
-                      {lang === 'en' ? 'Verify & Save' : 'സ്ഥിരീകരിക്കുക'}
+                      {phoneUpdating && <Loader2 className="w-3 h-3 animate-spin" />}
+                      <span>{phoneUpdating ? (lang === 'en' ? 'Verifying...' : 'പരിശോധിക്കുന്നു...') : (lang === 'en' ? 'Verify & Save' : 'സ്ഥിരീകരിക്കുക')}</span>
                     </button>
                   </div>
                 )}
@@ -626,9 +628,13 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
             <button
               type="submit"
               disabled={isSaving}
-              className="px-5 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold transition flex items-center gap-2 shadow-xs text-xs"
+              className="px-5 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold transition flex items-center gap-2 shadow-xs text-xs disabled:opacity-60"
             >
-              <Save className="w-3.5 h-3.5" />
+              {isSaving ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5" />
+              )}
               <span>{isSaving ? (lang === 'en' ? 'Saving...' : 'സേവ് ചെയ്യുന്നു...') : (lang === 'en' ? 'Save Profile' : 'സേവ് ചെയ്യുക')}</span>
             </button>
           </div>

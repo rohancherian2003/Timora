@@ -15,6 +15,7 @@ import {
   MessageSquare,
   Navigation,
   User,
+  Loader2,
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
@@ -107,10 +108,12 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
   const [regNumber, setRegNumber] = useState('');
   const [model, setModel] = useState('');
   const [capacity, setCapacity] = useState(12);
+  const [isSubmittingVehicle, setIsSubmittingVehicle] = useState(false);
 
   const handleAddVehicle = (e: React.FormEvent) => {
     e.preventDefault();
     if (!regNumber.trim()) return;
+    setIsSubmittingVehicle(true);
     const newVeh: VehicleItem = {
       id: `veh-${Date.now()}`,
       regNumber: regNumber.trim().toUpperCase(),
@@ -120,10 +123,13 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
       formIvPermitted: true,
       status: 'available',
     };
-    setFleet([...fleet, newVeh]);
-    setRegNumber('');
-    setModel('');
-    setShowAddVehicle(false);
+    setTimeout(() => {
+      setFleet([...fleet, newVeh]);
+      setRegNumber('');
+      setModel('');
+      setIsSubmittingVehicle(false);
+      setShowAddVehicle(false);
+    }, 400);
   };
 
   return (
@@ -274,8 +280,10 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
               {lang === 'en' ? 'Register New Timber Transit Vehicle' : 'പുതിയ വാഹനം രജിസ്റ്റർ ചെയ്യുക'}
             </h3>
             <button
+              type="button"
               onClick={() => setShowAddVehicle(false)}
-              className="text-stone-400 hover:text-stone-700 font-bold"
+              aria-label={lang === 'en' ? 'Close dialog' : 'ഡയലോഗ് അടയ്ക്കുക'}
+              className="text-stone-400 hover:text-stone-700 font-bold focus:outline-none focus:ring-2 focus:ring-[#5B6147] rounded-lg p-1 text-sm"
             >
               ✕
             </button>
@@ -336,9 +344,17 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
               </button>
               <button
                 type="submit"
-                className="px-5 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs shadow-xs"
+                disabled={isSubmittingVehicle}
+                className="px-5 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs shadow-xs flex items-center gap-1.5 disabled:opacity-60"
               >
-                {lang === 'en' ? 'Add to Registered Fleet' : 'ഫ്ലീറ്റിൽ ചേർക്കുക'}
+                {isSubmittingVehicle ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>{lang === 'en' ? 'Adding...' : 'ചേർക്കുന്നു...'}</span>
+                  </>
+                ) : (
+                  <span>{lang === 'en' ? 'Add to Registered Fleet' : 'ഫ്ലീറ്റിൽ ചേർക്കുക'}</span>
+                )}
               </button>
             </div>
           </form>

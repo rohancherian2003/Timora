@@ -16,6 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 import { LoginAlertModal } from '../../components/LoginAlertModal';
 import { BackButton } from '../../components/BackButton';
 import { SubmitReviewModal } from '../../components/SubmitReviewModal';
+import { api } from '../../lib/api';
 
 export interface CarpenterReview {
   id: string;
@@ -55,7 +56,6 @@ export function CarpenterDirectoryPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) 
     setIsLoading(true);
     setError(null);
     try {
-      const { api } = await import('../../lib/api');
       const res = await api.get('/carpenters');
       if (res.data?.success && Array.isArray(res.data?.data)) {
         const mapped: CarpenterItem[] = res.data.data.map((item: any) => ({

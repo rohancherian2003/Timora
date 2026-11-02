@@ -22,6 +22,7 @@ import { validateIndianPhone, validatePin, validatePinConfirmation } from '@timo
 import { useAuth, UserRole, SellerSubtype, UserProfile } from '../../context/AuthContext';
 import { BrandLogo } from '../../components/BrandLogo';
 import { BackButton } from '../../components/BackButton';
+import { api } from '../../lib/api';
 
 const KERALA_DISTRICTS = [
   { id: 1, name: 'Thiruvananthapuram (തിരുവനന്തപുരം)' },
@@ -215,7 +216,6 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       };
 
       try {
-        const { api } = await import('../../lib/api');
         const res = await api.post('/auth/register', payload);
 
         if (res.data?.success) {
@@ -422,10 +422,13 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-xs"
+                  className="w-full py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-60"
                 >
                   {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{lang === 'en' ? 'Verifying...' : 'സ്ഥിരീകരിക്കുന്നു...'}</span>
+                    </>
                   ) : (
                     <>
                       <span>{lang === 'en' ? 'Verify Mobile Number' : 'മൊബൈൽ സ്ഥിരീകരിക്കുക'}</span>
@@ -489,10 +492,13 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-2/3 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-xs"
+                    className="w-2/3 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-60"
                   >
                     {loading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>{lang === 'en' ? 'Confirming...' : 'സ്ഥിരീകരിക്കുന്നു...'}</span>
+                      </>
                     ) : (
                       <>
                         <span>{lang === 'en' ? 'Confirm OTP' : 'സ്ഥിരീകരിക്കുക'}</span>
@@ -726,10 +732,13 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-2/3 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-xs"
+                    className="w-2/3 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-60"
                   >
                     {loading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>{lang === 'en' ? 'Creating Account...' : 'അക്കൗണ്ട് ഉണ്ടാക്കുന്നു...'}</span>
+                      </>
                     ) : (
                       <>
                         <span>{lang === 'en' ? 'Create Account' : 'രജിസ്റ്റർ ചെയ്യുക'}</span>

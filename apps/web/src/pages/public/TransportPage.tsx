@@ -18,6 +18,7 @@ import { useAuth } from '../../context/AuthContext';
 import { LoginAlertModal } from '../../components/LoginAlertModal';
 import { BackButton } from '../../components/BackButton';
 import { SubmitReviewModal } from '../../components/SubmitReviewModal';
+import { api } from '../../lib/api';
 
 export interface TransporterReview {
   id: string;
@@ -56,7 +57,6 @@ export function TransportPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setIsLoading(true);
     setError(null);
     try {
-      const { api } = await import('../../lib/api');
       const res = await api.get('/transport/providers');
       if (res.data?.success && Array.isArray(res.data?.data)) {
         const liveItems: TransporterItem[] = res.data.data.map((p: any) => ({

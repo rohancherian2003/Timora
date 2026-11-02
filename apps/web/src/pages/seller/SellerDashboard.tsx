@@ -19,6 +19,7 @@ import {
   Trash2,
   Camera,
   X,
+  Loader2,
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
@@ -27,6 +28,7 @@ import { getTicketsForUser, SupportTicket } from '../../utils/ticketService';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
 import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
+import { api } from '../../lib/api';
 
 export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { user, refreshUser } = useAuth();
@@ -48,6 +50,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [pricePerCft, setPricePerCft] = useState(2400);
   const [submitted, setSubmitted] = useState(false);
   const [sellerListings, setSellerListings] = useState<any[]>([]);
+  const [isLoadingListings, setIsLoadingListings] = useState(true);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -107,7 +110,6 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const handleUploadSinglePhoto = async (listingId: string, file: File) => {
     setIsUploadingPhoto(true);
     try {
-      const { api } = await import('../../lib/api');
       const formData = new FormData();
       formData.append('image', file);
       await api.post(`/listings/${listingId}/images`, formData, {
@@ -129,7 +131,6 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const handleDeletePhoto = async (listingId: string, imageId: string) => {
     if (!window.confirm(lang === 'en' ? 'Remove this photograph?' : 'ഈ ഫോട്ടോ നീക്കം ചെയ്യണോ?')) return;
     try {
-      const { api } = await import('../../lib/api');
       await api.delete(`/listings/${listingId}/images/${imageId}`);
       const listRes = await api.get('/listings/seller/me');
       if (listRes.data?.success && Array.isArray(listRes.data?.data)) {
@@ -145,7 +146,6 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const handleReplacePhoto = async (listingId: string, imageId: string, file: File) => {
     setIsUploadingPhoto(true);
     try {
-      const { api } = await import('../../lib/api');
       const formData = new FormData();
       formData.append('image', file);
       await api.put(`/listings/${listingId}/images/${imageId}`, formData, {
@@ -168,13 +168,15 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     let isMounted = true;
     async function fetchMyListings() {
       try {
-        const { api } = await import('../../lib/api');
+        setIsLoadingListings(true);
         const res = await api.get('/listings/seller/me');
         if (isMounted && res.data?.success && Array.isArray(res.data?.data) && res.data.data.length > 0) {
           setSellerListings(res.data.data);
         }
       } catch {
         // Fall back gracefully to demo stock
+      } finally {
+        if (isMounted) setIsLoadingListings(false);
       }
     }
     fetchMyListings();
@@ -200,7 +202,6 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setImageError(null);
 
     try {
-      const { api } = await import('../../lib/api');
       const res = await api.post('/listings', {
         title: title.trim(),
         species_id: speciesId,
@@ -434,8 +435,10 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               {lang === 'en' ? 'Submit Timber Stock for Approval' : 'പുതിയ തടി അനുമതിക്കായി സമർപ്പിക്കുക'}
             </h2>
             <button
+              type="button"
               onClick={() => setShowAddForm(false)}
-              className="text-xs text-[#8E7F6B] hover:text-[#4A3626] font-bold px-2 py-1 rounded-lg hover:bg-[#E7E1D6]/50 transition"
+              aria-label={lang === 'en' ? 'Close form' : 'ഫോം അടയ്ക്കുക'}
+              className="text-xs text-[#8E7F6B] hover:text-[#4A3626] font-bold px-2 py-1 rounded-lg hover:bg-[#E7E1D6]/50 transition focus:outline-none focus:ring-2 focus:ring-[#5B6147]"
             >
               ✕ Close
             </button>
@@ -621,7 +624,10 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 className="w-full py-3 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] disabled:opacity-50 text-white font-bold text-sm shadow-md shadow-amber-950/10 transition flex items-center justify-center gap-2"
               >
                 {isSubmittingListing ? (
-                  <span>{lang === 'en' ? 'Uploading & Submitting...' : 'സമർപ്പിക്കുന്നു...'}</span>
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{lang === 'en' ? 'Uploading & Submitting...' : 'സമർപ്പിക്കുന്നു...'}</span>
+                  </>
                 ) : (
                   <span>{lang === 'en' ? 'Submit Listing for Approval' : 'അംഗീകാരത്തിനായി ലിസ്റ്റിംഗ് സമർപ്പിക്കുക'}</span>
                 )}
@@ -641,7 +647,22 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         </div>
 
         <div className="divide-y divide-stone-200 text-xs sm:text-sm">
-          {sellerListings.length > 0 ? (
+          {isLoadingListings ? (
+            <div className="p-4 space-y-3 animate-pulse" data-testid="seller-listings-loading">
+              {[1, 2].map((n) => (
+                <div key={n} className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 w-1/2">
+                    <div className="w-12 h-12 rounded-xl bg-stone-200 flex-shrink-0" />
+                    <div className="space-y-1.5 w-full">
+                      <div className="h-4 bg-stone-200 rounded w-3/4" />
+                      <div className="h-3 bg-stone-100 rounded w-1/2" />
+                    </div>
+                  </div>
+                  <div className="h-6 w-24 bg-stone-200 rounded-full" />
+                </div>
+              ))}
+            </div>
+          ) : sellerListings.length > 0 ? (
             sellerListings.map((item) => {
               const primaryImg = Array.isArray(item.images)
                 ? item.images.find((img: any) => img.is_primary)?.url || item.images[0]?.url

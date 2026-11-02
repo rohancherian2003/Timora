@@ -23,20 +23,49 @@ import { AuthProvider, useAuth, UserRole } from './context/AuthContext';
 import { BrandLogo } from './components/BrandLogo';
 import { OfflineBanner } from './components/OfflineBanner';
 import { NotificationBell } from './components/NotificationBell';
-import { MarketplacePage } from './pages/public/MarketplacePage';
-import { ListingDetailPage } from './pages/public/ListingDetailPage';
-import { CalculatorPage } from './pages/public/CalculatorPage';
-import { TransportPage } from './pages/public/TransportPage';
-import { LoginPage } from './pages/auth/LoginPage';
-import { RegisterPage } from './pages/auth/RegisterPage';
-import { CarpenterDirectoryPage } from './pages/carpenter/CarpenterDirectoryPage';
-import { TimberMillsPage } from './pages/public/TimberMillsPage';
-import { SellerDashboard } from './pages/seller/SellerDashboard';
-import { TimberMillOwnerDashboard } from './pages/seller/TimberMillOwnerDashboard';
-import { CarpenterDashboard } from './pages/carpenter/CarpenterDashboard';
-import { TransportOwnerDashboard } from './pages/transport/TransportOwnerDashboard';
-import { BuyerDashboard } from './pages/buyer/BuyerDashboard';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
+
+const MarketplacePage = React.lazy(() =>
+  import('./pages/public/MarketplacePage').then((m) => ({ default: m.MarketplacePage }))
+);
+const ListingDetailPage = React.lazy(() =>
+  import('./pages/public/ListingDetailPage').then((m) => ({ default: m.ListingDetailPage }))
+);
+const CalculatorPage = React.lazy(() =>
+  import('./pages/public/CalculatorPage').then((m) => ({ default: m.CalculatorPage }))
+);
+const TransportPage = React.lazy(() =>
+  import('./pages/public/TransportPage').then((m) => ({ default: m.TransportPage }))
+);
+const LoginPage = React.lazy(() =>
+  import('./pages/auth/LoginPage').then((m) => ({ default: m.LoginPage }))
+);
+const RegisterPage = React.lazy(() =>
+  import('./pages/auth/RegisterPage').then((m) => ({ default: m.RegisterPage }))
+);
+const CarpenterDirectoryPage = React.lazy(() =>
+  import('./pages/carpenter/CarpenterDirectoryPage').then((m) => ({ default: m.CarpenterDirectoryPage }))
+);
+const TimberMillsPage = React.lazy(() =>
+  import('./pages/public/TimberMillsPage').then((m) => ({ default: m.TimberMillsPage }))
+);
+const SellerDashboard = React.lazy(() =>
+  import('./pages/seller/SellerDashboard').then((m) => ({ default: m.SellerDashboard }))
+);
+const TimberMillOwnerDashboard = React.lazy(() =>
+  import('./pages/seller/TimberMillOwnerDashboard').then((m) => ({ default: m.TimberMillOwnerDashboard }))
+);
+const CarpenterDashboard = React.lazy(() =>
+  import('./pages/carpenter/CarpenterDashboard').then((m) => ({ default: m.CarpenterDashboard }))
+);
+const TransportOwnerDashboard = React.lazy(() =>
+  import('./pages/transport/TransportOwnerDashboard').then((m) => ({ default: m.TransportOwnerDashboard }))
+);
+const BuyerDashboard = React.lazy(() =>
+  import('./pages/buyer/BuyerDashboard').then((m) => ({ default: m.BuyerDashboard }))
+);
+const AdminDashboard = React.lazy(() =>
+  import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard }))
+);
 
 import { SessionTimeoutModal } from './components/SessionTimeoutModal';
 import { SignOutConfirmModal } from './components/SignOutConfirmModal';
@@ -64,8 +93,10 @@ function ProtectedRoute({
   React.useEffect(() => {
     if (!isAuthenticated || !user) return;
 
-    // Establish history barrier entry on mount / route transition
-    window.history.pushState({ protectedDashboard: true }, '', window.location.href);
+    // Establish history barrier entry on mount if not already present
+    if (!window.history.state?.protectedDashboard) {
+      window.history.pushState({ protectedDashboard: true }, '', window.location.href);
+    }
 
     const handlePopState = () => {
       // Re-push current location immediately to prevent moving off dashboard
@@ -84,14 +115,10 @@ function ProtectedRoute({
     };
   }, [isAuthenticated, user, location.pathname]);
 
-  const handleSignOutConfirm = async () => {
-    try {
-      logout();
-      setShowSignOutPrompt(false);
-      navigate('/', { replace: true });
-    } catch (err) {
-      throw err;
-    }
+  const handleSignOutConfirm = () => {
+    logout();
+    setShowSignOutPrompt(false);
+    navigate('/', { replace: true });
   };
 
   if (!isAuthenticated || !user) {
@@ -801,7 +828,7 @@ export function App() {
         {/* Sleek Route Transition Progress Bar */}
         <PageTransitionLoader />
         <div
-          className="min-h-screen flex flex-col font-sans pb-16 md:pb-0 bg-stone-50/50 text-stone-900"
+          className="min-h-screen flex flex-col font-sans pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-0 bg-stone-50/50 text-stone-900"
           lang={lang}
         >
           {/* Offline Banner for Network Recovery */}
@@ -815,89 +842,91 @@ export function App() {
 
           {/* Main Content Area */}
           <main className="flex-grow">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<MarketplacePage lang={lang} />} />
-              <Route path="/marketplace" element={<MarketplacePage lang={lang} />} />
-              <Route path="/listing/:id" element={<ListingDetailPage lang={lang} />} />
-              <Route path="/listings/:id" element={<ListingDetailPage lang={lang} />} />
-              <Route path="/calculator" element={<CalculatorPage lang={lang} />} />
-              <Route path="/transport" element={<TransportPage lang={lang} />} />
-              <Route path="/carpenters" element={<CarpenterDirectoryPage lang={lang} />} />
-              <Route path="/mills" element={<TimberMillsPage lang={lang} />} />
-              <Route path="/timber-mills" element={<TimberMillsPage lang={lang} />} />
+            <React.Suspense fallback={<PageTransitionLoader />}>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<MarketplacePage lang={lang} />} />
+                <Route path="/marketplace" element={<MarketplacePage lang={lang} />} />
+                <Route path="/listing/:id" element={<ListingDetailPage lang={lang} />} />
+                <Route path="/listings/:id" element={<ListingDetailPage lang={lang} />} />
+                <Route path="/calculator" element={<CalculatorPage lang={lang} />} />
+                <Route path="/transport" element={<TransportPage lang={lang} />} />
+                <Route path="/carpenters" element={<CarpenterDirectoryPage lang={lang} />} />
+                <Route path="/mills" element={<TimberMillsPage lang={lang} />} />
+                <Route path="/timber-mills" element={<TimberMillsPage lang={lang} />} />
 
-              {/* Authentication Routes - Protected against back-navigation when already logged in */}
-              <Route
-                path="/login"
-                element={
-                  <GuestRoute>
-                    <LoginPage lang={lang} />
-                  </GuestRoute>
-                }
-              />
-              <Route
-                path="/register"
-                element={
-                  <GuestRoute>
-                    <RegisterPage lang={lang} />
-                  </GuestRoute>
-                }
-              />
+                {/* Authentication Routes - Protected against back-navigation when already logged in */}
+                <Route
+                  path="/login"
+                  element={
+                    <GuestRoute>
+                      <LoginPage lang={lang} />
+                    </GuestRoute>
+                  }
+                />
+                <Route
+                  path="/register"
+                  element={
+                    <GuestRoute>
+                      <RegisterPage lang={lang} />
+                    </GuestRoute>
+                  }
+                />
 
-              {/* Protected Role-Specific Dashboards */}
-              <Route
-                path="/dashboard/seller"
-                element={
-                  <ProtectedRoute allowedRoles={['seller']} lang={lang}>
-                    <SellerDashboard lang={lang} />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/mill"
-                element={
-                  <ProtectedRoute allowedRoles={['seller']} lang={lang}>
-                    <TimberMillOwnerDashboard lang={lang} />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/carpenter"
-                element={
-                  <ProtectedRoute allowedRoles={['carpenter']} lang={lang}>
-                    <CarpenterDashboard lang={lang} />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/transport"
-                element={
-                  <ProtectedRoute allowedRoles={['transport']} lang={lang}>
-                    <TransportOwnerDashboard lang={lang} />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/buyer"
-                element={
-                  <ProtectedRoute allowedRoles={['buyer']} lang={lang}>
-                    <BuyerDashboard lang={lang} />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']} lang={lang}>
-                    <AdminDashboard lang={lang} />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Protected Role-Specific Dashboards */}
+                <Route
+                  path="/dashboard/seller"
+                  element={
+                    <ProtectedRoute allowedRoles={['seller']} lang={lang}>
+                      <SellerDashboard lang={lang} />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/mill"
+                  element={
+                    <ProtectedRoute allowedRoles={['seller']} lang={lang}>
+                      <TimberMillOwnerDashboard lang={lang} />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/carpenter"
+                  element={
+                    <ProtectedRoute allowedRoles={['carpenter']} lang={lang}>
+                      <CarpenterDashboard lang={lang} />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/transport"
+                  element={
+                    <ProtectedRoute allowedRoles={['transport']} lang={lang}>
+                      <TransportOwnerDashboard lang={lang} />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/buyer"
+                  element={
+                    <ProtectedRoute allowedRoles={['buyer']} lang={lang}>
+                      <BuyerDashboard lang={lang} />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']} lang={lang}>
+                      <AdminDashboard lang={lang} />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Catch-all redirect */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+                {/* Catch-all redirect */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </React.Suspense>
           </main>
 
           {/* Footer */}
