@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth, UserProfile } from '../context/AuthContext';
 import { validateIndianPhone } from '@timora/shared';
+import { api } from '../lib/api';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -179,7 +180,6 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
 
     setPhoneUpdating(true);
     try {
-      const { api } = await import('../lib/api');
       const res = await api.post('/auth/phone/initiate-change', { newPhone: normalized });
       if (res.data?.data?.configured) {
         setPhoneOtpSent(true);
@@ -217,7 +217,6 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
 
     setPhoneUpdating(true);
     try {
-      const { api } = await import('../lib/api');
       const res = await api.post('/auth/phone/verify-change', { newPhone: newPhone.trim(), otp: phoneOtp.trim() });
       if (res.data?.success) {
         const updatedUser: UserProfile = { ...user, phone: res.data.data.newPhone };
@@ -262,19 +261,29 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
 
       if (user.role === 'seller') {
         if (user.sellerSubtype === 'mill_owner') {
-          updatedFields.millName = millName.trim() || businessName.trim();
-          updatedFields.businessName = millName.trim() || businessName.trim();
+          const val = millName.trim() || businessName.trim();
+          if (val) {
+            updatedFields.millName = val;
+            updatedFields.businessName = val;
+          }
         } else {
-          updatedFields.businessName = businessName.trim();
+          if (businessName.trim()) {
+            updatedFields.businessName = businessName.trim();
+          }
         }
       } else if (user.role === 'carpenter') {
-        updatedFields.skills = skills.split(',').map((s) => s.trim()).filter(Boolean);
-        updatedFields.experience = Math.max(0, Math.min(70, Number(experience) || 0));
-        updatedFields.businessName = businessName.trim();
+        const skillList = skills.split(',').map((s) => s.trim()).filter(Boolean);
+        if (skillList.length > 0) updatedFields.skills = skillList;
+        if (experience && !isNaN(Number(experience))) {
+          updatedFields.experience = Math.max(0, Math.min(70, Number(experience)));
+        }
+        if (businessName.trim()) updatedFields.businessName = businessName.trim();
       } else if (user.role === 'transport') {
-        updatedFields.vehicleDetails = vehicleDetails.trim();
-        updatedFields.tonnageCapacity = Math.max(0.1, Math.min(100, Number(tonnageCapacity) || 1));
-        updatedFields.businessName = businessName.trim();
+        if (vehicleDetails.trim()) updatedFields.vehicleDetails = vehicleDetails.trim();
+        if (tonnageCapacity && !isNaN(Number(tonnageCapacity))) {
+          updatedFields.tonnageCapacity = Math.max(0.1, Math.min(100, Number(tonnageCapacity)));
+        }
+        if (businessName.trim()) updatedFields.businessName = businessName.trim();
       }
 
       await updateProfile(updatedFields);

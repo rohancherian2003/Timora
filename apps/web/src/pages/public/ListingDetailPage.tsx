@@ -49,6 +49,11 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     let isMounted = true;
     async function fetchLiveDetail() {
       if (!id) return;
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+      if (!isUuid) {
+        // Fallback demo listing IDs (e.g. '1', '2', etc.) are resolved directly from local catalog
+        return;
+      }
       try {
         const res = await api.get(`/listings/${id}`);
         if (isMounted && res.data?.success && res.data?.data) {
@@ -441,8 +446,10 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 {lang === 'en' ? 'Send Timber Enquiry' : 'തടി അന്വേഷണം അയക്കുക'}
               </h3>
               <button
+                type="button"
                 onClick={() => setShowEnquiryModal(false)}
-                className="text-[#8E7F6B] hover:text-[#4A3626] font-bold p-1 rounded-lg hover:bg-[#E7E1D6]/50 transition"
+                aria-label={lang === 'en' ? 'Close dialog' : 'ഡയലോഗ് അടയ്ക്കുക'}
+                className="text-[#8E7F6B] hover:text-[#4A3626] font-bold p-1 rounded-lg hover:bg-[#E7E1D6]/50 transition focus:outline-none focus:ring-2 focus:ring-[#5B6147]"
               >
                 ✕
               </button>

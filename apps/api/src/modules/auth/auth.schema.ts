@@ -39,6 +39,12 @@ export const loginSchema = z.object({
   }),
 });
 
+export const refreshTokenSchema = z.object({
+  body: z.object({
+    refreshToken: z.string().min(1, 'Refresh token is required.'),
+  }),
+});
+
 export const forgotPinSchema = z.object({
   body: z.object({
     phone: z.string().min(10, 'Please enter a valid 10-digit mobile number.'),
@@ -72,69 +78,80 @@ export const updateProfileSchema = z.object({
       .max(14, 'District ID must be between 1 and 14.')
       .optional(),
     businessName: z
-      .string()
-      .trim()
-      .min(2, 'Business name must be at least 2 characters.')
-      .max(150)
-      .optional(),
+      .union([
+        z.string().trim().min(2, 'Business name must be at least 2 characters.').max(150),
+        z.literal(''),
+      ])
+      .optional()
+      .nullable(),
     business_name: z
-      .string()
-      .trim()
-      .min(2, 'Business name must be at least 2 characters.')
-      .max(150)
-      .optional(),
+      .union([
+        z.string().trim().min(2, 'Business name must be at least 2 characters.').max(150),
+        z.literal(''),
+      ])
+      .optional()
+      .nullable(),
     millName: z
-      .string()
-      .trim()
-      .min(2, 'Mill name must be at least 2 characters.')
-      .max(150)
-      .optional(),
+      .union([
+        z.string().trim().min(2, 'Mill name must be at least 2 characters.').max(150),
+        z.literal(''),
+      ])
+      .optional()
+      .nullable(),
     mill_name: z
-      .string()
-      .trim()
-      .min(2, 'Mill name must be at least 2 characters.')
-      .max(150)
-      .optional(),
+      .union([
+        z.string().trim().min(2, 'Mill name must be at least 2 characters.').max(150),
+        z.literal(''),
+      ])
+      .optional()
+      .nullable(),
     skills: z
       .union([
         z.array(z.string().trim().min(1).max(50)),
-        z.string().trim().min(1).max(300),
+        z.string().trim().max(300),
       ])
-      .optional(),
+      .optional()
+      .nullable(),
     experience: z
       .number()
       .int('Experience must be an integer.')
       .min(0, 'Experience must be at least 0 years.')
       .max(70, 'Experience cannot exceed 70 years.')
-      .optional(),
+      .optional()
+      .nullable(),
     vehicleDetails: z
       .union([
         z.array(z.string().trim().min(1).max(100)),
-        z.string().trim().min(1).max(200),
+        z.string().trim().max(200),
       ])
-      .optional(),
+      .optional()
+      .nullable(),
     vehicle_details: z
       .union([
         z.array(z.string().trim().min(1).max(100)),
-        z.string().trim().min(1).max(200),
+        z.string().trim().max(200),
       ])
-      .optional(),
+      .optional()
+      .nullable(),
     tonnageCapacity: z
       .number()
       .positive('Tonnage capacity must be positive.')
       .max(100, 'Tonnage capacity cannot exceed 100 tonnes.')
-      .optional(),
+      .optional()
+      .nullable(),
     tonnage_capacity: z
       .number()
       .positive('Tonnage capacity must be positive.')
       .max(100, 'Tonnage capacity cannot exceed 100 tonnes.')
-      .optional(),
+      .optional()
+      .nullable(),
     locality: z
-      .string()
-      .trim()
-      .min(2, 'Locality must be at least 2 characters.')
-      .max(150)
-      .optional(),
+      .union([
+        z.string().trim().min(2, 'Locality must be at least 2 characters.').max(150),
+        z.literal(''),
+      ])
+      .optional()
+      .nullable(),
 
     // Tampering fields: allowed in schema so requests containing them don't fail schema parsing,
     // but strictly ignored / stripped by service and database layers

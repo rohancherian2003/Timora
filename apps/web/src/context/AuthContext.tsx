@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import type { ApprovalStatus } from '@timora/shared';
+import { api } from '../lib/api';
 
 export type UserRole = 'buyer' | 'seller' | 'carpenter' | 'transport' | 'admin';
 export type SellerSubtype = 'individual' | 'mill_owner';
@@ -154,6 +155,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem('timora_access_token');
+    localStorage.removeItem('timora_refresh_token');
     localStorage.removeItem('timora_user');
     localStorage.removeItem(LAST_ACTIVE_KEY);
     try {
@@ -292,10 +294,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 1. Attempt Real Backend API Authentication
     try {
-      const { api } = await import('../lib/api');
       const res = await api.post('/auth/login', { phone: cleanPhone, pin });
       if (res.data?.success && res.data?.data) {
-        const { user: apiUser, accessToken } = res.data.data;
+        const { user: apiUser, accessToken, refreshToken } = res.data.data;
         const profile: UserProfile = {
           id: apiUser.id,
           name: apiUser.name || 'Timora Member',
@@ -312,6 +313,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSessionMode('authenticated');
         localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
         localStorage.setItem(TOKEN_KEY, accessToken);
+        if (refreshToken) {
+          localStorage.setItem('timora_refresh_token', refreshToken);
+        }
         localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
         lastStorageWriteRef.current = Date.now();
         resetSessionTimer();
@@ -397,6 +401,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     delete (safeData as any).id;
     delete (safeData as any).approvalStatus;
 
+    // Remove empty string fields so they do not fail minimum length validations
+    Object.keys(safeData).forEach((key) => {
+      const val = (safeData as any)[key];
+      if (val === '' || val === undefined) {
+        delete (safeData as any)[key];
+      }
+    });
+
     const mergedUser: UserProfile = {
       ...user,
       ...safeData,
@@ -419,7 +431,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const currentToken = localStorage.getItem(TOKEN_KEY);
     if (currentToken && !currentToken.startsWith('demo-')) {
       try {
-        const { api } = await import('../lib/api');
         await api.patch('/auth/profile', safeData);
       } catch (err: any) {
         const msg = err?.response?.data?.error?.message || err?.message || 'Failed to update profile.';
@@ -437,7 +448,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const { api } = await import('../lib/api');
       const res = await api.get('/auth/me');
       if (res.data?.success && res.data?.data?.user) {
         const backendUser = res.data.data.user;

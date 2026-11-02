@@ -70,6 +70,41 @@ export function errorHandler(
     return;
   }
 
+  // PostgreSQL foreign-key constraint violations (e.g. invalid district_id, species_id, or timber_type_id)
+  if (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code: string }).code === '23503'
+  ) {
+    const pgErr = err as { detail?: string };
+    const body: ApiErrorResponse = {
+      success: false,
+      error: {
+        code: 'INVALID_REFERENCE',
+        message: 'A referenced entity (e.g. species, district, or timber type) does not exist.',
+        ...(pgErr.detail ? { fields: { reference: [pgErr.detail] } } : {}),
+      },
+    };
+    res.status(400).json(body);
+    return;
+  }
+
+  // PostgreSQL invalid input syntax (e.g. invalid UUID format '22P02')
+  if (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code: string }).code === '22P02'
+  ) {
+    const body: ApiErrorResponse = {
+      success: false,
+      error: { code: 'NOT_FOUND', message: 'Resource not found.' },
+    };
+    res.status(404).json(body);
+    return;
+  }
+
   // Unknown / unexpected errors — log full details, return generic message
   logger.error({ err, path: req.path, method: req.method }, 'Unhandled error');
 

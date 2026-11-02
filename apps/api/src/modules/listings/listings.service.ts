@@ -104,6 +104,11 @@ export class ListingsService {
    * Get listing by ID (increments view count)
    */
   async getListingById(id: string) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+    if (!isUuid) {
+      throw new AppError(404, 'NOT_FOUND', 'Timber listing not found.');
+    }
+
     await query(`UPDATE timber_listings SET view_count = view_count + 1 WHERE id = $1`, [id]);
 
     const res = await query(
