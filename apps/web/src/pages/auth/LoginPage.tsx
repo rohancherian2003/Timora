@@ -98,9 +98,32 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     }
   }, [isAuthenticated, user, navigate]);
 
-  const handleQuickDemo = (role: UserRole, subtype?: SellerSubtype) => {
+  const DEMO_PHONE_MAP: Record<string, string> = {
+    buyer: '9847987654',
+    seller_individual: '9847120001',
+    seller_mill_owner: '9847120002',
+    carpenter: '9847330001',
+    transport: '9847440001',
+    admin: '9847000000',
+  };
+
+  const handleQuickDemo = async (role: UserRole, subtype?: SellerSubtype) => {
     setError(null);
     setLoading(true);
+    const key = role === 'seller' ? `seller_${subtype || 'individual'}` : role;
+    const demoPhone = DEMO_PHONE_MAP[key] || '9847987654';
+
+    try {
+      const res = await login(demoPhone, '123456');
+      if (res.success) {
+        const dest = getDestination(res.role || role, res.subtype || subtype);
+        navigate(dest, { replace: true });
+        return;
+      }
+    } catch {
+      // Fallback to local demo session if backend network is unreachable
+    }
+
     loginAsDemo(role, subtype);
     const dest = getDestination(role, subtype);
     navigate(dest, { replace: true });
