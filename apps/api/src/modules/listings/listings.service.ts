@@ -55,7 +55,11 @@ export class ListingsService {
     const whereClause = conditions.join(' AND ');
 
     const countRes = await query<{ count: string }>(
-      `SELECT COUNT(*) FROM timber_listings l WHERE ${whereClause}`,
+      `SELECT COUNT(DISTINCT l.id)
+       FROM timber_listings l
+       JOIN users u ON u.id = l.seller_id
+       LEFT JOIN seller_profiles sp ON sp.user_id = u.id
+       WHERE ${whereClause}`,
       params
     );
     const total = parseInt(countRes.rows[0]?.count || '0', 10);

@@ -1,6 +1,20 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+const getApiBaseUrl = (): string => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1'
+  ) {
+    return 'https://timora-backend-three.vercel.app/api/v1';
+  }
+  return 'http://localhost:3001/api/v1';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -11,30 +25,129 @@ export const api = axios.create({
 
 // Attach JWT access token if available (real tokens only, exclude demo sessions)
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('timora_auth_token') || localStorage.getItem('timora_access_token');
+  const token =
+    localStorage.getItem('timora_auth_token') ||
+    localStorage.getItem('timora_access_token');
   if (token && !token.startsWith('demo-') && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Auto-handle 401 token expiry (exclude login endpoint to allow inline PIN error display)
+// Refresh token concurrency management
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (error: unknown) => void;
+}> = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else if (token) {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+const clearAuthSession = () => {
+  localStorage.removeItem('timora_auth_token');
+  localStorage.removeItem('timora_auth_user');
+  localStorage.removeItem('timora_access_token');
+  localStorage.removeItem('timora_refresh_token');
+  localStorage.removeItem('timora_user');
+  localStorage.removeItem('timora_last_active');
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('timora:auth:unauthorized'));
+  }
+};
+
+// Response interceptor with transparent 401 refresh rotation
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      const isLoginRequest = error.config?.url?.includes('/auth/login');
-      if (!isLoginRequest) {
-        localStorage.removeItem('timora_auth_token');
-        localStorage.removeItem('timora_auth_user');
-        localStorage.removeItem('timora_access_token');
-        localStorage.removeItem('timora_user');
-        localStorage.removeItem('timora_last_active');
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('timora:auth:unauthorized'));
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && originalRequest) {
+      const url = originalRequest.url || '';
+      const isAuthEndpoint =
+        url.includes('/auth/login') ||
+        url.includes('/auth/refresh') ||
+        url.includes('/auth/send-otp') ||
+        url.includes('/auth/register');
+
+      // Do not attempt token refresh for authentication credentials endpoints
+      if (isAuthEndpoint) {
+        if (url.includes('/auth/refresh')) {
+          clearAuthSession();
         }
+        return Promise.reject(error);
+      }
+
+      if (originalRequest._retry) {
+        clearAuthSession();
+        return Promise.reject(error);
+      }
+
+      const refreshToken = localStorage.getItem('timora_refresh_token');
+      if (!refreshToken || refreshToken.startsWith('demo-')) {
+        clearAuthSession();
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((newAccessToken) => {
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+            }
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshResponse = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+          refreshToken,
+        });
+
+        const data = refreshResponse.data?.data;
+        if (data?.accessToken) {
+          const newAccessToken = data.accessToken;
+          const newRefreshToken = data.refreshToken;
+
+          localStorage.setItem('timora_auth_token', newAccessToken);
+          localStorage.setItem('timora_access_token', newAccessToken);
+          if (newRefreshToken) {
+            localStorage.setItem('timora_refresh_token', newRefreshToken);
+          }
+
+          api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          }
+
+          processQueue(null, newAccessToken);
+          return api(originalRequest);
+        } else {
+          throw new Error('Refresh response did not contain new access token.');
+        }
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        clearAuthSession();
+        return Promise.reject(refreshErr);
+      } finally {
+        isRefreshing = false;
       }
     }
+
     return Promise.reject(error);
   }
 );

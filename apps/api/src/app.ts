@@ -63,6 +63,23 @@ export function createApp(): express.Application {
   // General rate limiter
   app.use(apiRateLimiter);
 
+  // Root endpoint
+  app.get('/', (_req, res) => {
+    res.json({
+      name: 'Timora API Server',
+      version: '1.0.0',
+      status: 'online',
+      message: 'Timora Timber Marketplace REST API is operational',
+      endpoints: {
+        health: '/health',
+        api: '/api/v1',
+        species: '/api/v1/species',
+        districts: '/api/v1/districts',
+        listings: '/api/v1/listings',
+      },
+    });
+  });
+
   // Health check endpoint (does not leak sensitive credentials)
   app.get('/health', async (_req, res) => {
     const isDbConnected = await checkDbConnection();
@@ -73,6 +90,16 @@ export function createApp(): express.Application {
         database: isDbConnected ? 'connected' : 'disconnected',
         server: 'online',
       },
+    });
+  });
+
+  // Base API endpoint
+  app.get('/api', (_req, res) => {
+    res.json({
+      name: 'Timora API',
+      version: '1.0.0',
+      status: 'active',
+      v1: '/api/v1',
     });
   });
 
