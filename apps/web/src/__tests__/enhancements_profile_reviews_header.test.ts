@@ -210,18 +210,19 @@ describe('TIMORA™ Profile Management, Verified Reviews & Responsive Header Tes
   // 4. DESKTOP HEADER ALIGNMENT & VIEWPORT ADAPTATION
   // ─────────────────────────────────────────────────────────────
   describe('4. Desktop Header Alignment & Non-Maximized Responsive Viewports', () => {
-    it('uses compact Directories dropdown on unmaximized screens (768px-1199px) to prevent label collision', () => {
+    it('uses compact Directories dropdown on unmaximized screens (1024px-1535px) to prevent label collision', () => {
       const getNavigationMode = (viewportWidth: number) => {
-        if (viewportWidth < 768) return 'mobile_bottom_nav';
-        if (viewportWidth < 1200) return 'compact_desktop_with_directories_dropdown';
+        if (viewportWidth < 1024) return 'mobile_or_tablet_sub_bar';
+        if (viewportWidth < 1536) return 'compact_desktop_with_directories_dropdown';
         return 'full_expanded_desktop';
       };
 
-      expect(getNavigationMode(375)).toBe('mobile_bottom_nav');
-      expect(getNavigationMode(800)).toBe('compact_desktop_with_directories_dropdown');
+      expect(getNavigationMode(375)).toBe('mobile_or_tablet_sub_bar');
+      expect(getNavigationMode(800)).toBe('mobile_or_tablet_sub_bar');
       expect(getNavigationMode(1024)).toBe('compact_desktop_with_directories_dropdown');
-      expect(getNavigationMode(1150)).toBe('compact_desktop_with_directories_dropdown');
-      expect(getNavigationMode(1280)).toBe('full_expanded_desktop');
+      expect(getNavigationMode(1280)).toBe('compact_desktop_with_directories_dropdown');
+      expect(getNavigationMode(1440)).toBe('compact_desktop_with_directories_dropdown');
+      expect(getNavigationMode(1536)).toBe('full_expanded_desktop');
       expect(getNavigationMode(1920)).toBe('full_expanded_desktop');
     });
 

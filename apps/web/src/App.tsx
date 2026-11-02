@@ -508,11 +508,11 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
         <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#5B6147] to-[#4A3626] text-white flex items-center justify-center text-xs font-bold shadow-xs flex-shrink-0">
           {user.name[0] || 'U'}
         </div>
-        <div className="hidden sm:flex flex-col items-start text-left">
-          <span className="text-xs font-bold text-stone-900 truncate max-w-[130px] sm:max-w-[160px]">
+        <div className="hidden sm:flex flex-col items-start text-left min-w-0">
+          <span className="text-xs font-bold text-stone-900 truncate max-w-[105px] sm:max-w-[125px] xl:max-w-[145px]" title={user.name}>
             {user.name}
           </span>
-          <span className="text-[10px] text-stone-500 font-medium leading-none hidden xl:block">
+          <span className="text-[10px] text-stone-500 font-medium leading-none hidden 2xl:block">
             {formatCleanPhone(user.phone)}
           </span>
         </div>
@@ -522,10 +522,10 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-stone-200 p-3 z-50 animate-fadeIn space-y-2.5">
-            <div className="p-2 border-b border-stone-100">
-              <div className="flex items-start sm:items-center justify-between gap-2 mb-1.5 flex-wrap">
-                <span className="text-xs font-bold text-stone-900 truncate max-w-[140px] sm:max-w-[160px]" title={user.name}>
+          <div className="absolute right-0 top-full mt-2 w-76 sm:w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-stone-200 p-3 z-50 animate-fadeIn space-y-2.5">
+            <div className="p-2.5 border-b border-stone-100 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold text-stone-900 truncate flex-1 min-w-0" title={user.name}>
                   {user.name}
                 </span>
                 <div className="flex-shrink-0">
@@ -533,9 +533,9 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
                 </div>
               </div>
               {user.businessName && (
-                <p className="text-[11px] text-stone-600 line-clamp-1">{user.businessName}</p>
+                <p className="text-[11px] text-stone-600 truncate">{user.businessName}</p>
               )}
-              <p className="text-[11px] text-stone-400 font-mono mt-0.5">{formatCleanPhone(user.phone)}</p>
+              <p className="text-[11px] text-stone-500 font-sans tracking-tight">{formatCleanPhone(user.phone)}</p>
             </div>
 
             {/* Exactly 3 Standardized Profile Menu Items for ALL Roles */}
@@ -647,15 +647,15 @@ function AppHeader({
             <span className="whitespace-nowrap">{lang === 'en' ? 'CFT Calculator' : 'തടി കാൽക്കുലേറ്റർ'}</span>
           </Link>
 
-          {/* Medium Screens (lg: 1024px - 1279px): Compact Directories Dropdown */}
-          <div className="block xl:hidden flex-shrink-0 w-auto">
+          {/* Medium to Large Desktop Screens (lg & xl: 1024px - 1535px): Compact Directories Dropdown */}
+          <div className="block 2xl:hidden flex-shrink-0 w-auto">
             <DirectoriesNavDropdown lang={lang} isCurrent={isCurrent} />
           </div>
 
-          {/* Full Large Desktop Screens (>= 1280px): Expanded Direct Links */}
+          {/* Extra-Wide Desktop Screens (>= 1536px): Expanded Direct Links */}
           <Link
             to="/carpenters"
-            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold items-center gap-1.5 ${
+            className={`hidden 2xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold items-center gap-1.5 ${
               isCurrent('/carpenters')
                 ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                 : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
@@ -667,7 +667,7 @@ function AppHeader({
 
           <Link
             to="/transport"
-            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold items-center gap-1.5 ${
+            className={`hidden 2xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold items-center gap-1.5 ${
               isCurrent('/transport')
                 ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                 : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
@@ -679,7 +679,7 @@ function AppHeader({
 
           <Link
             to="/mills"
-            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold items-center gap-1.5 ${
+            className={`hidden 2xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold items-center gap-1.5 ${
               isCurrent('/mills') || isCurrent('/timber-mills')
                 ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                 : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
