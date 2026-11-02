@@ -355,14 +355,14 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       )}
 
       {/* Tab Navigation */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-stone-200">
+      <div className="flex items-center gap-3 overflow-x-auto pb-2 border-b border-stone-200">
         <button
           type="button"
           onClick={() => setActiveTab('business')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap flex-shrink-0 w-auto border ${
             activeTab === 'business'
-              ? 'bg-[#5B6147] text-white shadow-xs'
-              : 'text-stone-600 hover:bg-[#E7E1D6]/60'
+              ? 'border-[#5B6147] bg-[#5B6147] text-white shadow-xs'
+              : 'border-transparent text-stone-600 hover:bg-[#E7E1D6]/60 hover:text-stone-900'
           }`}
         >
           <UserCheck className="w-4 h-4" />
@@ -377,10 +377,10 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         <button
           type="button"
           onClick={() => setActiveTab('listings')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap flex-shrink-0 w-auto border ${
             activeTab === 'listings'
-              ? 'bg-[#5B6147] text-white shadow-xs'
-              : 'text-stone-600 hover:bg-[#E7E1D6]/60'
+              ? 'border-[#5B6147] bg-[#5B6147] text-white shadow-xs'
+              : 'border-transparent text-stone-600 hover:bg-[#E7E1D6]/60 hover:text-stone-900'
           }`}
         >
           <PackageCheck className="w-4 h-4" />
@@ -395,10 +395,10 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         <button
           type="button"
           onClick={() => setActiveTab('tickets')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap flex-shrink-0 w-auto border ${
             activeTab === 'tickets'
-              ? 'bg-[#5B6147] text-white shadow-xs'
-              : 'text-stone-600 hover:bg-[#E7E1D6]/60'
+              ? 'border-[#5B6147] bg-[#5B6147] text-white shadow-xs'
+              : 'border-transparent text-stone-600 hover:bg-[#E7E1D6]/60 hover:text-stone-900'
           }`}
         >
           <LifeBuoy className="w-4 h-4" />
@@ -413,10 +413,10 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         <button
           type="button"
           onClick={() => setActiveTab('audit')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap flex-shrink-0 w-auto border ${
             activeTab === 'audit'
-              ? 'bg-[#5B6147] text-white shadow-xs'
-              : 'text-stone-600 hover:bg-[#E7E1D6]/60'
+              ? 'border-[#5B6147] bg-[#5B6147] text-white shadow-xs'
+              : 'border-transparent text-stone-600 hover:bg-[#E7E1D6]/60 hover:text-stone-900'
           }`}
         >
           <FileText className="w-4 h-4" />

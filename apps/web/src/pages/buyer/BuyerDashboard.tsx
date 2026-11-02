@@ -233,49 +233,49 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-stone-300/80 gap-6 text-sm font-semibold overflow-x-auto">
+      <div className="flex border-b border-stone-300/80 gap-3 text-sm font-semibold overflow-x-auto pb-2">
         <button
           onClick={() => setActiveTab('orders')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
+          className={`px-4 py-2 rounded-full flex items-center gap-2 border transition whitespace-nowrap flex-shrink-0 w-auto ${
             activeTab === 'orders'
-              ? 'border-[#5B6147] text-[#5B6147] font-bold'
-              : 'border-transparent text-stone-500 hover:text-stone-900'
+              ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+              : 'border-transparent text-stone-500 hover:text-stone-900 hover:bg-stone-100'
           }`}
         >
           <ShoppingBag className="w-4 h-4" />
-          {lang === 'en' ? 'My Timber Orders' : 'എന്റെ ഓർഡറുകൾ'}
+          <span>{lang === 'en' ? 'My Timber Orders' : 'എന്റെ ഓർഡറുകൾ'}</span>
         </button>
 
         <button
           onClick={() => setActiveTab('enquiries')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
+          className={`px-4 py-2 rounded-full flex items-center gap-2 border transition whitespace-nowrap flex-shrink-0 w-auto ${
             activeTab === 'enquiries'
-              ? 'border-[#5B6147] text-[#5B6147] font-bold'
-              : 'border-transparent text-stone-500 hover:text-stone-900'
+              ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+              : 'border-transparent text-stone-500 hover:text-stone-900 hover:bg-stone-100'
           }`}
         >
           <MessageSquare className="w-4 h-4" />
-          {lang === 'en' ? 'Active Enquiries' : 'അന്വേഷണങ്ങൾ'}
+          <span>{lang === 'en' ? 'Active Enquiries' : 'അന്വേഷണങ്ങൾ'}</span>
         </button>
 
         <button
           onClick={() => setActiveTab('wishlist')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
+          className={`px-4 py-2 rounded-full flex items-center gap-2 border transition whitespace-nowrap flex-shrink-0 w-auto ${
             activeTab === 'wishlist'
-              ? 'border-[#5B6147] text-[#5B6147] font-bold'
-              : 'border-transparent text-stone-500 hover:text-stone-900'
+              ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+              : 'border-transparent text-stone-500 hover:text-stone-900 hover:bg-stone-100'
           }`}
         >
           <Heart className="w-4 h-4" />
-          {lang === 'en' ? 'Saved Wishlist' : 'സേവ് ചെയ്തവ'}
+          <span>{lang === 'en' ? 'Saved Wishlist' : 'സേവ് ചെയ്തവ'}</span>
         </button>
 
         <button
           onClick={() => setActiveTab('tickets')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
+          className={`px-4 py-2 rounded-full flex items-center gap-2 border transition whitespace-nowrap flex-shrink-0 w-auto ${
             activeTab === 'tickets'
-              ? 'border-[#5B6147] text-[#5B6147] font-bold'
-              : 'border-transparent text-stone-500 hover:text-stone-900'
+              ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+              : 'border-transparent text-stone-500 hover:text-stone-900 hover:bg-stone-100'
           }`}
         >
           <LifeBuoy className="w-4 h-4" />

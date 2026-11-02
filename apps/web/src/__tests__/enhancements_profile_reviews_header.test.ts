@@ -247,26 +247,34 @@ describe('TIMORA™ Profile Management, Verified Reviews & Responsive Header Tes
       expect(dropdownDestinations.map((d) => d.path)).toContain('/transport');
     });
 
-    it('blends notifications into My Orders and removes separate bell for buyers', () => {
-      const shouldShowSeparateNotificationBell = (role: string) => role !== 'buyer';
-      const getBuyerOrderNotificationBadge = (role: string, unreadCount: number) => {
-        if (role === 'buyer' && unreadCount > 0) {
-          return { showBadge: true, count: unreadCount > 9 ? '9+' : `${unreadCount}` };
-        }
-        return { showBadge: false, count: null };
+    it('completely removes the notification bell icon from all dashboards and headers', () => {
+      const shouldShowNotificationBellInHeader = (_role: string) => false;
+
+      // Bell is removed for all roles in header
+      expect(shouldShowNotificationBellInHeader('buyer')).toBe(false);
+      expect(shouldShowNotificationBellInHeader('seller')).toBe(false);
+      expect(shouldShowNotificationBellInHeader('carpenter')).toBe(false);
+      expect(shouldShowNotificationBellInHeader('transport')).toBe(false);
+      expect(shouldShowNotificationBellInHeader('admin')).toBe(false);
+    });
+
+    it('enforces complete unbroken oval border, balanced padding, and no cut-off for all navigation items', () => {
+      const getNavItemClasses = (isActive: boolean) => {
+        const base = 'whitespace-nowrap flex-shrink-0 w-auto px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold';
+        const state = isActive
+          ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+          : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100';
+        return `${base} ${state}`;
       };
 
-      // Buyer role
-      expect(shouldShowSeparateNotificationBell('buyer')).toBe(false);
-      expect(getBuyerOrderNotificationBadge('buyer', 3)).toEqual({ showBadge: true, count: '3' });
-      expect(getBuyerOrderNotificationBadge('buyer', 15)).toEqual({ showBadge: true, count: '9+' });
-      expect(getBuyerOrderNotificationBadge('buyer', 0)).toEqual({ showBadge: false, count: null });
-
-      // Other roles keep separate bell
-      expect(shouldShowSeparateNotificationBell('seller')).toBe(true);
-      expect(shouldShowSeparateNotificationBell('carpenter')).toBe(true);
-      expect(shouldShowSeparateNotificationBell('transport')).toBe(true);
-      expect(shouldShowSeparateNotificationBell('admin')).toBe(true);
+      const activeClasses = getNavItemClasses(true);
+      expect(activeClasses).toContain('whitespace-nowrap');
+      expect(activeClasses).toContain('flex-shrink-0');
+      expect(activeClasses).toContain('w-auto');
+      expect(activeClasses).toContain('rounded-full');
+      expect(activeClasses).toContain('px-4 py-2');
+      expect(activeClasses).not.toContain('overflow-hidden');
+      expect(activeClasses).not.toContain('max-w-');
     });
 
     it('guarantees root-relative asset URLs to prevent MIME type / HTML syntax errors on refresh', () => {
