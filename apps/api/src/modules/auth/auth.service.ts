@@ -218,7 +218,7 @@ export class AuthService {
       const accessToken = jwt.sign(
         { id: user.id, phone: user.phone, role: user.role },
         env.JWT_SECRET,
-        { expiresIn: env.JWT_ACCESS_EXPIRES as `${number}m` | `${number}h` | `${number}d` }
+        { expiresIn: (env.JWT_EXPIRES_IN || env.JWT_ACCESS_EXPIRES || '15m') as `${number}m` | `${number}h` | `${number}d` }
       );
 
       const refreshToken = jwt.sign(
@@ -309,7 +309,7 @@ export class AuthService {
     const accessToken = jwt.sign(
       { id: user.id, phone: user.phone, role: user.role },
       env.JWT_SECRET,
-      { expiresIn: env.JWT_ACCESS_EXPIRES as `${number}m` | `${number}h` | `${number}d` }
+      { expiresIn: (env.JWT_EXPIRES_IN || env.JWT_ACCESS_EXPIRES || '15m') as `${number}m` | `${number}h` | `${number}d` }
     );
 
     const refreshToken = jwt.sign(
@@ -384,7 +384,7 @@ export class AuthService {
     const accessToken = jwt.sign(
       { id: user.id, phone: user.phone, role: user.role },
       env.JWT_SECRET,
-      { expiresIn: env.JWT_ACCESS_EXPIRES as `${number}m` | `${number}h` | `${number}d` }
+      { expiresIn: (env.JWT_EXPIRES_IN || env.JWT_ACCESS_EXPIRES || '15m') as `${number}m` | `${number}h` | `${number}d` }
     );
 
     const newRefreshToken = jwt.sign(

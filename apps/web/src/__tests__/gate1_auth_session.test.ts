@@ -128,13 +128,13 @@ describe('Gate 1: Real Authentication & Session Engine', () => {
     });
   });
 
-  describe('3. Multi-Tab Inactivity Synchronization & 25-Minute Timeout', () => {
-    const SESSION_TIMEOUT_MS = 25 * 60 * 1000;
+  describe('3. Multi-Tab Inactivity Synchronization & 15-Minute Timeout', () => {
+    const SESSION_TIMEOUT_MS = 15 * 60 * 1000;
 
-    it('identifies timeout when last active timestamp exceeds 25 minutes', () => {
+    it('identifies timeout when last active timestamp exceeds 15 minutes', () => {
       const now = Date.now();
-      const past26Minutes = now - (26 * 60 * 1000);
-      mockStorage['timora_last_active'] = String(past26Minutes);
+      const past16Minutes = now - (16 * 60 * 1000);
+      mockStorage['timora_last_active'] = String(past16Minutes);
 
       const lastActive = parseInt(mockStorage['timora_last_active'], 10);
       const elapsed = now - lastActive;
@@ -142,7 +142,7 @@ describe('Gate 1: Real Authentication & Session Engine', () => {
       expect(elapsed).toBeGreaterThanOrEqual(SESSION_TIMEOUT_MS);
     });
 
-    it('keeps session active when peer tab updates timora_last_active within 25 minutes', () => {
+    it('keeps session active when peer tab updates timora_last_active within 15 minutes', () => {
       const now = Date.now();
       const recentActivity = now - (5 * 60 * 1000); // 5 mins ago in Tab B
       mockStorage['timora_last_active'] = String(recentActivity);
@@ -152,7 +152,7 @@ describe('Gate 1: Real Authentication & Session Engine', () => {
       const remainingTime = SESSION_TIMEOUT_MS - elapsed;
 
       expect(elapsed).toBeLessThan(SESSION_TIMEOUT_MS);
-      expect(remainingTime).toBe(20 * 60 * 1000);
+      expect(remainingTime).toBe(10 * 60 * 1000);
     });
 
     it('simulates cross-tab logout synchronization via storage event payload', () => {

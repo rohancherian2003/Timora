@@ -33,8 +33,8 @@ export function SessionTimeoutModal({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
         <p className="text-xs sm:text-sm text-[#7A5A3A] leading-relaxed">
           {lang === 'en'
-            ? 'Your session was automatically closed after 25 minutes of inactivity to protect your account. Please sign in again to continue.'
-            : 'നിങ്ങളുടെ അക്കൗണ്ടിന്റെ സുരക്ഷ മുൻനിർത്തി 25 മിനിറ്റ് നിഷ്ക്രിയമായിരുന്നതിനാൽ സെഷൻ അവസാനിച്ചു. തുടരാൻ ദയവായി വീണ്ടും ലോഗിൻ ചെയ്യുക.'}
+            ? 'Your session was automatically closed after 15 minutes of inactivity to protect your account. Please sign in again to continue.'
+            : 'നിങ്ങളുടെ അക്കൗണ്ടിന്റെ സുരക്ഷ മുൻനിർത്തി 15 മിനിറ്റ് നിഷ്ക്രിയമായിരുന്നതിനാൽ സെഷൻ അവസാനിച്ചു. തുടരാൻ ദയവായി വീണ്ടും ലോഗിൻ ചെയ്യുക.'}
         </p>
 
         <div className="pt-2">

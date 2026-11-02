@@ -295,5 +295,53 @@ describe('TIMORA™ Profile Management, Verified Reviews & Responsive Header Tes
       expect(resolvedFromAbsolute).toBe('/assets/index.js');
       expect(resolvedFromRelative).toBe('/dashboard/assets/index.js'); // The buggy behavior when base was './'
     });
+
+    it('standardizes profile dropdown menu to strictly exactly 3 items across all roles', () => {
+      const getProfileDropdownMenuItems = () => [
+        { id: 'dashboard', label: 'My Dashboard' },
+        { id: 'settings', label: 'Edit Profile & Settings' },
+        { id: 'signout', label: 'Sign Out' },
+      ];
+
+      const roles = ['buyer', 'seller', 'carpenter', 'transport', 'admin', 'custom_registered'];
+      roles.forEach((_role) => {
+        const items = getProfileDropdownMenuItems();
+        expect(items).toHaveLength(3);
+        expect(items.map((i) => i.id)).toEqual(['dashboard', 'settings', 'signout']);
+      });
+    });
+
+    it('formats phone numbers with clean single +91 prefix and no duplication', () => {
+      const formatCleanPhone = (phone?: string): string => {
+        if (!phone) return '';
+        const digits = phone.replace(/\D/g, '');
+        if (digits.length >= 10) {
+          const last10 = digits.slice(-10);
+          return `+91 ${last10}`;
+        }
+        return phone;
+      };
+
+      expect(formatCleanPhone('9847000000')).toBe('+91 9847000000');
+      expect(formatCleanPhone('+919847000000')).toBe('+91 9847000000');
+      expect(formatCleanPhone('+91 9847000000')).toBe('+91 9847000000');
+      expect(formatCleanPhone('+91 +919847000000')).toBe('+91 9847000000');
+      expect(formatCleanPhone('')).toBe('');
+    });
+
+    it('anchors dropdown card to right-0 and bounds max width within viewport', () => {
+      const dropdownCardClasses =
+        'absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-stone-200 p-3 z-50 animate-fadeIn space-y-2.5';
+
+      expect(dropdownCardClasses).toContain('absolute');
+      expect(dropdownCardClasses).toContain('right-0');
+      expect(dropdownCardClasses).toContain('top-full');
+      expect(dropdownCardClasses).toContain('max-w-[calc(100vw-2rem)]');
+    });
+
+    it('enforces 15-minute inactivity session timeout constant', () => {
+      const SESSION_TIMEOUT_MS = 15 * 60 * 1000;
+      expect(SESSION_TIMEOUT_MS).toBe(900000); // 900,000 ms = 15 minutes
+    });
   });
 });

@@ -103,7 +103,7 @@ export const DEMO_PROFILES: Record<string, UserProfile> = {
 const STORAGE_KEY = 'timora_auth_user';
 const TOKEN_KEY = 'timora_auth_token';
 const LAST_ACTIVE_KEY = 'timora_last_active';
-const SESSION_TIMEOUT_MS = 25 * 60 * 1000; // 25 minutes inactivity
+const SESSION_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes inactivity
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSessionTimedOut, setIsSessionTimedOut] = useState<boolean>(false);
@@ -235,7 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const handleUnauthorizedEvent = () => {
-      doLogout(false);
+      doLogout(true);
     };
 
     window.addEventListener('storage', handleStorageChange);

@@ -419,6 +419,17 @@ function DirectoriesNavDropdown({
   );
 }
 
+// Helper to cleanly format Indian phone numbers with a single +91 prefix
+function formatCleanPhone(phone?: string): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length >= 10) {
+    const last10 = digits.slice(-10);
+    return `+91 ${last10}`;
+  }
+  return phone;
+}
+
 // User Menu Component for Top Header
 function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
   const { user, logout } = useAuth();
@@ -498,11 +509,11 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
           {user.name[0] || 'U'}
         </div>
         <div className="hidden sm:flex flex-col items-start text-left">
-          <span className="text-xs font-bold text-stone-900 truncate max-w-[90px] sm:max-w-[105px] lg:max-w-[120px] xl:max-w-[150px]">
+          <span className="text-xs font-bold text-stone-900 truncate max-w-[130px] sm:max-w-[160px]">
             {user.name}
           </span>
           <span className="text-[10px] text-stone-500 font-medium leading-none hidden xl:block">
-            {user.phone}
+            {formatCleanPhone(user.phone)}
           </span>
         </div>
         <ChevronDown className={`w-3.5 h-3.5 text-stone-400 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
@@ -511,18 +522,23 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-stone-200 p-2 z-50 animate-fadeIn space-y-2">
+          <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-stone-200 p-3 z-50 animate-fadeIn space-y-2.5">
             <div className="p-2 border-b border-stone-100">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-stone-900">{user.name}</span>
-                {getRoleBadge()}
+              <div className="flex items-start sm:items-center justify-between gap-2 mb-1.5 flex-wrap">
+                <span className="text-xs font-bold text-stone-900 truncate max-w-[140px] sm:max-w-[160px]" title={user.name}>
+                  {user.name}
+                </span>
+                <div className="flex-shrink-0">
+                  {getRoleBadge()}
+                </div>
               </div>
               {user.businessName && (
                 <p className="text-[11px] text-stone-600 line-clamp-1">{user.businessName}</p>
               )}
-              <p className="text-[11px] text-stone-400 font-mono mt-0.5">+91 {user.phone}</p>
+              <p className="text-[11px] text-stone-400 font-mono mt-0.5">{formatCleanPhone(user.phone)}</p>
             </div>
 
+            {/* Exactly 3 Standardized Profile Menu Items for ALL Roles */}
             <div className="space-y-0.5">
               <Link
                 to={getDashboardLink()}
@@ -532,39 +548,6 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
                 <LayoutDashboard className="w-4 h-4 text-[#5B6147]" />
                 <span>{lang === 'en' ? 'My Dashboard' : 'എന്റെ ഡാഷ്‌ബോർഡ്'}</span>
               </Link>
-
-              {user.role === 'buyer' && (
-                <Link
-                  to="/dashboard/buyer"
-                  onClick={() => setOpen(false)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-stone-700 hover:text-[#4A3626] hover:bg-stone-50 rounded-xl transition"
-                >
-                  <ShoppingBag className="w-4 h-4 text-emerald-700" />
-                  <span>{lang === 'en' ? 'My Orders' : 'എന്റെ ഓർഡറുകൾ'}</span>
-                </Link>
-              )}
-
-              {user.role === 'seller' && (
-                <Link
-                  to="/dashboard/seller"
-                  onClick={() => setOpen(false)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-stone-700 hover:text-[#4A3626] hover:bg-stone-100/50 rounded-xl transition"
-                >
-                  <Store className="w-4 h-4 text-[#3F452F]" />
-                  <span>{lang === 'en' ? 'Depot Stock Manager' : 'സ്റ്റോക്ക് മാനേജർ'}</span>
-                </Link>
-              )}
-
-              {user.role === 'admin' && (
-                <Link
-                  to="/admin"
-                  onClick={() => setOpen(false)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-stone-700 hover:text-stone-900 hover:bg-stone-100 rounded-xl transition"
-                >
-                  <Shield className="w-4 h-4 text-stone-800" />
-                  <span>{lang === 'en' ? 'Admin Moderation Console' : 'അഡ്മിൻ കൺസോൾ'}</span>
-                </Link>
-              )}
 
               <button
                 type="button"
@@ -633,7 +616,7 @@ function AppHeader({
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs transition-colors w-full max-w-full">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 lg:gap-3 xl:gap-4">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
         {/* Brand Logo with clear right spacing */}
         <Link to="/" className="group flex items-center flex-shrink-0 mr-1 sm:mr-2">
           <BrandLogo size="md" lang={lang} />
