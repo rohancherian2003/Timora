@@ -336,6 +336,81 @@ export class AuthService {
   }
 
   /**
+   * Rotate refresh token and issue a fresh access token
+   */
+  async rotateTokens(rawRefreshToken: string) {
+    if (!rawRefreshToken) {
+      throw new AppError(400, 'REFRESH_TOKEN_REQUIRED', 'Refresh token is required.');
+    }
+
+    let payload: { id: string; tokenVersion?: number };
+    try {
+      payload = jwt.verify(rawRefreshToken, env.JWT_SECRET) as { id: string; tokenVersion?: number };
+    } catch {
+      throw new AppError(401, 'INVALID_REFRESH_TOKEN', 'Refresh token is invalid or expired.');
+    }
+
+    const res = await query(
+      `SELECT u.id, u.phone, u.role, u.is_active, p.name, p.language_pref, p.account_tier,
+              sp.seller_subtype, sp.approval_status as seller_approval_status, sp.business_name as seller_business,
+              cp.approval_status as carpenter_approval_status,
+              tp.approval_status as transport_approval_status
+       FROM users u
+       LEFT JOIN user_profiles p ON p.user_id = u.id
+       LEFT JOIN seller_profiles sp ON sp.user_id = u.id
+       LEFT JOIN carpenter_profiles cp ON cp.user_id = u.id
+       LEFT JOIN transport_owner_profiles tp ON tp.user_id = u.id
+       WHERE u.id = $1`,
+      [payload.id]
+    );
+
+    const user = res.rows[0];
+    if (!user) {
+      throw new AppError(401, 'USER_NOT_FOUND', 'User belonging to this token no longer exists.');
+    }
+
+    if (!user.is_active) {
+      throw new AppError(403, 'ACCOUNT_DEACTIVATED', 'Your account has been deactivated.');
+    }
+
+    const approvalStatus =
+      user.role === 'buyer'
+        ? 'APPROVED'
+        : user.seller_approval_status ||
+          user.carpenter_approval_status ||
+          user.transport_approval_status ||
+          'PENDING_APPROVAL';
+
+    const accessToken = jwt.sign(
+      { id: user.id, phone: user.phone, role: user.role },
+      env.JWT_SECRET,
+      { expiresIn: env.JWT_ACCESS_EXPIRES as `${number}m` | `${number}h` | `${number}d` }
+    );
+
+    const newRefreshToken = jwt.sign(
+      { id: user.id, tokenVersion: (payload.tokenVersion || 1) + 1 },
+      env.JWT_SECRET,
+      { expiresIn: env.JWT_REFRESH_EXPIRES as `${number}m` | `${number}h` | `${number}d` }
+    );
+
+    return {
+      user: {
+        id: user.id,
+        phone: user.phone,
+        role: user.role,
+        name: user.name,
+        seller_subtype: user.seller_subtype,
+        seller_business: user.seller_business,
+        language_pref: user.language_pref,
+        account_tier: user.account_tier,
+        approval_status: approvalStatus,
+      },
+      accessToken,
+      refreshToken: newRefreshToken,
+    };
+  }
+
+  /**
    * Update authenticated user profile fields
    * Strictly prevents modifying role, id, phone, is_active, or approval_status
    */

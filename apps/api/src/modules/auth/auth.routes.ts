@@ -8,6 +8,7 @@ import {
   verifyOtpSchema,
   registerSchema,
   loginSchema,
+  refreshTokenSchema,
   updateProfileSchema,
 } from './auth.schema.js';
 
@@ -37,6 +38,12 @@ authRouter.post(
   loginRateLimiter,
   validate(loginSchema),
   authController.login.bind(authController)
+);
+
+authRouter.post(
+  '/refresh',
+  validate(refreshTokenSchema),
+  authController.refreshToken.bind(authController)
 );
 
 authRouter.get(

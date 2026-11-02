@@ -45,4 +45,24 @@ describe('Auth & Health Endpoints', () => {
     expect(res.status).toBe(422);
     expect(res.body.success).toBe(false);
   });
+
+  it('POST /api/v1/auth/refresh validates required refreshToken parameter', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/refresh')
+      .send({});
+
+    expect(res.status).toBe(422);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('POST /api/v1/auth/refresh rejects invalid or malformed tokens with 401', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/refresh')
+      .send({ refreshToken: 'invalid.jwt.token' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('INVALID_REFRESH_TOKEN');
+  });
 });

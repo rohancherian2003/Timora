@@ -77,6 +77,7 @@ export function DashboardNotificationsFeed({
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
     );
+    window.dispatchEvent(new CustomEvent('timora_notifications_updated'));
 
     if (actionUrl) {
       navigate(actionUrl);

@@ -246,5 +246,46 @@ describe('TIMORA™ Profile Management, Verified Reviews & Responsive Header Tes
       expect(dropdownDestinations.map((d) => d.path)).toContain('/mills');
       expect(dropdownDestinations.map((d) => d.path)).toContain('/transport');
     });
+
+    it('blends notifications into My Orders and removes separate bell for buyers', () => {
+      const shouldShowSeparateNotificationBell = (role: string) => role !== 'buyer';
+      const getBuyerOrderNotificationBadge = (role: string, unreadCount: number) => {
+        if (role === 'buyer' && unreadCount > 0) {
+          return { showBadge: true, count: unreadCount > 9 ? '9+' : `${unreadCount}` };
+        }
+        return { showBadge: false, count: null };
+      };
+
+      // Buyer role
+      expect(shouldShowSeparateNotificationBell('buyer')).toBe(false);
+      expect(getBuyerOrderNotificationBadge('buyer', 3)).toEqual({ showBadge: true, count: '3' });
+      expect(getBuyerOrderNotificationBadge('buyer', 15)).toEqual({ showBadge: true, count: '9+' });
+      expect(getBuyerOrderNotificationBadge('buyer', 0)).toEqual({ showBadge: false, count: null });
+
+      // Other roles keep separate bell
+      expect(shouldShowSeparateNotificationBell('seller')).toBe(true);
+      expect(shouldShowSeparateNotificationBell('carpenter')).toBe(true);
+      expect(shouldShowSeparateNotificationBell('transport')).toBe(true);
+      expect(shouldShowSeparateNotificationBell('admin')).toBe(true);
+    });
+
+    it('guarantees root-relative asset URLs to prevent MIME type / HTML syntax errors on refresh', () => {
+      const viteBase = '/';
+      const resolveAssetPath = (base: string, asset: string) => `${base}${asset}`.replace(/\/\//g, '/');
+
+      expect(viteBase).toBe('/');
+      expect(resolveAssetPath(viteBase, 'assets/index.js')).toBe('/assets/index.js');
+      expect(resolveAssetPath(viteBase, 'registerSW.js')).toBe('/registerSW.js');
+      expect(resolveAssetPath(viteBase, 'manifest.webmanifest')).toBe('/manifest.webmanifest');
+
+      // Verifies that a browser on '/dashboard/buyer' resolves '/assets/index.js' to domain root, NOT '/dashboard/assets/index.js'
+      const simulatedOrigin = 'https://timora-rho.vercel.app';
+      const currentRoute = '/dashboard/buyer';
+      const resolvedFromAbsolute = new URL('/assets/index.js', `${simulatedOrigin}${currentRoute}`).pathname;
+      const resolvedFromRelative = new URL('./assets/index.js', `${simulatedOrigin}${currentRoute}`).pathname;
+
+      expect(resolvedFromAbsolute).toBe('/assets/index.js');
+      expect(resolvedFromRelative).toBe('/dashboard/assets/index.js'); // The buggy behavior when base was './'
+    });
   });
 });

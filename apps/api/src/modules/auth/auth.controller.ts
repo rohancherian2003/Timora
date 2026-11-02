@@ -63,6 +63,20 @@ export class AuthController {
     }
   }
 
+  async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { refreshToken } = req.body;
+      const result = await authService.rotateTokens(refreshToken);
+      const response: ApiSuccessResponse = {
+        success: true,
+        data: result,
+      };
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async me(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await authService.getMe(req.user!.id);

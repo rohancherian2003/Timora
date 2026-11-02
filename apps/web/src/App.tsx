@@ -23,6 +23,7 @@ import { AuthProvider, useAuth, UserRole } from './context/AuthContext';
 import { BrandLogo } from './components/BrandLogo';
 import { OfflineBanner } from './components/OfflineBanner';
 import { NotificationBell } from './components/NotificationBell';
+import { useBuyerNotifications } from './hooks/useBuyerNotifications';
 
 const MarketplacePage = React.lazy(() =>
   import('./pages/public/MarketplacePage').then((m) => ({ default: m.MarketplacePage }))
@@ -171,6 +172,7 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
   const location = useLocation();
   const currentPath = location.pathname;
   const { user, isAuthenticated } = useAuth();
+  const { unreadCount: buyerUnreadCount } = useBuyerNotifications();
 
   const isActive = (path: string) => {
     if (path === '/' && (currentPath === '/' || currentPath === '/marketplace')) return true;
@@ -223,11 +225,18 @@ function MobileBottomNav({ lang }: { lang: 'en' | 'ml' }) {
       {isAuthenticated && user?.role === 'buyer' && (
         <Link
           to="/dashboard/buyer"
-          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition ${
+          className={`relative flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition ${
             isActive('/dashboard/buyer') ? 'text-[#5B6147] font-bold' : 'text-stone-500 hover:text-stone-800'
           }`}
         >
-          <ShoppingBag className="w-5 h-5" />
+          <div className="relative">
+            <ShoppingBag className="w-5 h-5" />
+            {buyerUnreadCount > 0 && (
+              <span className="absolute -top-1 -right-2 min-w-[15px] h-[15px] px-0.5 bg-rose-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-xs animate-pulse">
+                {buyerUnreadCount > 9 ? '9+' : buyerUnreadCount}
+              </span>
+            )}
+          </div>
           <span className="text-[10px] mt-0.5">{lang === 'en' ? 'Orders' : 'ഓർഡർ'}</span>
         </Link>
       )}
@@ -426,6 +435,7 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
   const [open, setOpen] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const { unreadCount: buyerUnreadCount } = useBuyerNotifications();
   const navigate = useNavigate();
 
   if (!user) return null;
@@ -538,10 +548,17 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
                 <Link
                   to="/dashboard/buyer"
                   onClick={() => setOpen(false)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-stone-700 hover:text-[#4A3626] hover:bg-stone-50 rounded-xl transition"
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-stone-700 hover:text-[#4A3626] hover:bg-stone-50 rounded-xl transition"
                 >
-                  <ShoppingBag className="w-4 h-4 text-emerald-700" />
-                  <span>{lang === 'en' ? 'Orders & Negotiations' : 'ഓർഡറുകൾ'}</span>
+                  <div className="flex items-center gap-2.5">
+                    <ShoppingBag className="w-4 h-4 text-emerald-700" />
+                    <span>{lang === 'en' ? 'My Orders & Notifications' : 'ഓർഡറുകൾ & അറിയിപ്പുകൾ'}</span>
+                  </div>
+                  {buyerUnreadCount > 0 && (
+                    <span className="min-w-[18px] h-[18px] px-1 bg-rose-600 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center animate-pulse">
+                      {buyerUnreadCount > 9 ? '9+' : buyerUnreadCount}
+                    </span>
+                  )}
                 </Link>
               )}
 
@@ -624,6 +641,7 @@ function AppHeader({
 }) {
   const { user, isAuthenticated } = useAuth();
   const location = useLocation();
+  const { unreadCount: buyerUnreadCount } = useBuyerNotifications();
 
   const isCurrent = (path: string) => {
     if (path === '/marketplace' && (location.pathname === '/' || location.pathname === '/marketplace')) {
@@ -634,20 +652,20 @@ function AppHeader({
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs transition-colors">
-      <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 h-16 flex items-center justify-between gap-2">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand Logo with clear right spacing */}
-        <Link to="/" className="group flex items-center flex-shrink-0 mr-2 md:mr-3 lg:mr-5">
+        <Link to="/" className="group flex items-center flex-shrink-0 mr-1 sm:mr-2 md:mr-3">
           <BrandLogo size="md" lang={lang} />
         </Link>
 
-        {/* Desktop Navigation Links - Compact, elegant, never wraps or overflows */}
-        <nav className="hidden md:flex items-center gap-1.5 lg:gap-2.5 xl:gap-3.5 text-xs lg:text-[13px] font-semibold text-stone-600 whitespace-nowrap flex-shrink min-w-0">
+        {/* Desktop Navigation Links - Compact, elegant, never wraps or overflows into the right cluster */}
+        <nav className="hidden md:flex items-center gap-1 lg:gap-2 xl:gap-3 text-xs lg:text-[13px] font-semibold text-stone-600 min-w-0 flex-1 overflow-x-auto no-scrollbar py-1">
           <Link
             to="/marketplace"
-            className={`whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 ${
+            className={`whitespace-nowrap flex-shrink-0 transition px-2 py-1 rounded-lg ${
               isCurrent('/marketplace')
-                ? 'text-[#5B6147] border-[#5B6147] font-bold'
-                : 'border-transparent hover:text-[#5B6147]'
+                ? 'text-[#5B6147] font-bold bg-[#E7E1D6]/60'
+                : 'hover:text-[#5B6147] hover:bg-stone-100'
             }`}
           >
             <span className="whitespace-nowrap">{lang === 'en' ? 'Marketplace' : 'മാർക്കറ്റ്'}</span>
@@ -655,10 +673,10 @@ function AppHeader({
 
           <Link
             to="/calculator"
-            className={`whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 flex items-center gap-1.5 ${
+            className={`whitespace-nowrap flex-shrink-0 transition px-2 py-1 rounded-lg flex items-center gap-1.5 ${
               isCurrent('/calculator')
-                ? 'text-[#5B6147] border-[#5B6147] font-bold'
-                : 'border-transparent hover:text-[#5B6147]'
+                ? 'text-[#5B6147] font-bold bg-[#E7E1D6]/60'
+                : 'hover:text-[#5B6147] hover:bg-stone-100'
             }`}
           >
             <Calculator className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
@@ -666,17 +684,17 @@ function AppHeader({
           </Link>
 
           {/* Medium & Unmaximized Desktop Screens: Compact Directories Dropdown */}
-          <div className="block xl:hidden">
+          <div className="block xl:hidden flex-shrink-0">
             <DirectoriesNavDropdown lang={lang} isCurrent={isCurrent} />
           </div>
 
           {/* Full Large Desktop Screens (>= 1280px): Expanded Direct Links */}
           <Link
             to="/carpenters"
-            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 items-center gap-1.5 ${
+            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 transition px-2 py-1 rounded-lg items-center gap-1.5 ${
               isCurrent('/carpenters')
-                ? 'text-[#5B6147] border-[#5B6147] font-bold'
-                : 'border-transparent hover:text-[#5B6147]'
+                ? 'text-[#5B6147] font-bold bg-[#E7E1D6]/60'
+                : 'hover:text-[#5B6147] hover:bg-stone-100'
             }`}
           >
             <Hammer className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
@@ -685,10 +703,10 @@ function AppHeader({
 
           <Link
             to="/transport"
-            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 items-center gap-1.5 ${
+            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 transition px-2 py-1 rounded-lg items-center gap-1.5 ${
               isCurrent('/transport')
-                ? 'text-[#5B6147] border-[#5B6147] font-bold'
-                : 'border-transparent hover:text-[#5B6147]'
+                ? 'text-[#5B6147] font-bold bg-[#E7E1D6]/60'
+                : 'hover:text-[#5B6147] hover:bg-stone-100'
             }`}
           >
             <Truck className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
@@ -697,10 +715,10 @@ function AppHeader({
 
           <Link
             to="/mills"
-            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 items-center gap-1.5 ${
+            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 transition px-2 py-1 rounded-lg items-center gap-1.5 ${
               isCurrent('/mills') || isCurrent('/timber-mills')
-                ? 'text-[#5B6147] border-[#5B6147] font-bold'
-                : 'border-transparent hover:text-[#5B6147]'
+                ? 'text-[#5B6147] font-bold bg-[#E7E1D6]/60'
+                : 'hover:text-[#5B6147] hover:bg-stone-100'
             }`}
           >
             <Factory className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
@@ -711,14 +729,28 @@ function AppHeader({
           {isAuthenticated && user?.role === 'buyer' && (
             <Link
               to="/dashboard/buyer"
-              className={`whitespace-nowrap flex-shrink-0 transition px-1.5 lg:px-2 pb-1 border-b-2 flex items-center gap-1.5 ${
+              className={`whitespace-nowrap flex-shrink-0 transition px-2.5 py-1 rounded-xl border flex items-center gap-1.5 ${
                 isCurrent('/dashboard/buyer')
-                  ? 'text-[#5B6147] border-[#5B6147] font-bold'
-                  : 'border-transparent hover:text-[#5B6147] text-stone-700'
+                  ? 'text-[#4A3626] bg-[#E7E1D6]/80 border-[#5B6147] font-bold shadow-xs'
+                  : 'border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-[#5B6147]'
               }`}
+              title={
+                buyerUnreadCount > 0
+                  ? lang === 'en'
+                    ? `My Orders (${buyerUnreadCount} new notifications)`
+                    : `എന്റെ ഓർഡറുകൾ (${buyerUnreadCount} പുതിയ അറിയിപ്പുകൾ)`
+                  : lang === 'en'
+                  ? 'My Orders & Dashboard'
+                  : 'എന്റെ ഓർഡറുകൾ'
+              }
             >
               <ShoppingBag className="w-3.5 h-3.5 text-emerald-700 flex-shrink-0" />
               <span className="whitespace-nowrap">{lang === 'en' ? 'My Orders' : 'എന്റെ ഓർഡറുകൾ'}</span>
+              {buyerUnreadCount > 0 && (
+                <span className="min-w-[18px] h-[18px] px-1 bg-rose-600 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center shadow-xs animate-pulse">
+                  {buyerUnreadCount > 9 ? '9+' : buyerUnreadCount}
+                </span>
+              )}
             </Link>
           )}
 
@@ -775,35 +807,37 @@ function AppHeader({
           )}
         </nav>
 
-        {/* Right Action Cluster: Language Switcher + Auth */}
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+        {/* Right Action Cluster: Language Switcher + User Navigation - Strictly flex-shrink-0 ml-auto so it never gets overlapped */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0 ml-auto pl-1 sm:pl-2">
           {/* Language Switcher */}
           <button
+            type="button"
             onClick={toggleLanguage}
-            className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-bold rounded-xl border border-stone-200 hover:bg-stone-100 text-stone-700 transition flex-shrink-0"
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 transition flex-shrink-0 whitespace-nowrap shadow-2xs"
             title="Toggle Language / ഭാഷ മാറ്റുക"
           >
-            <Globe className="w-3.5 h-3.5 text-[#3F452F]" />
-            <span>{lang === 'en' ? 'മലയാളം' : 'English'}</span>
+            <Globe className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
+            <span className="whitespace-nowrap leading-none">{lang === 'en' ? 'മലയാളം' : 'English'}</span>
           </button>
 
           {/* Auth State Control */}
           {isAuthenticated ? (
-            <div className="flex items-center gap-1 sm:gap-2">
-              <NotificationBell lang={lang} />
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              {/* Notifications are blended into My Orders for Buyer role; only non-buyer roles show separate bell icon */}
+              {user?.role !== 'buyer' && <NotificationBell lang={lang} />}
               <UserNavMenu lang={lang} />
             </div>
           ) : (
             <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
               <Link
                 to="/login"
-                className="px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-xl text-stone-700 hover:text-stone-900 hover:bg-stone-100 transition"
+                className="px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-xl text-stone-700 hover:text-stone-900 hover:bg-stone-100 transition whitespace-nowrap"
               >
                 {lang === 'en' ? 'Sign In' : 'ലോഗിൻ'}
               </Link>
               <Link
                 to="/register"
-                className="px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white shadow-xs transition"
+                className="px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white shadow-xs transition whitespace-nowrap"
               >
                 {lang === 'en' ? 'Register' : 'രജിസ്റ്റർ'}
               </Link>
