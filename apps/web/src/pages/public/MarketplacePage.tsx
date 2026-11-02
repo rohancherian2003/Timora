@@ -205,7 +205,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-16">
       {/* 1. REFINED MINIMAL HERO SECTION */}
       <section className="relative overflow-hidden bg-gradient-to-b from-[#E7E1D6]/80 via-[#FAF8F5] to-white border-b border-[#8E7F6B]/20 pt-6 pb-8 sm:pt-8 sm:pb-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           {/* Main Headline & Supporting Copy */}
           <div className="text-center max-w-3xl mx-auto space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E7E1D6] border border-[#8E7F6B]/30 text-[#4A3626] text-xs font-bold shadow-2xs">
@@ -360,7 +360,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       </section>
 
       {/* 2. REFINED FILTER BAR & CATALOG CONTAINER */}
-      <section id="timber-catalog" className="max-w-6xl mx-auto px-4 sm:px-6 space-y-4">
+      <section id="timber-catalog" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
         {/* Compact Primary Species Filter Row */}
         <div className="flex items-center justify-between gap-3 overflow-x-auto pb-1 scrollbar-none">
           <div className="flex items-center gap-1.5 flex-nowrap">
@@ -646,7 +646,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       </section>
 
       {/* 4. KERALA TIMBER MILLS SPOTLIGHT */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6">
+      <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-3xl border border-[#8E7F6B]/30 p-6 sm:p-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>

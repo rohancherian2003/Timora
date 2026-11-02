@@ -203,7 +203,7 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const isFirewood = listing.type.toLowerCase().includes('firewood') || listing.title.toLowerCase().includes('firewood');
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-7 animate-fadeIn">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-7 animate-fadeIn">
       {/* State-Preserving In-Page Back Button */}
       <BackButton
         label={lang === 'en' ? 'Back to Marketplace' : 'തിരികെ മാർക്കറ്റിലേക്ക്'}

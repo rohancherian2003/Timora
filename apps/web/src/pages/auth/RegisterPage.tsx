@@ -285,7 +285,7 @@ export function RegisterPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   };
 
   return (
-    <div className="min-h-[82vh] flex items-center justify-center px-4 py-8 bg-[#FAF8F5]">
+    <div className="w-full max-w-full overflow-x-hidden min-h-[82vh] flex items-center justify-center px-4 py-8 bg-[#FAF8F5]">
       <div className="max-w-md w-full space-y-5 bg-white p-6 sm:p-8 rounded-3xl border border-[#8E7F6B]/30 shadow-xl relative">
         <div className="flex items-center justify-between">
           <BackButton fallbackPath="/" lang={lang} />

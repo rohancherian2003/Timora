@@ -300,7 +300,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-7 animate-fadeIn">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-7 animate-fadeIn">
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 sm:p-8 bg-gradient-to-br from-[#E7E1D6] via-[#d5cfc4] to-[#c4bdb0] rounded-3xl border border-[#c4bdb0] shadow-sm">
         <div>
@@ -355,7 +355,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       )}
 
       {/* Tab Navigation */}
-      <div className="flex items-center gap-3 overflow-x-auto pb-2 border-b border-stone-200">
+      <div className="flex items-center gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar pb-2 border-b border-stone-200">
         <button
           type="button"
           onClick={() => setActiveTab('business')}
@@ -428,8 +428,8 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       {activeTab === 'business' && (
         <div className="space-y-4">
           {/* Sub-Filter pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-            <span className="text-stone-500 font-semibold">{lang === 'en' ? 'Role Filter:' : 'വിഭാഗം:'}</span>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
+            <span className="text-stone-500 font-semibold whitespace-nowrap flex-shrink-0">{lang === 'en' ? 'Role Filter:' : 'വിഭാഗം:'}</span>
             {[
               { key: 'all', label: 'All Businesses' },
               { key: 'seller', label: 'Individual Sellers' },
@@ -441,9 +441,9 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 key={f.key}
                 type="button"
                 onClick={() => setBusinessFilter(f.key as any)}
-                className={`px-3 py-1.5 rounded-xl font-bold transition ${
+                className={`whitespace-nowrap flex-shrink-0 w-auto px-3.5 py-1.5 rounded-full font-bold transition text-xs ${
                   businessFilter === f.key
-                    ? 'bg-[#5B6147] text-white'
+                    ? 'bg-[#5B6147] text-white shadow-2xs'
                     : 'bg-white border border-stone-300 text-stone-700 hover:bg-stone-100'
                 }`}
               >

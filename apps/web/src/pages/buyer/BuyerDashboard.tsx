@@ -142,7 +142,7 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
       {/* Welcome Bar */}
       <div className="p-6 sm:p-8 bg-gradient-to-br from-[#E7E1D6] via-[#d5cfc4] to-[#c4bdb0] rounded-3xl border border-[#c4bdb0] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -233,7 +233,7 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-stone-300/80 gap-3 text-sm font-semibold overflow-x-auto pb-2">
+      <div className="flex border-b border-stone-300/80 gap-2.5 sm:gap-3 text-sm font-semibold overflow-x-auto no-scrollbar pb-2">
         <button
           onClick={() => setActiveTab('orders')}
           className={`px-4 py-2 rounded-full flex items-center gap-2 border transition whitespace-nowrap flex-shrink-0 w-auto ${

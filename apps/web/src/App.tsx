@@ -363,7 +363,7 @@ function DirectoriesNavDropdown({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`whitespace-nowrap flex-shrink-0 w-auto transition px-4 py-2 text-xs sm:text-sm font-semibold rounded-full flex items-center gap-1.5 border ${
+        className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 text-xs xl:text-sm font-semibold rounded-full flex items-center gap-1.5 border ${
           isDirectoryActive
             ? 'text-[#4A3626] bg-[#E7E1D6]/80 border-[#5B6147] font-bold shadow-xs'
             : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
@@ -492,13 +492,13 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
     <div className="relative flex-shrink-0 w-auto">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full border border-stone-200 bg-white hover:bg-stone-50 shadow-xs transition flex-shrink-0 whitespace-nowrap w-auto"
+        className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full border border-stone-200 bg-white hover:bg-stone-50 shadow-xs transition flex-shrink-0 whitespace-nowrap w-auto"
       >
         <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#5B6147] to-[#4A3626] text-white flex items-center justify-center text-xs font-bold shadow-xs flex-shrink-0">
           {user.name[0] || 'U'}
         </div>
         <div className="hidden sm:flex flex-col items-start text-left">
-          <span className="text-xs font-bold text-stone-900 truncate max-w-[85px] md:max-w-[105px] lg:max-w-[130px]">
+          <span className="text-xs font-bold text-stone-900 truncate max-w-[90px] sm:max-w-[105px] lg:max-w-[120px] xl:max-w-[150px]">
             {user.name}
           </span>
           <span className="text-[10px] text-stone-500 font-medium leading-none hidden xl:block">
@@ -632,18 +632,18 @@ function AppHeader({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs transition-colors">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 lg:gap-4">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs transition-colors w-full max-w-full">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 lg:gap-3 xl:gap-4">
         {/* Brand Logo with clear right spacing */}
         <Link to="/" className="group flex items-center flex-shrink-0 mr-1 sm:mr-2">
           <BrandLogo size="md" lang={lang} />
         </Link>
 
-        {/* Desktop Navigation Links - Complete, unbroken pill/oval borders with px-4 py-2, never clipped or overlapping */}
-        <nav className="hidden md:flex items-center gap-2 lg:gap-3 text-xs sm:text-sm font-semibold text-stone-600 flex-shrink-0 w-auto">
+        {/* Desktop Navigation Links - Compact single-line fitting on lg & xl viewports */}
+        <nav className="hidden lg:flex items-center gap-1.5 xl:gap-2.5 text-xs xl:text-sm font-semibold text-stone-600 flex-shrink-0 w-auto">
           <Link
             to="/marketplace"
-            className={`whitespace-nowrap flex-shrink-0 w-auto transition px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold flex items-center gap-1.5 ${
+            className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
               isCurrent('/marketplace')
                 ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                 : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
@@ -654,17 +654,17 @@ function AppHeader({
 
           <Link
             to="/calculator"
-            className={`whitespace-nowrap flex-shrink-0 w-auto transition px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold flex items-center gap-1.5 ${
+            className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
               isCurrent('/calculator')
                 ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                 : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
             }`}
           >
-            <Calculator className="w-4 h-4 text-[#3F452F] flex-shrink-0" />
+            <Calculator className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
             <span className="whitespace-nowrap">{lang === 'en' ? 'CFT Calculator' : 'തടി കാൽക്കുലേറ്റർ'}</span>
           </Link>
 
-          {/* Medium Screens (< 1280px): Compact Directories Dropdown */}
+          {/* Medium Screens (lg: 1024px - 1279px): Compact Directories Dropdown */}
           <div className="block xl:hidden flex-shrink-0 w-auto">
             <DirectoriesNavDropdown lang={lang} isCurrent={isCurrent} />
           </div>
@@ -672,52 +672,52 @@ function AppHeader({
           {/* Full Large Desktop Screens (>= 1280px): Expanded Direct Links */}
           <Link
             to="/carpenters"
-            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold items-center gap-1.5 ${
+            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold items-center gap-1.5 ${
               isCurrent('/carpenters')
                 ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                 : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
             }`}
           >
-            <Hammer className="w-4 h-4 text-stone-500 flex-shrink-0" />
+            <Hammer className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
             <span className="whitespace-nowrap">{lang === 'en' ? 'Carpenters' : 'ആശാരിമാർ'}</span>
           </Link>
 
           <Link
             to="/transport"
-            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold items-center gap-1.5 ${
+            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold items-center gap-1.5 ${
               isCurrent('/transport')
                 ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                 : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
             }`}
           >
-            <Truck className="w-4 h-4 text-stone-500 flex-shrink-0" />
+            <Truck className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
             <span className="whitespace-nowrap">{lang === 'en' ? 'Transport' : 'ലോറികൾ'}</span>
           </Link>
 
           <Link
             to="/mills"
-            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold items-center gap-1.5 ${
+            className={`hidden xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold items-center gap-1.5 ${
               isCurrent('/mills') || isCurrent('/timber-mills')
                 ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                 : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
             }`}
           >
-            <Factory className="w-4 h-4 text-stone-500 flex-shrink-0" />
+            <Factory className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
             <span className="whitespace-nowrap">{lang === 'en' ? 'Timber Mills' : 'തടി മില്ലുകൾ'}</span>
           </Link>
 
-          {/* ROLE-SPECIFIC DASHBOARD PILL BUTTONS (Complete, Unbroken Oval Border rounded-full, w-auto, flex-shrink-0) */}
+          {/* ROLE-SPECIFIC DASHBOARD PILL BUTTONS (Complete Unbroken Oval Border rounded-full, w-auto, flex-shrink-0) */}
           {isAuthenticated && user?.role === 'buyer' && (
             <Link
               to="/dashboard/buyer"
-              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold flex items-center gap-1.5 ${
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
                 isCurrent('/dashboard/buyer')
                   ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                   : 'border-stone-200 text-stone-700 hover:text-[#5B6147] hover:bg-stone-100'
               }`}
               title={lang === 'en' ? 'My Orders' : 'എന്റെ ഓർഡറുകൾ'}
             >
-              <ShoppingBag className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+              <ShoppingBag className="w-3.5 h-3.5 text-emerald-700 flex-shrink-0" />
               <span className="whitespace-nowrap">{lang === 'en' ? 'My Orders' : 'എന്റെ ഓർഡറുകൾ'}</span>
             </Link>
           )}
@@ -725,13 +725,13 @@ function AppHeader({
           {isAuthenticated && user?.role === 'seller' && (
             <Link
               to={user.sellerSubtype === 'mill_owner' ? '/dashboard/mill' : '/dashboard/seller'}
-              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold flex items-center gap-1.5 ${
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
                 isCurrent('/dashboard/seller') || isCurrent('/dashboard/mill')
                   ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                   : 'border-stone-200 text-stone-700 hover:text-[#5B6147] hover:bg-stone-100'
               }`}
             >
-              <LayoutDashboard className="w-4 h-4 text-[#3F452F] flex-shrink-0" />
+              <LayoutDashboard className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
               <span className="whitespace-nowrap">
                 {user.sellerSubtype === 'mill_owner'
                   ? (lang === 'en' ? 'Mill Hub' : 'മിൽ ഹബ്')
@@ -743,13 +743,13 @@ function AppHeader({
           {isAuthenticated && user?.role === 'carpenter' && (
             <Link
               to="/dashboard/carpenter"
-              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold flex items-center gap-1.5 ${
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
                 isCurrent('/dashboard/carpenter')
                   ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                   : 'border-stone-200 text-stone-700 hover:text-[#5B6147] hover:bg-stone-100'
               }`}
             >
-              <Hammer className="w-4 h-4 text-[#3F452F] flex-shrink-0" />
+              <Hammer className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
               <span className="whitespace-nowrap">{lang === 'en' ? 'Carpenter Hub' : 'ആശാരി ഹബ്'}</span>
             </Link>
           )}
@@ -757,13 +757,13 @@ function AppHeader({
           {isAuthenticated && user?.role === 'transport' && (
             <Link
               to="/dashboard/transport"
-              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold flex items-center gap-1.5 ${
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
                 isCurrent('/dashboard/transport')
                   ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                   : 'border-stone-200 text-stone-700 hover:text-[#5B6147] hover:bg-stone-100'
               }`}
             >
-              <Truck className="w-4 h-4 text-[#3F452F] flex-shrink-0" />
+              <Truck className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
               <span className="whitespace-nowrap">{lang === 'en' ? 'Transit Hub' : 'ലോറി ഹബ്'}</span>
             </Link>
           )}
@@ -771,28 +771,28 @@ function AppHeader({
           {isAuthenticated && user?.role === 'admin' && (
             <Link
               to="/admin"
-              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold flex items-center gap-1.5 ${
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
                 isCurrent('/admin')
                   ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                   : 'border-stone-200 text-stone-700 hover:text-[#5B6147] hover:bg-stone-100'
               }`}
             >
-              <Shield className="w-4 h-4 text-[#4A3626] flex-shrink-0" />
+              <Shield className="w-3.5 h-3.5 text-[#4A3626] flex-shrink-0" />
               <span className="whitespace-nowrap">{lang === 'en' ? 'Admin Console' : 'അഡ്മിൻ കൺസോൾ'}</span>
             </Link>
           )}
         </nav>
 
         {/* Right Action Cluster: Language Switcher + User Navigation Menu (Notification Bell completely removed) */}
-        <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 ml-auto">
+        <div className="flex items-center gap-2 sm:gap-2.5 xl:gap-3 flex-shrink-0 ml-auto">
           {/* Language Switcher */}
           <button
             type="button"
             onClick={toggleLanguage}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-bold rounded-full border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 transition flex-shrink-0 whitespace-nowrap w-auto shadow-2xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 xl:px-4 xl:py-2 text-xs xl:text-sm font-bold rounded-full border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 transition flex-shrink-0 whitespace-nowrap w-auto shadow-2xs"
             title="Toggle Language / ഭാഷ മാറ്റുക"
           >
-            <Globe className="w-4 h-4 text-[#3F452F] flex-shrink-0" />
+            <Globe className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-[#3F452F] flex-shrink-0" />
             <span className="whitespace-nowrap leading-none">{lang === 'en' ? 'മലയാളം' : 'English'}</span>
           </button>
 
@@ -802,20 +802,160 @@ function AppHeader({
               <UserNavMenu lang={lang} />
             </div>
           ) : (
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
               <Link
                 to="/login"
-                className="px-4 py-2 text-xs sm:text-sm font-bold rounded-full text-stone-700 hover:text-stone-900 hover:bg-stone-100 transition whitespace-nowrap w-auto"
+                className="px-3 py-1.5 xl:px-4 xl:py-2 text-xs xl:text-sm font-bold rounded-full text-stone-700 hover:text-stone-900 hover:bg-stone-100 transition whitespace-nowrap w-auto"
               >
                 {lang === 'en' ? 'Sign In' : 'ലോഗിൻ'}
               </Link>
               <Link
                 to="/register"
-                className="px-4 py-2 text-xs sm:text-sm font-bold rounded-full bg-[#5B6147] hover:bg-[#3F452F] text-white shadow-xs transition whitespace-nowrap w-auto"
+                className="px-3 py-1.5 xl:px-4 xl:py-2 text-xs xl:text-sm font-bold rounded-full bg-[#5B6147] hover:bg-[#3F452F] text-white shadow-xs transition whitespace-nowrap w-auto"
               >
                 {lang === 'en' ? 'Register' : 'രജിസ്റ്റർ'}
               </Link>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Responsive Sub-Navigation Pill Bar on Mobile & Tablet (< lg viewports) */}
+      <div className="lg:hidden w-full border-t border-stone-200/80 bg-stone-50/95 backdrop-blur-md px-4 sm:px-6 py-2 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-2 w-max">
+          <Link
+            to="/marketplace"
+            className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 ${
+              isCurrent('/marketplace')
+                ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+                : 'border-stone-200 bg-white text-stone-600 hover:text-[#5B6147]'
+            }`}
+          >
+            <span>{lang === 'en' ? 'Marketplace' : 'മാർക്കറ്റ്'}</span>
+          </Link>
+
+          <Link
+            to="/calculator"
+            className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 ${
+              isCurrent('/calculator')
+                ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+                : 'border-stone-200 bg-white text-stone-600 hover:text-[#5B6147]'
+            }`}
+          >
+            <Calculator className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
+            <span>{lang === 'en' ? 'CFT Calculator' : 'കാൽക്കുലേറ്റർ'}</span>
+          </Link>
+
+          <Link
+            to="/carpenters"
+            className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 ${
+              isCurrent('/carpenters')
+                ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+                : 'border-stone-200 bg-white text-stone-600 hover:text-[#5B6147]'
+            }`}
+          >
+            <Hammer className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
+            <span>{lang === 'en' ? 'Carpenters' : 'ആശാരിമാർ'}</span>
+          </Link>
+
+          <Link
+            to="/transport"
+            className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 ${
+              isCurrent('/transport')
+                ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+                : 'border-stone-200 bg-white text-stone-600 hover:text-[#5B6147]'
+            }`}
+          >
+            <Truck className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
+            <span>{lang === 'en' ? 'Transport' : 'ലോറികൾ'}</span>
+          </Link>
+
+          <Link
+            to="/mills"
+            className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 ${
+              isCurrent('/mills') || isCurrent('/timber-mills')
+                ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+                : 'border-stone-200 bg-white text-stone-600 hover:text-[#5B6147]'
+            }`}
+          >
+            <Factory className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
+            <span>{lang === 'en' ? 'Timber Mills' : 'മില്ലുകൾ'}</span>
+          </Link>
+
+          {/* Role-Specific Dashboard Pill in Mobile/Tablet Sub-nav Bar */}
+          {isAuthenticated && user?.role === 'buyer' && (
+            <Link
+              to="/dashboard/buyer"
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 ${
+                isCurrent('/dashboard/buyer')
+                  ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+                  : 'border-stone-200 bg-white text-stone-700 hover:text-[#5B6147]'
+              }`}
+              title={lang === 'en' ? 'My Orders' : 'എന്റെ ഓർഡറുകൾ'}
+            >
+              <ShoppingBag className="w-3.5 h-3.5 text-emerald-700 flex-shrink-0" />
+              <span>{lang === 'en' ? 'My Orders' : 'എന്റെ ഓർഡറുകൾ'}</span>
+            </Link>
+          )}
+
+          {isAuthenticated && user?.role === 'seller' && (
+            <Link
+              to={user.sellerSubtype === 'mill_owner' ? '/dashboard/mill' : '/dashboard/seller'}
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 ${
+                isCurrent('/dashboard/seller') || isCurrent('/dashboard/mill')
+                  ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+                  : 'border-stone-200 bg-white text-stone-700 hover:text-[#5B6147]'
+              }`}
+            >
+              <LayoutDashboard className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
+              <span>
+                {user.sellerSubtype === 'mill_owner'
+                  ? (lang === 'en' ? 'Mill Hub' : 'മിൽ ഹബ്')
+                  : (lang === 'en' ? 'Seller Hub' : 'കച്ചവട ഹബ്')}
+              </span>
+            </Link>
+          )}
+
+          {isAuthenticated && user?.role === 'carpenter' && (
+            <Link
+              to="/dashboard/carpenter"
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 ${
+                isCurrent('/dashboard/carpenter')
+                  ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+                  : 'border-stone-200 bg-white text-stone-700 hover:text-[#5B6147]'
+              }`}
+            >
+              <Hammer className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
+              <span>{lang === 'en' ? 'Carpenter Hub' : 'ആശാരി ഹബ്'}</span>
+            </Link>
+          )}
+
+          {isAuthenticated && user?.role === 'transport' && (
+            <Link
+              to="/dashboard/transport"
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 ${
+                isCurrent('/dashboard/transport')
+                  ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+                  : 'border-stone-200 bg-white text-stone-700 hover:text-[#5B6147]'
+              }`}
+            >
+              <Truck className="w-3.5 h-3.5 text-[#3F452F] flex-shrink-0" />
+              <span>{lang === 'en' ? 'Transit Hub' : 'ലോറി ഹബ്'}</span>
+            </Link>
+          )}
+
+          {isAuthenticated && user?.role === 'admin' && (
+            <Link
+              to="/admin"
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 ${
+                isCurrent('/admin')
+                  ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
+                : 'border-stone-200 bg-white text-stone-700 hover:text-[#5B6147]'
+              }`}
+            >
+              <Shield className="w-3.5 h-3.5 text-[#4A3626] flex-shrink-0" />
+              <span>{lang === 'en' ? 'Admin Console' : 'അഡ്മിൻ കൺസോൾ'}</span>
+            </Link>
           )}
         </div>
       </div>
@@ -836,7 +976,7 @@ export function App() {
         {/* Sleek Route Transition Progress Bar */}
         <PageTransitionLoader />
         <div
-          className="min-h-screen flex flex-col font-sans pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-0 bg-stone-50/50 text-stone-900"
+          className="w-full max-w-full overflow-x-hidden min-h-screen flex flex-col font-sans pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-0 bg-stone-50/50 text-stone-900"
           lang={lang}
         >
           {/* Offline Banner for Network Recovery */}
@@ -849,7 +989,7 @@ export function App() {
           />
 
           {/* Main Content Area */}
-          <main className="flex-grow">
+          <main className="w-full max-w-full overflow-x-hidden flex-grow">
             <React.Suspense fallback={<PageTransitionLoader />}>
               <Routes>
                 {/* Public Routes */}
@@ -938,8 +1078,8 @@ export function App() {
           </main>
 
           {/* Footer */}
-          <footer className="bg-stone-900 text-stone-400 py-12 border-t border-stone-800">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+          <footer className="w-full max-w-full overflow-x-hidden bg-stone-900 text-stone-400 py-12 border-t border-stone-800">
+            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
               <div className="space-y-3">
                 <BrandLogo size="md" variant="dark" lang={lang} />
                 <p className="text-xs text-stone-400 leading-relaxed">
