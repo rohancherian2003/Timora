@@ -60,6 +60,10 @@ export function createApp(): express.Application {
 
   app.options('*', cors());
 
+  // Body parsing middleware
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
   // General rate limiter
   app.use(apiRateLimiter);
 
