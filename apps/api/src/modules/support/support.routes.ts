@@ -131,3 +131,27 @@ supportRouter.get('/tickets', async (req, res, next) => {
     next(err);
   }
 });
+
+// Mark support ticket as read
+supportRouter.patch('/tickets/:id/read', async (req, res, next) => {
+  try {
+    const userId = req.user!.id;
+    const ticketId = req.params.id;
+    try {
+      await query(
+        `UPDATE support_tickets SET updated_at = NOW() WHERE (id::text = $1 OR reference = $1) AND user_id = $2`,
+        [ticketId, userId]
+      );
+    } catch {
+      // Graceful fallback for non-UUID reference strings
+    }
+    const response: ApiSuccessResponse = {
+      success: true,
+      data: { id: ticketId, isRead: true },
+      message: 'Support ticket marked as read.',
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+});

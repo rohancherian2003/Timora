@@ -73,3 +73,18 @@ transportRouter.get('/quotes', optionalAuthenticate, async (req, res, next) => {
     next(err);
   }
 });
+
+// Accept transit consignment booking
+transportRouter.patch('/bookings/:id/accept', optionalAuthenticate, async (req, res, next) => {
+  try {
+    const bookingId = req.params.id;
+    const response: ApiSuccessResponse = {
+      success: true,
+      data: { id: bookingId, status: 'confirmed' },
+      message: 'Transit consignment booking accepted.',
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+});

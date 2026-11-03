@@ -16,6 +16,7 @@ export interface SupportTicket {
   resolutionReply?: string;
   resolutionReplyMl?: string;
   resolvedAt?: string;
+  isRead?: boolean;
 }
 
 const STORAGE_KEY = 'timora_support_tickets';
@@ -36,6 +37,7 @@ const INITIAL_TICKETS: SupportTicket[] = [
     resolutionReply: 'Admin contacted the depot management directly. The merchant verified the 8 CFT variance and agreed to issue a refund for the price difference. The refund will reflect within 24 hours.',
     resolutionReplyMl: 'അഡ്മിൻ ഡിപ്പോയുമായി നേരിട്ട് സംസാരിച്ചു. വ്യത്യാസം വന്ന 8 CFT തുക തിരികെ അക്കൗണ്ടിലേക്ക് നൽകാൻ വ്യാപാരി സമ്മതിച്ചിട്ടുണ്ട്. റീഫണ്ട് 24 മണിക്കൂറിനുള്ളിൽ ലഭിക്കും.',
     resolvedAt: '2026-10-25 15:45',
+    isRead: false,
   },
   {
     id: 'TKT-2026-8901',
@@ -140,6 +142,7 @@ export function resolveTicket(ticketId: string, replyMessage: string, replyMessa
         resolutionReply: replyMessage,
         resolutionReplyMl: replyMessageMl || replyMessage,
         resolvedAt: dateStr,
+        isRead: false,
       };
       return resolvedTicket;
     }
@@ -148,6 +151,26 @@ export function resolveTicket(ticketId: string, replyMessage: string, replyMessa
 
   saveStoredTickets(updated);
   return resolvedTicket;
+}
+
+export function markTicketAsRead(ticketId: string): void {
+  const tickets = getStoredTickets();
+  let changed = false;
+  const updated = tickets.map((t) => {
+    if (t.id === ticketId && !t.isRead) {
+      changed = true;
+      return { ...t, isRead: true };
+    }
+    return t;
+  });
+  if (changed) {
+    saveStoredTickets(updated);
+  }
+}
+
+export function getUnreadTicketCount(phone?: string, role?: string): number {
+  const userTickets = getTicketsForUser(phone, role);
+  return userTickets.filter((t) => !t.isRead && (t.status === 'resolved' || Boolean(t.resolutionReply))).length;
 }
 
 export function getTicketsForUser(phone?: string, role?: string): SupportTicket[] {

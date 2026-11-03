@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
-import { getTicketsForUser, SupportTicket } from '../../utils/ticketService';
+import { getTicketsForUser, markTicketAsRead, SupportTicket } from '../../utils/ticketService';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
 import { SubmitReviewModal } from '../../components/SubmitReviewModal';
@@ -69,7 +69,7 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [dismissedResolvedId, setDismissedResolvedId] = useState<string | null>(null);
-  const [liveOrders, setLiveOrders] = useState<any[]>([]);
+  const [liveOrders, setLiveOrders] = useState<any[]>(DEMO_BUYER_ORDERS);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
   const [selectedReviewOrder, setSelectedReviewOrder] = useState<{
@@ -114,8 +114,8 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setConfirmingOrderId(orderId);
     try {
       await api.patch(`/orders/${orderId}/confirm-delivery`);
-    } catch {
-      // Local fallback
+    } catch (err) {
+      console.warn('Fallback: confirmed order delivery locally', err);
     } finally {
       setConfirmingOrderId(null);
     }
@@ -140,6 +140,30 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const latestResolvedTicket = tickets.find(
     (t) => t.status === 'resolved' && t.resolutionReply && t.id !== dismissedResolvedId
   );
+
+  // Unread resolved tickets counter for notification badge
+  const unreadTicketsCount = tickets.filter(
+    (t) => !t.isRead && (t.status === 'resolved' || Boolean(t.resolutionReply))
+  ).length;
+
+  // Auto-clear unread notification badge once user views the resolved reply
+  useEffect(() => {
+    if (activeTab === 'tickets' || latestResolvedTicket) {
+      const unreadTickets = tickets.filter(
+        (t) => !t.isRead && (t.status === 'resolved' || Boolean(t.resolutionReply))
+      );
+      if (unreadTickets.length > 0) {
+        unreadTickets.forEach(async (t) => {
+          markTicketAsRead(t.id);
+          try {
+            await api.patch(`/support/tickets/${t.id}/read`);
+          } catch {
+            // Silently handled in local fallback
+          }
+        });
+      }
+    }
+  }, [activeTab, latestResolvedTicket, tickets]);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
@@ -280,9 +304,9 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         >
           <LifeBuoy className="w-4 h-4" />
           <span>{lang === 'en' ? 'Support Tickets' : 'എന്റെ പരാതികൾ'}</span>
-          {tickets.length > 0 && (
-            <span className="px-2 py-0.5 rounded-full bg-stone-200 text-[#4A3626] text-[10px] font-bold border border-stone-300">
-              {tickets.length}
+          {unreadTicketsCount > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-bold border border-emerald-300">
+              {unreadTicketsCount}
             </span>
           )}
         </button>
@@ -308,7 +332,7 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               ))}
             </div>
           ) : (
-            (liveOrders.length > 0 ? liveOrders : DEMO_BUYER_ORDERS).map((order) => (
+            liveOrders.map((order) => (
               <div
                 key={order.id}
                 className="bg-white rounded-3xl border border-stone-300/80 p-6 shadow-xs hover:border-stone-400 hover:shadow-md transition flex flex-col sm:flex-row sm:items-center justify-between gap-4"

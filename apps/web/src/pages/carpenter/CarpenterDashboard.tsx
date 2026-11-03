@@ -16,12 +16,15 @@ import {
   MessageSquare,
   Wrench,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { VerificationStatusBanner } from '../../components/VerificationStatusBanner';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
 import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
+import { api } from '../../lib/api';
+import { getTicketsForUser, markTicketAsRead, SupportTicket } from '../../utils/ticketService';
 
 interface CarpentryEnquiry {
   id: string;
@@ -30,7 +33,7 @@ interface CarpentryEnquiry {
   workType: string;
   timberSpecies: string;
   location: string;
-  status: 'new' | 'quoted' | 'in_progress';
+  status: 'new' | 'quoted' | 'in_progress' | 'completed';
   date: string;
 }
 
@@ -62,6 +65,48 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [enquiries, setEnquiries] = useState<CarpentryEnquiry[]>(DEMO_CARPENTRY_ENQUIRIES);
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [updatingEnquiryId, setUpdatingEnquiryId] = useState<string | null>(null);
+
+  const [tickets, setTickets] = useState<SupportTicket[]>(() =>
+    getTicketsForUser(user?.phone, 'carpenter')
+  );
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setTickets(getTicketsForUser(user?.phone, 'carpenter'));
+    };
+    window.addEventListener('timora_tickets_updated', handleUpdate);
+    return () => window.removeEventListener('timora_tickets_updated', handleUpdate);
+  }, [user]);
+
+  const latestResolvedTicket = tickets.find(
+    (t) => t.status === 'resolved' && t.resolutionReply
+  );
+
+  const unreadTicketsCount = tickets.filter(
+    (t) => !t.isRead && (t.status === 'resolved' || Boolean(t.resolutionReply))
+  ).length;
+
+  useEffect(() => {
+    if (latestResolvedTicket && !latestResolvedTicket.isRead) {
+      markTicketAsRead(latestResolvedTicket.id);
+      api.patch(`/support/tickets/${latestResolvedTicket.id}/read`).catch(() => {});
+    }
+  }, [latestResolvedTicket]);
+
+  const handleUpdateEnquiryStatus = async (enquiryId: string, status: 'in_progress' | 'completed') => {
+    setUpdatingEnquiryId(enquiryId);
+    try {
+      await api.patch(`/enquiries/${enquiryId}/status`, { status });
+    } catch (err) {
+      console.warn('Fallback: updated carpentry enquiry status locally', err);
+    } finally {
+      setUpdatingEnquiryId(null);
+    }
+    setEnquiries((prev) =>
+      prev.map((e) => (e.id === enquiryId ? { ...e, status } : e))
+    );
+  };
 
   useEffect(() => {
     if (refreshUser) refreshUser();
@@ -145,6 +190,11 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           >
             <LifeBuoy className="w-4 h-4 text-[#5B6147]" />
             <span>{lang === 'en' ? 'Support Desk' : 'സഹായം'}</span>
+            {unreadTicketsCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-bold border border-emerald-300">
+                {unreadTicketsCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -274,20 +324,67 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               <div className="flex items-center gap-3">
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    enq.status === 'new'
-                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                      : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    enq.status === 'completed'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : enq.status === 'in_progress'
+                      ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                      : 'bg-amber-100 text-amber-900 border border-amber-300'
                   }`}
                 >
-                  {enq.status === 'new'
-                    ? (lang === 'en' ? 'New Request' : 'പുതിയത്')
-                    : (lang === 'en' ? 'In Progress' : 'പുരോഗമിക്കുന്നു')}
+                  {enq.status === 'completed'
+                    ? (lang === 'en' ? 'Completed & Done' : 'പൂർത്തിയായി')
+                    : enq.status === 'in_progress'
+                    ? (lang === 'en' ? 'In Progress' : 'പുരോഗമിക്കുന്നു')
+                    : (lang === 'en' ? 'New Request' : 'പുതിയത്')}
                 </span>
+
+                {enq.status === 'in_progress' && (
+                  <button
+                    type="button"
+                    disabled={updatingEnquiryId === enq.id}
+                    onClick={() => handleUpdateEnquiryStatus(enq.id, 'completed')}
+                    className="px-3 py-1.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs shadow-xs transition flex items-center gap-1 disabled:opacity-60"
+                  >
+                    {updatingEnquiryId === enq.id ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>{lang === 'en' ? 'Updating...' : 'പൂർത്തിയാക്കുന്നു...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{lang === 'en' ? 'Mark Done' : 'പൂർത്തിയായി'}</span>
+                      </>
+                    )}
+                  </button>
+                )}
+
+                {enq.status === 'new' && (
+                  <button
+                    type="button"
+                    disabled={updatingEnquiryId === enq.id}
+                    onClick={() => handleUpdateEnquiryStatus(enq.id, 'in_progress')}
+                    className="px-3 py-1.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs shadow-xs transition flex items-center gap-1 disabled:opacity-60"
+                  >
+                    {updatingEnquiryId === enq.id ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>{lang === 'en' ? 'Accepting...' : 'സ്വീകരിക്കുന്നു...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{lang === 'en' ? 'Accept Work' : 'പണി സ്വീകരിക്കുക'}</span>
+                      </>
+                    )}
+                  </button>
+                )}
+
                 <a
                   href={`tel:${enq.clientPhone}`}
-                  className="px-3 py-1.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs transition flex items-center gap-1"
+                  className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-[#4A3626] font-bold text-xs transition flex items-center gap-1 border border-stone-300"
                 >
-                  <Phone className="w-3.5 h-3.5" />
+                  <Phone className="w-3.5 h-3.5 text-[#5B6147]" />
                   <span>{lang === 'en' ? 'Call' : 'വിളിക്കുക'}</span>
                 </a>
               </div>

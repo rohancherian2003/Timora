@@ -17,6 +17,7 @@ import {
   Truck,
   TrendingUp,
   Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
@@ -25,6 +26,7 @@ import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
 import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
 import { api } from '../../lib/api';
+import { getTicketsForUser, markTicketAsRead, SupportTicket } from '../../utils/ticketService';
 
 interface SawnBatch {
   id: string;
@@ -76,6 +78,52 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
   const [showAddBatch, setShowAddBatch] = useState(false);
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [updatingBatchId, setUpdatingBatchId] = useState<string | null>(null);
+
+  const [tickets, setTickets] = useState<SupportTicket[]>(() =>
+    getTicketsForUser(user?.phone, 'mill_owner')
+  );
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setTickets(getTicketsForUser(user?.phone, 'mill_owner'));
+    };
+    window.addEventListener('timora_tickets_updated', handleUpdate);
+    return () => window.removeEventListener('timora_tickets_updated', handleUpdate);
+  }, [user]);
+
+  const latestResolvedTicket = tickets.find(
+    (t) => t.status === 'resolved' && t.resolutionReply
+  );
+
+  const unreadTicketsCount = tickets.filter(
+    (t) => !t.isRead && (t.status === 'resolved' || Boolean(t.resolutionReply))
+  ).length;
+
+  useEffect(() => {
+    if (latestResolvedTicket && !latestResolvedTicket.isRead) {
+      markTicketAsRead(latestResolvedTicket.id);
+      api.patch(`/support/tickets/${latestResolvedTicket.id}/read`).catch(() => {});
+    }
+  }, [latestResolvedTicket]);
+
+  const handleToggleBatchStatus = async (batchId: string) => {
+    setUpdatingBatchId(batchId);
+    const target = batches.find((b) => b.id === batchId);
+    const nextStatus = target?.status === 'available' ? 'in_sawing' : 'available';
+    try {
+      await api.patch(`/listings/${batchId}/stock`, {
+        status: nextStatus === 'available' ? 'approved' : 'pending',
+      });
+    } catch (err) {
+      console.warn('Fallback: updated mill batch stock status locally', err);
+    } finally {
+      setUpdatingBatchId(null);
+    }
+    setBatches((prev) =>
+      prev.map((b) => (b.id === batchId ? { ...b, status: nextStatus as any } : b))
+    );
+  };
 
   useEffect(() => {
     if (refreshUser) refreshUser();
@@ -190,6 +238,11 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
           >
             <LifeBuoy className="w-4 h-4 text-[#5B6147]" />
             <span>{lang === 'en' ? 'Support Desk' : 'സഹായം'}</span>
+            {unreadTicketsCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-bold border border-emerald-300">
+                {unreadTicketsCount}
+              </span>
+            )}
           </button>
 
           <button
@@ -436,7 +489,7 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
                 </div>
               </div>
 
-              <div className="flex items-center justify-between sm:justify-end gap-4">
+              <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 flex-wrap">
                 <div className="text-left sm:text-right">
                   <div className="font-mono font-bold text-sm text-[#4A3626]">
                     {batch.quantityCft} CFT @ {formatINR(batch.ratePerCft)}/CFT
@@ -457,6 +510,25 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
                     ? (lang === 'en' ? 'In Stock' : 'ലഭ്യമാണ്')
                     : (lang === 'en' ? 'Sawing in Progress' : 'അറുക്കുന്നു')}
                 </span>
+
+                <button
+                  type="button"
+                  disabled={updatingBatchId === batch.id}
+                  onClick={() => handleToggleBatchStatus(batch.id)}
+                  className="px-2.5 py-1 rounded-xl border border-[#8E7F6B]/40 hover:bg-[#E7E1D6]/60 text-[#4A3626] text-xs font-bold transition flex items-center gap-1 disabled:opacity-60"
+                  title={lang === 'en' ? 'Update batch stock status' : 'സ്റ്റോക്ക് മാറ്റുക'}
+                >
+                  {updatingBatchId === batch.id ? (
+                    <Loader2 className="w-3 h-3 animate-spin text-[#5B6147]" />
+                  ) : (
+                    <RefreshCw className="w-3 h-3 text-[#5B6147]" />
+                  )}
+                  <span>
+                    {batch.status === 'available'
+                      ? (lang === 'en' ? 'Mark Sawing' : 'അറുക്കാൻ മാറ്റുക')
+                      : (lang === 'en' ? 'Mark In Stock' : 'സ്റ്റോക്കാക്കുക')}
+                  </span>
+                </button>
               </div>
             </div>
           ))}

@@ -23,6 +23,8 @@ import { VerificationStatusBanner } from '../../components/VerificationStatusBan
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
 import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
+import { api } from '../../lib/api';
+import { getTicketsForUser, markTicketAsRead, SupportTicket } from '../../utils/ticketService';
 
 interface VehicleItem {
   id: string;
@@ -109,6 +111,48 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
   const [model, setModel] = useState('');
   const [capacity, setCapacity] = useState(12);
   const [isSubmittingVehicle, setIsSubmittingVehicle] = useState(false);
+  const [acceptingBookingId, setAcceptingBookingId] = useState<string | null>(null);
+  const [tickets, setTickets] = useState<SupportTicket[]>(() =>
+    getTicketsForUser(user?.phone, 'transport')
+  );
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setTickets(getTicketsForUser(user?.phone, 'transport'));
+    };
+    window.addEventListener('timora_tickets_updated', handleUpdate);
+    return () => window.removeEventListener('timora_tickets_updated', handleUpdate);
+  }, [user]);
+
+  // Find latest resolved ticket to show as notification popup/banner
+  const latestResolvedTicket = tickets.find(
+    (t) => t.status === 'resolved' && t.resolutionReply
+  );
+
+  const unreadTicketsCount = tickets.filter(
+    (t) => !t.isRead && (t.status === 'resolved' || Boolean(t.resolutionReply))
+  ).length;
+
+  useEffect(() => {
+    if (latestResolvedTicket && !latestResolvedTicket.isRead) {
+      markTicketAsRead(latestResolvedTicket.id);
+      api.patch(`/support/tickets/${latestResolvedTicket.id}/read`).catch(() => {});
+    }
+  }, [latestResolvedTicket]);
+
+  const handleAcceptTransit = async (bookingId: string) => {
+    setAcceptingBookingId(bookingId);
+    try {
+      await api.patch(`/transport/bookings/${bookingId}/accept`);
+    } catch (err) {
+      console.warn('Fallback: accepted consignment booking locally', err);
+    } finally {
+      setAcceptingBookingId(null);
+    }
+    setBookings((prev) =>
+      prev.map((b) => (b.id === bookingId ? { ...b, status: 'confirmed' } : b))
+    );
+  };
 
   const handleAddVehicle = (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,6 +240,11 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
           >
             <LifeBuoy className="w-4 h-4 text-[#5B6147]" />
             <span>{lang === 'en' ? 'Support Desk' : 'സഹായം'}</span>
+            {unreadTicketsCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-bold border border-emerald-300">
+                {unreadTicketsCount}
+              </span>
+            )}
           </button>
 
           <button
@@ -469,11 +518,31 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
                     ? (lang === 'en' ? 'Confirmed Load' : 'ഉറപ്പിച്ചു')
                     : (lang === 'en' ? 'Quote Requested' : 'ആവശ്യപ്പെട്ടു')}
                 </span>
+                {b.status !== 'confirmed' && (
+                  <button
+                    type="button"
+                    disabled={acceptingBookingId === b.id}
+                    onClick={() => handleAcceptTransit(b.id)}
+                    className="px-3 py-1.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs shadow-xs transition flex items-center gap-1 disabled:opacity-60"
+                  >
+                    {acceptingBookingId === b.id ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>{lang === 'en' ? 'Accepting...' : 'സ്വീകരിക്കുന്നു...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{lang === 'en' ? 'Accept Transit' : 'ഓട്ടം സ്വീകരിക്കുക'}</span>
+                      </>
+                    )}
+                  </button>
+                )}
                 <a
                   href={`tel:${b.clientPhone}`}
-                  className="px-3 py-1.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs transition flex items-center gap-1"
+                  className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-[#4A3626] font-bold text-xs transition flex items-center gap-1 border border-stone-300"
                 >
-                  <Phone className="w-3.5 h-3.5" />
+                  <Phone className="w-3.5 h-3.5 text-[#5B6147]" />
                   <span>{lang === 'en' ? 'Call' : 'വിളിക്കുക'}</span>
                 </a>
               </div>

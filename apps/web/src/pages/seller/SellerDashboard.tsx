@@ -24,7 +24,7 @@ import {
 import { formatINR } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { VerificationStatusBanner } from '../../components/VerificationStatusBanner';
-import { getTicketsForUser, SupportTicket } from '../../utils/ticketService';
+import { getTicketsForUser, markTicketAsRead, SupportTicket } from '../../utils/ticketService';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
 import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
@@ -195,6 +195,17 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
   const latestResolvedTicket = tickets.find((t) => t.status === 'resolved' && t.resolutionReply);
 
+  const unreadTicketsCount = tickets.filter(
+    (t) => !t.isRead && (t.status === 'resolved' || Boolean(t.resolutionReply))
+  ).length;
+
+  useEffect(() => {
+    if (latestResolvedTicket && !latestResolvedTicket.isRead) {
+      markTicketAsRead(latestResolvedTicket.id);
+      api.patch(`/support/tickets/${latestResolvedTicket.id}/read`).catch(() => {});
+    }
+  }, [latestResolvedTicket]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmittingListing(true);
@@ -314,6 +325,11 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           >
             <LifeBuoy className="w-4 h-4 text-[#5B6147]" />
             <span>{lang === 'en' ? 'Support Desk' : 'സഹായം'}</span>
+            {unreadTicketsCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-bold border border-emerald-300">
+                {unreadTicketsCount}
+              </span>
+            )}
           </button>
 
           <button
