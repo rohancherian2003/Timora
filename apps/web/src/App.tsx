@@ -22,6 +22,7 @@ import {
 import { AuthProvider, useAuth, UserRole } from './context/AuthContext';
 import { BrandLogo } from './components/BrandLogo';
 import { OfflineBanner } from './components/OfflineBanner';
+import { useStrictUINavigation, isExplicitBackAllowed } from './hooks/useStrictUINavigation';
 
 const MarketplacePage = React.lazy(() =>
   import('./pages/public/MarketplacePage').then((m) => ({ default: m.MarketplacePage }))
@@ -72,6 +73,12 @@ import { SignOutRequiredModal } from './components/SignOutRequiredModal';
 import { PageTransitionLoader } from './components/PageTransitionLoader';
 import { EditProfileModal } from './components/EditProfileModal';
 
+// Universal Strict UI Navigation Guard component inside router
+function NavigationGuard() {
+  useStrictUINavigation();
+  return null;
+}
+
 // Protected Route Guard with Browser Back-Button Confirmation Alert
 function ProtectedRoute({
   children,
@@ -98,6 +105,9 @@ function ProtectedRoute({
     }
 
     const handlePopState = () => {
+      // If user triggered an authorized UI back button, allow transit without modal
+      if (isExplicitBackAllowed()) return;
+
       // Re-push current location immediately to prevent moving off dashboard
       window.history.pushState({ protectedDashboard: true }, '', window.location.href);
 
@@ -109,8 +119,10 @@ function ProtectedRoute({
     };
 
     window.addEventListener('popstate', handlePopState);
+    window.addEventListener('timora:unauthorized_back', handlePopState);
     return () => {
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('timora:unauthorized_back', handlePopState);
     };
   }, [isAuthenticated, user, location.pathname]);
 
@@ -779,13 +791,13 @@ function AppHeader({
             <span className="whitespace-nowrap leading-none">{lang === 'en' ? 'മലയാളം' : 'English'}</span>
           </button>
 
-          {/* Auth State Control */}
+          {/* Auth State Control: On mobile (< md), Sign In / Register are docked in bottom nav */}
           {isAuthenticated ? (
             <div className="flex items-center flex-shrink-0">
               <UserNavMenu lang={lang} />
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <div className="hidden md:flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
               <Link
                 to="/login"
                 className="px-3 py-1.5 xl:px-4 xl:py-2 text-xs xl:text-sm font-bold rounded-full text-stone-700 hover:text-stone-900 hover:bg-stone-100 transition whitespace-nowrap w-auto"
@@ -803,8 +815,8 @@ function AppHeader({
         </div>
       </div>
 
-      {/* Responsive Sub-Navigation Pill Bar on Mobile & Tablet (< lg viewports) */}
-      <div className="lg:hidden w-full border-t border-stone-200/80 bg-stone-50/95 backdrop-blur-md px-4 sm:px-6 py-2 overflow-x-auto no-scrollbar">
+      {/* Responsive Sub-Navigation Pill Bar on Tablet (hidden on mobile < md to eliminate redundancy with bottom navigation) */}
+      <div className="hidden md:block lg:hidden w-full border-t border-stone-200/80 bg-stone-50/95 backdrop-blur-md px-4 sm:px-6 py-2 overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-2 w-max">
           <Link
             to="/marketplace"
@@ -956,6 +968,9 @@ export function App() {
   return (
     <AuthProvider>
       <Router>
+        {/* Universal Strict UI-Only Navigation Guard */}
+        <NavigationGuard />
+
         {/* Sleek Route Transition Progress Bar */}
         <PageTransitionLoader />
         <div

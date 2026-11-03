@@ -263,8 +263,8 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             )}
           </div>
 
-          {/* 5 ESSENTIAL MARKETPLACE SHORTCUT TILES (Compact mobile navigation, desktop duplicates header) */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:hidden gap-2.5 max-w-4xl mx-auto pt-1">
+          {/* 5 ESSENTIAL MARKETPLACE SHORTCUT TILES (Compact 2-column mobile touch grid, desktop uses header navigation) */}
+          <div className="grid grid-cols-2 md:hidden gap-2.5 max-w-4xl mx-auto pt-1">
             {/* 1. Browse Timber */}
             <button
               type="button"
@@ -341,7 +341,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             {/* 5. CFT Calculator */}
             <Link
               to="/calculator"
-              className="p-3 rounded-2xl bg-white hover:bg-[#E7E1D6]/60 border border-[#8E7F6B]/30 text-left transition flex items-center gap-2.5 shadow-2xs group col-span-2 sm:col-span-1"
+              className="p-3 rounded-2xl bg-white hover:bg-[#E7E1D6]/60 border border-[#8E7F6B]/30 text-left transition flex items-center gap-2.5 shadow-2xs group col-span-2"
             >
               <div className="p-2 rounded-xl bg-[#E7E1D6] group-hover:bg-[#5B6147] group-hover:text-white transition text-[#5B6147] flex-shrink-0">
                 <Calculator className="w-4 h-4" />

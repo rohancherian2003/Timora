@@ -33,9 +33,15 @@
   animation-play-state: paused;
 }
 
-/* Smooth scroll */
+/* Smooth scroll and mobile swipe-to-go-back gesture prevention */
 html {
   scroll-behavior: smooth;
+}
+
+html,
+body,
+#root {
+  overscroll-behavior-x: none;
 }
 
 /* iOS & Mobile Safe Area Inset Utilities */

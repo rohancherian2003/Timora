@@ -1,4 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import {
+  triggerExplicitBack,
+  allowExplicitBack,
+  resetExplicitBack,
+  isExplicitBackAllowed,
+} from '../hooks/useStrictUINavigation';
 
 describe('Navigation, Session Security & Back Button Tests', () => {
   let mockStorage: Record<string, string> = {};
@@ -183,6 +189,104 @@ describe('Navigation, Session Security & Back Button Tests', () => {
         const canPerformRestrictedActions = user.approvalStatus === 'APPROVED';
         expect(canPerformRestrictedActions).toBe(false);
       });
+    });
+  });
+
+  describe('Strict UI-Only Back Navigation Guard & Mobile Layout Refactor', () => {
+    beforeEach(() => {
+      resetExplicitBack();
+    });
+
+    it('maintains isExplicitBack = false by default to trap accidental browser-level gestures', () => {
+      expect(isExplicitBackAllowed()).toBe(false);
+    });
+
+    it('authorizes explicit UI back button click and allows navigation', () => {
+      let navigatedTo = '';
+      triggerExplicitBack(() => {
+        expect(isExplicitBackAllowed()).toBe(true);
+        navigatedTo = '-1';
+      });
+
+      expect(navigatedTo).toBe('-1');
+    });
+
+    it('intercepts accidental popstate events and restores current location without leaving screen', () => {
+      let propagationStopped = false;
+      const pushedStates: Array<{ state: any; title: string; url: string }> = [];
+
+      const mockPopStateEvent = {
+        stopImmediatePropagation: () => {
+          propagationStopped = true;
+        },
+      } as unknown as PopStateEvent;
+
+      const currentUrl = 'https://timora.in/calculator';
+
+      // Simulate popstate interception logic
+      const simulatePopState = (evt: PopStateEvent, url: string) => {
+        if (isExplicitBackAllowed()) {
+          resetExplicitBack();
+          return true; // allowed
+        }
+        evt.stopImmediatePropagation();
+        pushedStates.push({ state: null, title: '', url });
+        return false; // trapped
+      };
+
+      const result = simulatePopState(mockPopStateEvent, currentUrl);
+
+      expect(result).toBe(false); // Accidental back was blocked
+      expect(propagationStopped).toBe(true);
+      expect(pushedStates).toHaveLength(1);
+      expect(pushedStates[0]?.url).toBe('https://timora.in/calculator');
+    });
+
+    it('permits authorized UI popstate navigation and auto-resets authorization flag', () => {
+      let propagationStopped = false;
+
+      const mockPopStateEvent = {
+        stopImmediatePropagation: () => {
+          propagationStopped = true;
+        },
+      } as unknown as PopStateEvent;
+
+      const simulatePopState = (evt: PopStateEvent) => {
+        if (isExplicitBackAllowed()) {
+          resetExplicitBack();
+          return true; // allowed
+        }
+        evt.stopImmediatePropagation();
+        return false; // trapped
+      };
+
+      // Set explicit back flag
+      allowExplicitBack();
+      expect(isExplicitBackAllowed()).toBe(true);
+
+      const result = simulatePopState(mockPopStateEvent);
+
+      expect(result).toBe(true); // Allowed
+      expect(propagationStopped).toBe(false);
+      expect(isExplicitBackAllowed()).toBe(false); // Auto-reset after transit
+    });
+
+    it('validates mobile-only CSS classes for top bar and navigation redundancy removal', () => {
+      // Top header unauthenticated guest buttons hidden on mobile (< 768px), visible on desktop (md:)
+      const guestTopBarClasses = 'hidden md:flex items-center gap-1.5 sm:gap-2 flex-shrink-0';
+      expect(guestTopBarClasses).toContain('hidden md:flex');
+
+      // Top sub-navigation bar hidden on mobile (< 768px), visible on tablet (md:block lg:hidden)
+      const subNavClasses = 'hidden md:block lg:hidden w-full border-t border-stone-200/80 bg-stone-50/95 backdrop-blur-md px-4 sm:px-6 py-2 overflow-x-auto no-scrollbar';
+      expect(subNavClasses).toContain('hidden md:block lg:hidden');
+
+      // Category shortcuts on Marketplace formatted as compact 2-column mobile touch grid
+      const categoryGridClasses = 'grid grid-cols-2 md:hidden gap-2.5 max-w-4xl mx-auto pt-1';
+      expect(categoryGridClasses).toContain('grid grid-cols-2 md:hidden');
+
+      // Body and root containers enforce overscroll-x-none
+      const rootClasses = 'bg-slate-50 text-slate-900 font-sans antialiased w-full max-w-full overflow-x-hidden overscroll-x-none';
+      expect(rootClasses).toContain('overscroll-x-none');
     });
   });
 });

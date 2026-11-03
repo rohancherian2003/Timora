@@ -209,6 +209,7 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         label={lang === 'en' ? 'Back to Marketplace' : 'തിരികെ മാർക്കറ്റിലേക്ക്'}
         fallbackPath="/marketplace"
         lang={lang}
+        onClick={handleBackNavigation}
       />
 
       {isLoadingDetail && !liveListing ? (

@@ -1,12 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { triggerExplicitBack } from '../hooks/useStrictUINavigation';
 
 interface BackButtonProps {
   label?: string;
   fallbackPath?: string;
   lang?: 'en' | 'ml';
   className?: string;
+  onClick?: () => void;
 }
 
 export function BackButton({
@@ -14,16 +16,23 @@ export function BackButton({
   fallbackPath = '/marketplace',
   lang = 'en',
   className = '',
+  onClick,
 }: BackButtonProps) {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    // If browser history has more than 1 entry and index > 0, navigate(-1)
-    if (window.history.length > 1 && window.history.state?.idx > 0) {
-      navigate(-1);
-    } else {
-      navigate(fallbackPath);
-    }
+    triggerExplicitBack(() => {
+      if (onClick) {
+        onClick();
+        return;
+      }
+      // If browser history has more than 1 entry and index > 0, navigate(-1)
+      if (window.history.length > 1 && window.history.state?.idx > 0) {
+        navigate(-1);
+      } else {
+        navigate(fallbackPath);
+      }
+    });
   };
 
   const defaultLabel = lang === 'en' ? 'Back' : 'തിരികെ';
