@@ -16,7 +16,7 @@ import {
   Star,
   Loader2,
 } from 'lucide-react';
-import { formatINR } from '@timora/shared';
+import { formatINR, formatUserProfileId, formatCleanPhone } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { getTicketsForUser, markTicketAsRead, SupportTicket } from '../../utils/ticketService';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
@@ -170,11 +170,14 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       {/* Welcome Bar */}
       <div className="p-6 sm:p-8 bg-gradient-to-br from-[#E7E1D6] via-[#d5cfc4] to-[#c4bdb0] rounded-3xl border border-[#c4bdb0] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#5B6147] text-white uppercase tracking-wider">
               {lang === 'en' ? 'Verified Buyer Account' : 'ഉപഭോക്തൃ പ്രൊഫൈൽ'}
             </span>
-            <span className="text-xs text-[#4A3626] font-mono font-medium">+91 {user?.phone || '9847987654'}</span>
+            <span className="px-2 py-0.5 rounded-md bg-white/80 border border-stone-300 text-[11px] font-mono font-bold text-[#4A3626]">
+              {formatUserProfileId(user)}
+            </span>
+            <span className="text-xs text-[#4A3626] font-mono font-medium">{formatCleanPhone(user?.phone || '9847987654')}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold font-serif text-[#4A3626]">
             {lang === 'en' ? `Welcome, ${user?.name || 'Timber Buyer'}` : `സ്വാഗതം, ${user?.name || 'ഉപഭോക്താവ്'}`}

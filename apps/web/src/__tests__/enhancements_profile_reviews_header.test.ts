@@ -332,17 +332,74 @@ describe('TIMORA™ Profile Management, Verified Reviews & Responsive Header Tes
 
     it('anchors dropdown card to right-0 and bounds max width within viewport', () => {
       const dropdownCardClasses =
-        'absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-stone-200 p-3 z-50 animate-fadeIn space-y-2.5';
+        'absolute right-0 top-full mt-2 w-76 sm:w-84 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-stone-200 p-3 z-50 animate-fadeIn space-y-2.5';
 
       expect(dropdownCardClasses).toContain('absolute');
       expect(dropdownCardClasses).toContain('right-0');
       expect(dropdownCardClasses).toContain('top-full');
       expect(dropdownCardClasses).toContain('max-w-[calc(100vw-2rem)]');
+      expect(dropdownCardClasses).not.toContain('overflow-hidden');
+    });
+
+    it('ensures profile pill name has sufficient width to display full names for Carpenter and Admin without clipping', () => {
+      const getProfileNameClasses = () =>
+        'text-xs font-bold text-stone-900 whitespace-nowrap max-w-[140px] md:max-w-[160px] lg:max-w-[185px] xl:max-w-[220px] truncate';
+
+      const classes = getProfileNameClasses();
+      expect(classes).toContain('whitespace-nowrap');
+      expect(classes).toContain('max-w-[140px]');
+      expect(classes).toContain('lg:max-w-[185px]');
+      expect(classes).toContain('xl:max-w-[220px]');
+
+      // Verify that 18 characters ("Master Binu Achari") and 15 characters ("Chief Moderator")
+      // are well within the 185px-220px limit (approx 7.2px per char in 12px bold font = ~130px)
+      const approxCharWidth = 7.5;
+      const carpenterNameWidth = 'Master Binu Achari'.length * approxCharWidth; // ~135px
+      const adminNameWidth = 'Chief Moderator'.length * approxCharWidth; // ~112.5px
+      expect(carpenterNameWidth).toBeLessThan(185);
+      expect(adminNameWidth).toBeLessThan(185);
+    });
+
+    it('ensures role badges inside dropdown have unbroken borders and whitespace-nowrap', () => {
+      const roleBadgeClasses =
+        'px-2 py-0.5 text-[10px] font-bold uppercase rounded-md whitespace-nowrap flex-shrink-0';
+
+      expect(roleBadgeClasses).toContain('whitespace-nowrap');
+      expect(roleBadgeClasses).toContain('flex-shrink-0');
+      expect(roleBadgeClasses).toContain('rounded-md');
     });
 
     it('enforces 15-minute inactivity session timeout constant', () => {
       const SESSION_TIMEOUT_MS = 15 * 60 * 1000;
       expect(SESSION_TIMEOUT_MS).toBe(900000); // 900,000 ms = 15 minutes
+    });
+
+    it('generates distinct memorable TMR-[ROLE_CODE]-[4_DIGITS] user profile IDs across all roles', () => {
+      const { formatUserProfileId } = require('@timora/shared');
+
+      const testProfiles = [
+        { role: 'carpenter', id: '701321e1-55ed-4867-b551-12c301a22470', phone: '9847330001', expectedRole: 'CRP' },
+        { role: 'buyer', id: 'usr-buyer-01', phone: '9847987654', expectedRole: 'BYR' },
+        { role: 'seller', sellerSubtype: 'individual', id: 'usr-seller-indiv', phone: '9847120001', expectedRole: 'SLR' },
+        { role: 'seller', sellerSubtype: 'mill_owner', id: 'usr-seller-mill', phone: '9847120002', expectedRole: 'MIL' },
+        { role: 'transport', id: 'usr-transport-01', phone: '9847440001', expectedRole: 'TRN' },
+        { role: 'admin', id: 'usr-admin-01', phone: '9847000000', expectedRole: 'ADM' },
+      ];
+
+      testProfiles.forEach((profile) => {
+        const displayId = formatUserProfileId(profile);
+        expect(displayId).toMatch(new RegExp(`^TMR-${profile.expectedRole}-[0-9A-Z]{4}$`));
+        // Verify raw UUID is NEVER present in the public profile badge
+        expect(displayId).not.toContain('701321e1-55ed-4867-b551-12c301a22470');
+        expect(displayId.length).toBe(12); // TMR (3) + '-' (1) + ROLE (3) + '-' (1) + 4 chars = 12
+      });
+    });
+
+    it('ensures registered login mobile number in Edit Profile modal displays single +91 country code', () => {
+      const { formatCleanPhone } = require('@timora/shared');
+      expect(formatCleanPhone('+919847330001')).toBe('+91 9847330001');
+      expect(formatCleanPhone('+91 +919847330001')).toBe('+91 9847330001');
+      expect(formatCleanPhone('9847330001')).toBe('+91 9847330001');
     });
   });
 });

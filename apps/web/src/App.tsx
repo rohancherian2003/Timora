@@ -20,6 +20,7 @@ import {
   X
 } from 'lucide-react';
 import { AuthProvider, useAuth, UserRole } from './context/AuthContext';
+import { formatUserProfileId, formatCleanPhone } from '@timora/shared';
 import { BrandLogo } from './components/BrandLogo';
 import { OfflineBanner } from './components/OfflineBanner';
 import { useStrictUINavigation, isExplicitBackAllowed } from './hooks/useStrictUINavigation';
@@ -525,7 +526,7 @@ function DirectoriesNavDropdown({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 text-xs xl:text-sm font-semibold rounded-full flex items-center gap-1.5 border ${
+        className={`whitespace-nowrap flex-shrink-0 w-auto transition px-2.5 py-1.5 xl:px-3.5 xl:py-2 text-xs xl:text-sm font-semibold rounded-full flex items-center gap-1.5 border ${
           isDirectoryActive
             ? 'text-[#4A3626] bg-[#E7E1D6]/80 border-[#5B6147] font-bold shadow-xs'
             : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
@@ -581,17 +582,6 @@ function DirectoriesNavDropdown({
   );
 }
 
-// Helper to cleanly format Indian phone numbers with a single +91 prefix
-function formatCleanPhone(phone?: string): string {
-  if (!phone) return '';
-  const digits = phone.replace(/\D/g, '');
-  if (digits.length >= 10) {
-    const last10 = digits.slice(-10);
-    return `+91 ${last10}`;
-  }
-  return phone;
-}
-
 // User Menu Component for Top Header
 function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
   const { user, logout } = useAuth();
@@ -624,7 +614,7 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
     switch (user.role) {
       case 'seller':
         return (
-          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-stone-200 text-[#4A3626] border border-stone-300">
+          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-stone-200 text-[#4A3626] border border-stone-300 whitespace-nowrap flex-shrink-0">
             {user.sellerSubtype === 'mill_owner'
               ? (lang === 'en' ? 'Timber Mill Owner' : 'തടി മിൽ ഉടമ')
               : (lang === 'en' ? 'Individual Seller' : 'വ്യക്തിഗത കച്ചവടക്കാരൻ')}
@@ -632,26 +622,26 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
         );
       case 'carpenter':
         return (
-          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-amber-100 text-amber-900 border border-amber-300">
+          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-amber-100 text-amber-900 border border-amber-300 whitespace-nowrap flex-shrink-0">
             {lang === 'en' ? 'Master Carpenter' : 'വിദഗ്ദ്ധ ആശാരി'}
           </span>
         );
       case 'transport':
         return (
-          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-blue-100 text-blue-900 border border-blue-300">
+          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-blue-100 text-blue-900 border border-blue-300 whitespace-nowrap flex-shrink-0">
             {lang === 'en' ? 'Transport Owner' : 'വാഹന ഉടമ'}
           </span>
         );
       case 'admin':
         return (
-          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-stone-800 text-white border border-stone-700">
+          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-stone-800 text-white border border-stone-700 whitespace-nowrap flex-shrink-0">
             {lang === 'en' ? 'Super Admin' : 'അഡ്മിൻ'}
           </span>
         );
       case 'buyer':
       default:
         return (
-          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
+          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300 whitespace-nowrap flex-shrink-0">
             {lang === 'en' ? 'Verified Buyer' : 'ഉപഭോക്താവ്'}
           </span>
         );
@@ -671,7 +661,10 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
           {user.name[0] || 'U'}
         </div>
         <div className="hidden sm:flex flex-col items-start text-left min-w-0">
-          <span className="text-xs font-bold text-stone-900 truncate max-w-[100px] sm:max-w-[120px] lg:max-w-[130px] xl:max-w-[150px]" title={user.name}>
+          <span
+            className="text-xs font-bold text-stone-900 whitespace-nowrap max-w-[140px] md:max-w-[160px] lg:max-w-[185px] xl:max-w-[220px] truncate"
+            title={user.name}
+          >
             {user.name}
           </span>
         </div>
@@ -681,7 +674,7 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-stone-200 p-3 z-50 animate-fadeIn space-y-2.5 overflow-hidden">
+          <div className="absolute right-0 top-full mt-2 w-76 sm:w-84 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-stone-200 p-3 z-50 animate-fadeIn space-y-2.5">
             <div className="p-2.5 border-b border-stone-100 space-y-1">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold text-stone-900 truncate flex-1 min-w-0" title={user.name}>
@@ -694,7 +687,12 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
               {user.businessName && (
                 <p className="text-[11px] text-stone-600 truncate">{user.businessName}</p>
               )}
-              <p className="text-[11px] text-stone-500 font-sans tracking-tight">{formatCleanPhone(user.phone)}</p>
+              <div className="flex items-center justify-between gap-2 pt-0.5">
+                <p className="text-[11px] text-stone-500 font-sans tracking-tight">{formatCleanPhone(user.phone)}</p>
+                <span className="text-[10px] font-mono font-bold text-stone-600 bg-stone-100 px-1.5 py-0.5 rounded border border-stone-200">
+                  {formatUserProfileId(user)}
+                </span>
+              </div>
             </div>
 
             {/* Exactly 3 Standardized Profile Menu Items for ALL Roles */}
@@ -775,17 +773,17 @@ function AppHeader({
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs transition-colors w-full max-w-full">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-6 xl:px-8 h-16 flex items-center justify-between gap-1.5 sm:gap-2 lg:gap-2.5">
         {/* Brand Logo with clear right spacing */}
         <Link to="/" className="group flex items-center flex-shrink-0 mr-1 sm:mr-2">
           <BrandLogo size="md" lang={lang} />
         </Link>
 
         {/* Desktop Navigation Links - Compact single-line fitting on lg & xl viewports */}
-        <nav className="hidden lg:flex items-center gap-1.5 xl:gap-2.5 text-xs xl:text-sm font-semibold text-stone-600 flex-shrink-0 w-auto">
+        <nav className="hidden lg:flex items-center gap-1 lg:gap-1.5 xl:gap-2 text-xs xl:text-sm font-semibold text-stone-600 flex-shrink-0 w-auto">
           <Link
             to="/marketplace"
-            className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
+            className={`whitespace-nowrap flex-shrink-0 w-auto transition px-2.5 py-1.5 xl:px-3.5 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
               isCurrent('/marketplace')
                 ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                 : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
@@ -796,7 +794,7 @@ function AppHeader({
 
           <Link
             to="/calculator"
-            className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
+            className={`whitespace-nowrap flex-shrink-0 w-auto transition px-2.5 py-1.5 xl:px-3.5 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
               isCurrent('/calculator')
                 ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                 : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
@@ -815,7 +813,7 @@ function AppHeader({
           {isAuthenticated && user?.role === 'buyer' && (
             <Link
               to="/dashboard/buyer"
-              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-2.5 py-1.5 xl:px-3.5 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
                 isCurrent('/dashboard/buyer')
                   ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                   : 'border-stone-200 text-stone-700 hover:text-[#5B6147] hover:bg-stone-100'
@@ -830,7 +828,7 @@ function AppHeader({
           {isAuthenticated && user?.role === 'seller' && (
             <Link
               to={user.sellerSubtype === 'mill_owner' ? '/dashboard/mill' : '/dashboard/seller'}
-              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-2.5 py-1.5 xl:px-3.5 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
                 isCurrent('/dashboard/seller') || isCurrent('/dashboard/mill')
                   ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                   : 'border-stone-200 text-stone-700 hover:text-[#5B6147] hover:bg-stone-100'
@@ -848,7 +846,7 @@ function AppHeader({
           {isAuthenticated && user?.role === 'carpenter' && (
             <Link
               to="/dashboard/carpenter"
-              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-2.5 py-1.5 xl:px-3.5 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
                 isCurrent('/dashboard/carpenter')
                   ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                   : 'border-stone-200 text-stone-700 hover:text-[#5B6147] hover:bg-stone-100'
@@ -862,7 +860,7 @@ function AppHeader({
           {isAuthenticated && user?.role === 'transport' && (
             <Link
               to="/dashboard/transport"
-              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-2.5 py-1.5 xl:px-3.5 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
                 isCurrent('/dashboard/transport')
                   ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                   : 'border-stone-200 text-stone-700 hover:text-[#5B6147] hover:bg-stone-100'
@@ -876,7 +874,7 @@ function AppHeader({
           {isAuthenticated && user?.role === 'admin' && (
             <Link
               to="/admin"
-              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
+              className={`whitespace-nowrap flex-shrink-0 w-auto transition px-2.5 py-1.5 xl:px-3.5 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold flex items-center gap-1.5 ${
                 isCurrent('/admin')
                   ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
                   : 'border-stone-200 text-stone-700 hover:text-[#5B6147] hover:bg-stone-100'
@@ -889,12 +887,12 @@ function AppHeader({
         </nav>
 
         {/* Right Action Cluster: Language Switcher + User Navigation Menu (Notification Bell completely removed) */}
-        <div className="flex items-center gap-2 sm:gap-2.5 xl:gap-3 flex-shrink-0 ml-auto">
+        <div className="flex items-center gap-1.5 sm:gap-2 xl:gap-2.5 flex-shrink-0 ml-auto">
           {/* Language Switcher */}
           <button
             type="button"
             onClick={toggleLanguage}
-            className="flex items-center gap-1.5 px-3 py-1.5 xl:px-4 xl:py-2 text-xs xl:text-sm font-bold rounded-full border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 transition flex-shrink-0 whitespace-nowrap w-auto shadow-2xs"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 xl:px-3.5 xl:py-2 text-xs xl:text-sm font-bold rounded-full border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 transition flex-shrink-0 whitespace-nowrap w-auto shadow-2xs"
             title="Toggle Language / ഭാഷ മാറ്റുക"
           >
             <Globe className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-[#3F452F] flex-shrink-0" />

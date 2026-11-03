@@ -18,7 +18,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useAuth, UserProfile } from '../context/AuthContext';
-import { validateIndianPhone } from '@timora/shared';
+import { validateIndianPhone, formatUserProfileId, formatCleanPhone } from '@timora/shared';
 import { api } from '../lib/api';
 
 interface EditProfileModalProps {
@@ -366,8 +366,8 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
                 {user.role} {user.sellerSubtype ? `(${user.sellerSubtype})` : ''}
               </span>
             </div>
-            <span className="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-              ID: {user.id}
+            <span className="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold tracking-wide">
+              ID: {formatUserProfileId(user)}
             </span>
           </div>
 
@@ -409,7 +409,7 @@ export function EditProfileModal({ isOpen, onClose, lang = 'en' }: EditProfileMo
             <div className="flex items-center gap-2">
               <input
                 type="text"
-                value={`+91 ${user.phone}`}
+                value={formatCleanPhone(user.phone)}
                 disabled
                 className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 bg-white text-stone-700 text-xs font-mono font-bold cursor-not-allowed"
               />

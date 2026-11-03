@@ -23,7 +23,7 @@ import {
   RotateCcw,
   Loader2,
 } from 'lucide-react';
-import { formatINR } from '@timora/shared';
+import { formatINR, formatUserProfileId, formatCleanPhone } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { getStoredTickets, resolveTicket, SupportTicket } from '../../utils/ticketService';
 import { EditProfileModal } from '../../components/EditProfileModal';
@@ -304,9 +304,17 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 sm:p-8 bg-gradient-to-br from-[#E7E1D6] via-[#d5cfc4] to-[#c4bdb0] rounded-3xl border border-[#c4bdb0] shadow-sm">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 text-[#5B6147] text-xs font-semibold backdrop-blur-sm border border-[#5B6147]/30 mb-2">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>{lang === 'en' ? 'Super Admin Moderation Suite' : 'സൂപ്പർ അഡ്മിൻ കൺട്രോൾ പാനൽ'}</span>
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 text-[#5B6147] text-xs font-semibold backdrop-blur-sm border border-[#5B6147]/30">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>{lang === 'en' ? 'Super Admin Moderation Suite' : 'സൂപ്പർ അഡ്മിൻ കൺട്രോൾ പാനൽ'}</span>
+            </span>
+            <span className="px-2 py-0.5 rounded-md bg-white/80 border border-stone-300 text-[11px] font-mono font-bold text-[#4A3626]">
+              {formatUserProfileId(user)}
+            </span>
+            <span className="text-xs text-[#4A3626] font-mono font-medium">
+              {formatCleanPhone(user?.phone || '9847000000')}
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold font-serif text-[#4A3626]">
             {lang === 'en' ? 'Kerala Timber Regulatory Cell' : 'കേരള തടി വ്യാപാര നിയന്ത്രണ സെൽ'}

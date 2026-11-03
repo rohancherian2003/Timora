@@ -21,7 +21,7 @@ import {
   X,
   Loader2,
 } from 'lucide-react';
-import { formatINR } from '@timora/shared';
+import { formatINR, formatUserProfileId, formatCleanPhone } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { VerificationStatusBanner } from '../../components/VerificationStatusBanner';
 import { getTicketsForUser, markTicketAsRead, SupportTicket } from '../../utils/ticketService';
@@ -287,12 +287,14 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       {/* Top Welcome - Individual Timber Seller */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 sm:p-8 bg-gradient-to-br from-[#E7E1D6] via-[#d5cfc4] to-[#c4bdb0] rounded-3xl border border-[#c4bdb0] shadow-sm">
         <div>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#5B6147] text-white uppercase tracking-wider flex items-center gap-1">
               <User className="w-3 h-3" />
               <span>{lang === 'en' ? 'Individual Timber Seller' : 'വ്യക്തിഗത തടി കച്ചവടക്കാരൻ'}</span>
             </span>
-            <span className="text-xs text-[#4A3626] font-mono font-medium">ID: {user?.id || 'usr-seller-indiv'}</span>
+            <span className="text-xs text-[#4A3626] font-mono font-bold bg-white/80 border border-stone-300 px-2 py-0.5 rounded-md">
+              ID: {formatUserProfileId(user)}
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold font-serif text-[#4A3626]">
             {user?.name || (lang === 'en' ? 'Seller Management Dashboard' : 'തടിക്കച്ചവട ഡാഷ്‌ബോർഡ്')}
@@ -300,7 +302,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           <p className="text-xs sm:text-sm text-[#7A5A3A] mt-1 flex items-center gap-2 font-medium">
             <span className="flex items-center gap-1">
               <Phone className="w-3.5 h-3.5 text-[#5B6147]" />
-              <span>+91 {user?.phone || '9847120001'}</span>
+              <span>{formatCleanPhone(user?.phone || '9847120001')}</span>
             </span>
             <span>•</span>
             <span className="flex items-center gap-1">

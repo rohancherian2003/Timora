@@ -4,6 +4,7 @@ export * from './types/index.js';
 // Utils
 export * from './utils/calculator.js';
 export * from './utils/validation.js';
+export * from './utils/formatters.js';
 
 // Constants
 export const KERALA_DISTRICTS_COUNT = 14;

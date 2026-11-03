@@ -19,7 +19,7 @@ import {
   Loader2,
   RefreshCw,
 } from 'lucide-react';
-import { formatINR } from '@timora/shared';
+import { formatINR, formatUserProfileId, formatCleanPhone } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { VerificationStatusBanner } from '../../components/VerificationStatusBanner';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
@@ -187,10 +187,13 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
       {/* TOP HEADER: SEPARATING MILL IDENTITY FROM OWNER IDENTITY */}
       <div className="p-6 sm:p-8 bg-gradient-to-br from-[#E7E1D6] via-[#d5cfc4] to-[#c4bdb0] rounded-3xl border border-[#c4bdb0] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-2">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap mb-2">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#5B6147] text-white uppercase tracking-wider flex items-center gap-1">
               <Factory className="w-3 h-3" />
               <span>{lang === 'en' ? 'Licensed Kerala Timber Mill' : 'അംഗീകൃത തടി മിൽ'}</span>
+            </span>
+            <span className="px-2 py-0.5 rounded-md bg-white/80 border border-stone-300 text-[11px] font-mono font-bold text-[#4A3626]">
+              {formatUserProfileId(user)}
             </span>
             <span className="text-xs text-[#4A3626] font-mono font-medium">
               Lic: KL-SAW-EKM-1048
@@ -211,7 +214,7 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
             <span>•</span>
             <span className="flex items-center gap-1">
               <Phone className="w-3.5 h-3.5 text-[#5B6147]" />
-              <span>+91 {user?.phone || '9847120002'}</span>
+              <span>{formatCleanPhone(user?.phone || '9847120002')}</span>
             </span>
             <span>•</span>
             <span className="flex items-center gap-1">

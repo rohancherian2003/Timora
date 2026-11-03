@@ -19,7 +19,7 @@ import {
   MessageSquare,
   Loader2,
 } from 'lucide-react';
-import { formatINR } from '@timora/shared';
+import { formatINR, formatUserProfileId } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { getTimberListingById, TimberListingItem, mapApiListingToItem } from '../../utils/timberListings';
 import { LoginAlertModal, AlertEntityType } from '../../components/LoginAlertModal';
@@ -360,8 +360,8 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               <span className="text-xs font-bold text-[#4A3626] uppercase tracking-wider block">
                 {lang === 'en' ? 'Verified Seller Details' : 'കച്ചവടക്കാരന്റെ വിവരങ്ങൾ'}
               </span>
-              <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                TIMORA ID: {listing.seller_id || `TMR-S${listing.id.padStart(4, '0')}`}
+              <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold">
+                TIMORA ID: {formatUserProfileId({ role: 'seller', id: listing.seller_id, phone: listing.seller_phone })}
               </span>
             </div>
 
