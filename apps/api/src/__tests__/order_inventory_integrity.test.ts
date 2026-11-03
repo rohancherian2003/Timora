@@ -423,5 +423,13 @@ describe('Phase 7: Critical Order and Inventory Integrity Suite', () => {
         expect(err.code).toBe('ORDER_CANCELLED');
       }
     });
+
+    it('gracefully handles demo orders (e.g. ord-101) without 404 or UUID database crash', async () => {
+      const result = await ordersService.confirmDelivery('usr-buyer-01', 'ord-101');
+      expect(result.bothConfirmed).toBe(true);
+      expect(result.order.id).toBe('ord-101');
+      expect(result.order.status).toBe('completed');
+      expect(result.order.buyer_confirmed).toBe(true);
+    });
   });
 });

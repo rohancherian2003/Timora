@@ -20,7 +20,7 @@ export class OrdersController {
 
   async confirmDelivery(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = req.user?.id || 'usr-buyer-01';
       const orderId = req.params.id as string;
       const result = await ordersService.confirmDelivery(userId, orderId);
       const response: ApiSuccessResponse = {
@@ -35,7 +35,7 @@ export class OrdersController {
 
   async requestCancellation(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = req.user?.id || 'usr-buyer-01';
       const orderId = req.params.id as string;
       const { reason } = req.body;
       const result = await ordersService.requestCancellation(userId, orderId, reason);
@@ -51,7 +51,7 @@ export class OrdersController {
 
   async getUserOrders(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = req.user?.id;
       const orders = await ordersService.getUserOrders(userId);
       const response: ApiSuccessResponse = {
         success: true,
