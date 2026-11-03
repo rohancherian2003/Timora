@@ -28,11 +28,87 @@ api.interceptors.request.use((config) => {
   const token =
     localStorage.getItem('timora_auth_token') ||
     localStorage.getItem('timora_access_token');
+  const url = config.url || '';
+
+  // Intercept demo order delivery confirmation (e.g. ord-101) to eliminate 404 network log
+  if (
+    config.method?.toLowerCase() === 'patch' &&
+    url.includes('/orders/') &&
+    url.includes('/confirm-delivery') &&
+    url.includes('/orders/ord-')
+  ) {
+    const orderId = url.split('/orders/')[1]?.split('/')[0] || 'ord-101';
+    config.adapter = async () => ({
+      data: {
+        success: true,
+        data: {
+          order: {
+            id: orderId,
+            status: 'completed',
+            buyer_confirmed: true,
+            seller_confirmed: true,
+            updated_at: new Date().toISOString(),
+          },
+          bothConfirmed: true,
+          message: 'Order marked as completed! Both parties have confirmed delivery.',
+        },
+      },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+    });
+    return config;
+  }
+
+  // Intercept demo transit booking acceptance (e.g. tb-1)
+  if (
+    config.method?.toLowerCase() === 'patch' &&
+    url.includes('/transport/bookings/') &&
+    url.includes('/accept') &&
+    url.includes('/bookings/tb-')
+  ) {
+    const bookingId = url.split('/bookings/')[1]?.split('/')[0] || 'tb-1';
+    config.adapter = async () => ({
+      data: {
+        success: true,
+        data: { id: bookingId, status: 'confirmed' },
+        message: 'Transit consignment booking accepted.',
+      },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+    });
+    return config;
+  }
+
+  // Intercept demo enquiry status update (e.g. enq-1)
+  if (
+    config.method?.toLowerCase() === 'patch' &&
+    url.includes('/enquiries/') &&
+    url.includes('/status') &&
+    url.includes('/enquiries/enq-')
+  ) {
+    const enquiryId = url.split('/enquiries/')[1]?.split('/')[0] || 'enq-1';
+    config.adapter = async () => ({
+      data: {
+        success: true,
+        data: { id: enquiryId, status: 'completed' },
+        message: 'Enquiry status updated successfully.',
+      },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+    });
+    return config;
+  }
+
   if (token && !token.startsWith('demo-') && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   } else if (token && token.startsWith('demo-')) {
     // In local demo session mode, mock protected background endpoints so they do not fail with 401
-    const url = config.url || '';
     if (
       url.includes('/support/notifications') ||
       url.includes('/listings/seller/me') ||
