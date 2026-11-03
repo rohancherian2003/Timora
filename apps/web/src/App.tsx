@@ -24,47 +24,197 @@ import { BrandLogo } from './components/BrandLogo';
 import { OfflineBanner } from './components/OfflineBanner';
 import { useStrictUINavigation, isExplicitBackAllowed } from './hooks/useStrictUINavigation';
 
-const MarketplacePage = React.lazy(() =>
-  import('./pages/public/MarketplacePage').then((m) => ({ default: m.MarketplacePage }))
+// Helper to retry dynamic chunk imports when new code is deployed to Vercel
+function lazyWithRetry<T extends React.ComponentType<any>>(
+  componentImport: () => Promise<{ default: T }>,
+  chunkName: string
+) {
+  return React.lazy(async () => {
+    const pageHasBeenForceRefreshed = sessionStorage.getItem(`timora_chunk_reload_${chunkName}`);
+
+    try {
+      const component = await componentImport();
+      sessionStorage.removeItem(`timora_chunk_reload_${chunkName}`);
+      return component;
+    } catch (error: any) {
+      console.warn(`[Timora] Chunk load failure for ${chunkName}:`, error);
+
+      const errorMessage = error?.message || String(error || '');
+      const isChunkError =
+        errorMessage.includes('Failed to fetch dynamically imported module') ||
+        errorMessage.includes('Expected a JavaScript-or-Wasm module script') ||
+        errorMessage.includes('MIME type') ||
+        error?.name === 'ChunkLoadError' ||
+        errorMessage.includes('dynamically imported module') ||
+        errorMessage.includes('text/html');
+
+      if (isChunkError && !pageHasBeenForceRefreshed) {
+        sessionStorage.setItem(`timora_chunk_reload_${chunkName}`, 'true');
+        // If service workers exist, attempt to trigger an update
+        if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+          try {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const r of registrations) {
+              await r.update();
+            }
+          } catch {
+            // Silently handled
+          }
+        }
+        window.location.reload();
+        return new Promise<{ default: T }>(() => {});
+      }
+
+      throw error;
+    }
+  });
+}
+
+// Error Boundary for dynamic chunk load failures and runtime exceptions
+interface ChunkErrorBoundaryProps {
+  children: React.ReactNode;
+  lang?: 'en' | 'ml';
+}
+
+interface ChunkErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+class ChunkErrorBoundary extends React.Component<ChunkErrorBoundaryProps, ChunkErrorBoundaryState> {
+  constructor(props: ChunkErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): ChunkErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('[Timora] ChunkErrorBoundary caught error:', error, errorInfo);
+  }
+
+  handleReload = async () => {
+    // Clear chunk reload flags
+    if (typeof sessionStorage !== 'undefined') {
+      Object.keys(sessionStorage).forEach((key) => {
+        if (key.startsWith('timora_chunk_reload_') || key.startsWith('timora_last_preload_reload')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+    }
+
+    // Unregister stale service workers if needed
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
+        }
+      } catch {
+        // Silently handled
+      }
+    }
+
+    // Force hard reload bypassing cache
+    window.location.reload();
+  };
+
+  render() {
+    if (this.state.hasError) {
+      const isMalayalam = this.props.lang === 'ml';
+      return (
+        <div className="w-full min-h-[60vh] flex items-center justify-center px-4 py-12">
+          <div className="max-w-md w-full bg-white rounded-3xl border border-stone-200 shadow-xl p-6 sm:p-8 text-center space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
+              <Sparkles className="w-8 h-8 animate-pulse text-[#5B6147]" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h2 className="text-xl font-bold font-serif text-[#4A3626]">
+                {isMalayalam ? 'പുതിയ അപ്ഡേറ്റ് ലഭ്യമാണ്' : 'New Update Available'}
+              </h2>
+              <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                {isMalayalam
+                  ? 'ടിമോറ പ്ലാറ്റ്‌ഫോമിൽ പുതിയ മാറ്റങ്ങൾ ലഭ്യമായിട്ടുണ്ട്. ദയവായി പേജ് റീലോഡ് ചെയ്യുക.'
+                  : 'A fresh version of Timora has been deployed. Please reload the page to load the latest features.'}
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={this.handleReload}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2"
+              >
+                <span>{isMalayalam ? 'പേജ് പുതുക്കുക (Reload)' : 'Reload & Update'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+const MarketplacePage = lazyWithRetry(() =>
+  import('./pages/public/MarketplacePage').then((m) => ({ default: m.MarketplacePage })),
+  'MarketplacePage'
 );
-const ListingDetailPage = React.lazy(() =>
-  import('./pages/public/ListingDetailPage').then((m) => ({ default: m.ListingDetailPage }))
+const ListingDetailPage = lazyWithRetry(() =>
+  import('./pages/public/ListingDetailPage').then((m) => ({ default: m.ListingDetailPage })),
+  'ListingDetailPage'
 );
-const CalculatorPage = React.lazy(() =>
-  import('./pages/public/CalculatorPage').then((m) => ({ default: m.CalculatorPage }))
+const CalculatorPage = lazyWithRetry(() =>
+  import('./pages/public/CalculatorPage').then((m) => ({ default: m.CalculatorPage })),
+  'CalculatorPage'
 );
-const TransportPage = React.lazy(() =>
-  import('./pages/public/TransportPage').then((m) => ({ default: m.TransportPage }))
+const TransportPage = lazyWithRetry(() =>
+  import('./pages/public/TransportPage').then((m) => ({ default: m.TransportPage })),
+  'TransportPage'
 );
-const LoginPage = React.lazy(() =>
-  import('./pages/auth/LoginPage').then((m) => ({ default: m.LoginPage }))
+const LoginPage = lazyWithRetry(() =>
+  import('./pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })),
+  'LoginPage'
 );
-const RegisterPage = React.lazy(() =>
-  import('./pages/auth/RegisterPage').then((m) => ({ default: m.RegisterPage }))
+const RegisterPage = lazyWithRetry(() =>
+  import('./pages/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })),
+  'RegisterPage'
 );
-const CarpenterDirectoryPage = React.lazy(() =>
-  import('./pages/carpenter/CarpenterDirectoryPage').then((m) => ({ default: m.CarpenterDirectoryPage }))
+const CarpenterDirectoryPage = lazyWithRetry(() =>
+  import('./pages/carpenter/CarpenterDirectoryPage').then((m) => ({ default: m.CarpenterDirectoryPage })),
+  'CarpenterDirectoryPage'
 );
-const TimberMillsPage = React.lazy(() =>
-  import('./pages/public/TimberMillsPage').then((m) => ({ default: m.TimberMillsPage }))
+const TimberMillsPage = lazyWithRetry(() =>
+  import('./pages/public/TimberMillsPage').then((m) => ({ default: m.TimberMillsPage })),
+  'TimberMillsPage'
 );
-const SellerDashboard = React.lazy(() =>
-  import('./pages/seller/SellerDashboard').then((m) => ({ default: m.SellerDashboard }))
+const SellerDashboard = lazyWithRetry(() =>
+  import('./pages/seller/SellerDashboard').then((m) => ({ default: m.SellerDashboard })),
+  'SellerDashboard'
 );
-const TimberMillOwnerDashboard = React.lazy(() =>
-  import('./pages/seller/TimberMillOwnerDashboard').then((m) => ({ default: m.TimberMillOwnerDashboard }))
+const TimberMillOwnerDashboard = lazyWithRetry(() =>
+  import('./pages/seller/TimberMillOwnerDashboard').then((m) => ({ default: m.TimberMillOwnerDashboard })),
+  'TimberMillOwnerDashboard'
 );
-const CarpenterDashboard = React.lazy(() =>
-  import('./pages/carpenter/CarpenterDashboard').then((m) => ({ default: m.CarpenterDashboard }))
+const CarpenterDashboard = lazyWithRetry(() =>
+  import('./pages/carpenter/CarpenterDashboard').then((m) => ({ default: m.CarpenterDashboard })),
+  'CarpenterDashboard'
 );
-const TransportOwnerDashboard = React.lazy(() =>
-  import('./pages/transport/TransportOwnerDashboard').then((m) => ({ default: m.TransportOwnerDashboard }))
+const TransportOwnerDashboard = lazyWithRetry(() =>
+  import('./pages/transport/TransportOwnerDashboard').then((m) => ({ default: m.TransportOwnerDashboard })),
+  'TransportOwnerDashboard'
 );
-const BuyerDashboard = React.lazy(() =>
-  import('./pages/buyer/BuyerDashboard').then((m) => ({ default: m.BuyerDashboard }))
+const BuyerDashboard = lazyWithRetry(() =>
+  import('./pages/buyer/BuyerDashboard').then((m) => ({ default: m.BuyerDashboard })),
+  'BuyerDashboard'
 );
-const AdminDashboard = React.lazy(() =>
-  import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard }))
+const AdminDashboard = lazyWithRetry(() =>
+  import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })),
+  'AdminDashboard'
 );
 
 import { SessionTimeoutModal } from './components/SessionTimeoutModal';
@@ -521,11 +671,8 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
           {user.name[0] || 'U'}
         </div>
         <div className="hidden sm:flex flex-col items-start text-left min-w-0">
-          <span className="text-xs font-bold text-stone-900 truncate max-w-[105px] sm:max-w-[125px] xl:max-w-[145px]" title={user.name}>
+          <span className="text-xs font-bold text-stone-900 truncate max-w-[100px] sm:max-w-[120px] lg:max-w-[130px] xl:max-w-[150px]" title={user.name}>
             {user.name}
-          </span>
-          <span className="text-[10px] text-stone-500 font-medium leading-none hidden 2xl:block">
-            {formatCleanPhone(user.phone)}
           </span>
         </div>
         <ChevronDown className={`w-3.5 h-3.5 text-stone-400 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
@@ -534,7 +681,7 @@ function UserNavMenu({ lang }: { lang: 'en' | 'ml' }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-76 sm:w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-stone-200 p-3 z-50 animate-fadeIn space-y-2.5">
+          <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-stone-200 p-3 z-50 animate-fadeIn space-y-2.5 overflow-hidden">
             <div className="p-2.5 border-b border-stone-100 space-y-1">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold text-stone-900 truncate flex-1 min-w-0" title={user.name}>
@@ -659,47 +806,10 @@ function AppHeader({
             <span className="whitespace-nowrap">{lang === 'en' ? 'CFT Calculator' : 'തടി കാൽക്കുലേറ്റർ'}</span>
           </Link>
 
-          {/* Medium to Large Desktop Screens (lg & xl: 1024px - 1535px): Compact Directories Dropdown */}
-          <div className="block 2xl:hidden flex-shrink-0 w-auto">
+          {/* Directories Dropdown: Carpenters, Transport, Timber Mills */}
+          <div className="flex-shrink-0 w-auto">
             <DirectoriesNavDropdown lang={lang} isCurrent={isCurrent} />
           </div>
-
-          {/* Extra-Wide Desktop Screens (>= 1536px): Expanded Direct Links */}
-          <Link
-            to="/carpenters"
-            className={`hidden 2xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold items-center gap-1.5 ${
-              isCurrent('/carpenters')
-                ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
-                : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
-            }`}
-          >
-            <Hammer className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
-            <span className="whitespace-nowrap">{lang === 'en' ? 'Carpenters' : 'ആശാരിമാർ'}</span>
-          </Link>
-
-          <Link
-            to="/transport"
-            className={`hidden 2xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold items-center gap-1.5 ${
-              isCurrent('/transport')
-                ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
-                : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
-            }`}
-          >
-            <Truck className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
-            <span className="whitespace-nowrap">{lang === 'en' ? 'Transport' : 'ലോറികൾ'}</span>
-          </Link>
-
-          <Link
-            to="/mills"
-            className={`hidden 2xl:flex whitespace-nowrap flex-shrink-0 w-auto transition px-3 py-1.5 xl:px-4 xl:py-2 rounded-full border text-xs xl:text-sm font-semibold items-center gap-1.5 ${
-              isCurrent('/mills') || isCurrent('/timber-mills')
-                ? 'border-[#5B6147] bg-[#E7E1D6]/80 text-[#4A3626] font-bold shadow-xs'
-                : 'border-transparent text-stone-600 hover:text-[#5B6147] hover:bg-stone-100'
-            }`}
-          >
-            <Factory className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
-            <span className="whitespace-nowrap">{lang === 'en' ? 'Timber Mills' : 'തടി മില്ലുകൾ'}</span>
-          </Link>
 
           {/* ROLE-SPECIFIC DASHBOARD PILL BUTTONS (Complete Unbroken Oval Border rounded-full, w-auto, flex-shrink-0) */}
           {isAuthenticated && user?.role === 'buyer' && (
@@ -988,8 +1098,9 @@ export function App() {
 
           {/* Main Content Area */}
           <main className="w-full max-w-full overflow-x-hidden flex-grow">
-            <React.Suspense fallback={<PageTransitionLoader />}>
-              <Routes>
+            <ChunkErrorBoundary lang={lang}>
+              <React.Suspense fallback={<PageTransitionLoader />}>
+                <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<MarketplacePage lang={lang} />} />
                 <Route path="/marketplace" element={<MarketplacePage lang={lang} />} />
@@ -1073,7 +1184,8 @@ export function App() {
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </React.Suspense>
-          </main>
+          </ChunkErrorBoundary>
+        </main>
 
           {/* Footer */}
           <footer className="w-full max-w-full overflow-x-hidden bg-stone-900 text-stone-400 py-12 border-t border-stone-800">
