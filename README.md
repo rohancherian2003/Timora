@@ -1,322 +1,549 @@
-# TIMORA™ — Kerala's Smart Timber Marketplace
-### *TIMBER · PEOPLE · POSSIBILITIES*
+# 🌲 TIMORA™ — Kerala's Smart Timber Marketplace
+### *Connecting Timber, People & Possibilities across God's Own Country*
 
-[![Production Web App](https://img.shields.io/badge/Live%20Web%20App-timora--rho.vercel.app-5B6147?style=for-the-badge&logo=vercel&logoColor=white)](https://timora-rho.vercel.app/)
+[![Production Web Client](https://img.shields.io/badge/Live%20Web%20App-timora--rho.vercel.app-5B6147?style=for-the-badge&logo=vercel&logoColor=white)](https://timora-rho.vercel.app/)
 [![Production Backend API](https://img.shields.io/badge/Live%20API-timora--backend--three.vercel.app-4A3626?style=for-the-badge&logo=vercel&logoColor=white)](https://timora-backend-three.vercel.app/api/v1)
-[![Tests Passing](https://img.shields.io/badge/Vitest-186%20Tests%20Passing-emerald?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
-
-[![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
-[![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Express](https://img.shields.io/badge/Express-4.21-black?logo=express&logoColor=white)](https://expressjs.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?logo=postgresql&logoColor=white)](https://supabase.com/)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Turborepo](https://img.shields.io/badge/Turborepo-2.3-EF4444?logo=turborepo&logoColor=white)](https://turbo.build/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Tests Passing](https://img.shields.io/badge/Vitest-223%20Tests%20Passing-emerald?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://supabase.com/)
+[![License](https://img.shields.io/badge/License-Proprietary-stone?style=for-the-badge)](LICENSE)
 
 ---
 
-> **TIMORA™** is an end-to-end digital marketplace, timber calculation suite, and logistics bridge engineered specifically for Kerala's native timber industry. It directly bridges house owners, building contractors, timber growers, master wood artisans (*ആശാരിമാർ*), licensed sawmills (*തടി മില്ലുകൾ*), and specialized heavy transit operators across all 14 districts of Kerala — ensuring transparent pricing, verified Forest Department Form IV transit permits, and authentic Kerala Quarter-Girth Hoppus volume calculations with zero middlemen brokerage.
+**TIMORA™** is an end-to-end digital marketplace, timber volume calculation engine, and logistics compliance bridge built specifically for Kerala's native timber economy. By eliminating speculative middlemen and informal brokerage, TIMORA directly connects verified residential and commercial buyers, individual agricultural tree growers, licensed sawmill depots, master wood joiners (*ആശാരിമാർ*), and certified heavy transit operators across all 14 districts of Kerala.
+
+The platform provides transparent cubic-foot (CFT) pricing, authentic Kerala Quarter-Girth Hoppus calculations, multi-role compliance moderation, and verified Forest Department Form IV transit permits.
 
 ---
 
-## 🌐 Live Deployments
+## 1. 🏗️ Tech Stack & Architecture
 
-| Component | Live Production URL | Description |
-| :--- | :--- | :--- |
-| **Frontend Web App (PWA)** | [https://timora-rho.vercel.app/](https://timora-rho.vercel.app/) | React 18, Vite, Tailwind CSS, PWA offline caching, English/Malayalam |
-| **Backend REST API** | [https://timora-backend-three.vercel.app/](https://timora-backend-three.vercel.app/) | Express.js, TypeScript, PostgreSQL (Supabase), Serverless Vercel engine |
-| **API Metadata & Spec** | [https://timora-backend-three.vercel.app/api/v1](https://timora-backend-three.vercel.app/api/v1) | Production API health metadata, versioning, and service endpoints |
-
----
-
-## 🌲 Core Platform Features
-
-### 1. Raw Timber Stock Exchange (`/marketplace`)
-* **Species Traded**: Nilambur Teak (*തേക്ക്*), African Mahogany (*മഹാഗണി*), Old-Growth Wild Jack / Anjili (*ആഞ്ഞിലി*), Estate Rubberwood (*റബർ*), Heritage Rosewood / Veetti (*ഈട്ടി*), and Varikka Plavu (*പ്ലാവ്*).
-* **Pure Raw Stock Guard**: Search query parser and filter engine actively identifies and rejects non-timber products (e.g. ready-made furniture, sofas, plywood).
-* **Form IV Transit Badges**: Live indicators certifying whether lots have verified Forest Department Form IV Transit Permits.
-* **Instant Loading Skeletons**: 6-point visual card hierarchy with reserved aspect ratio image placeholders to prevent cumulative layout shift (CLS).
-
-### 2. Kerala Standard Hoppus Rule CFT Calculator (`/calculator`)
-* Mathematical engine conforming strictly to the Kerala Forest & Public Works Department formula:
-  $$\text{Volume (CFT)} = \left(\frac{\text{Mid-Girth in Inches}}{4}\right)^2 \times \frac{\text{Length in Feet}}{144}$$
-* **Sawn Timber Rectangular CFT**:
-  $$\text{Volume (CFT)} = \frac{\text{Length (ft)} \times \text{Width (in)} \times \text{Thickness (in)}}{144} \times \text{Pieces}$$
-* Instant metric-imperial conversions ($\text{CFT} \longleftrightarrow \text{m}^3$) and live estimated cost calculations in Indian Rupees (₹).
-
-### 3. Licensed Timber Mills Directory (`/mills`)
-* Geo-sorted directory of licensed sawmills across Ernakulam, Pathanamthitta, Kottayam, Thrissur, Palakkad, and Kozhikode.
-* Provides live band-saw sawing rates (₹65 - ₹85 / CFT), kiln-seasoning capacity, direct WhatsApp integration, and customer reviews.
-* Context-aware authentication modals safeguarding mill owners from spam while allowing verified buyers to request custom cutting quotes.
-
-### 4. Master Carpenter Wood Artisan Directory (`/carpenters`)
-* Curated directory of verified master wood artisans (*വിദഗ്ദ്ധ ആശാരിമാർ*) specializing in:
-  - Traditional Kerala Nalukettu & Temple joinery
-  - Heavy timber roof trusses (*കഴുക്കോൽ പണി*)
-  - Solid teak front entrance doors & intricate relief carvings
-  - Moisture testing, seasoning, and wood preservation
-
-### 5. Specialized Timber Logistics & Haulage (`/transport`)
-* Directory of licensed transport operators equipped for raw log haulage:
-  - Self-loading hydraulic crane-equipped heavy flatbeds
-  - Long-bed multi-axle timber lorries
-  - Pre-inspected compliance for Forest Form IV inter-district transit
-
-### 6. Interactive Multi-Role Dashboards
-* **Timber Buyer Portal (`/dashboard/buyer`)**: Track timber orders, review active price enquiries, verify delivery status, and rate sellers.
-* **Depot Seller Portal (`/dashboard/seller`)**: Manage timber inventory, upload high-resolution timber photographs, track live CFT pricing, and manage incoming buyer bids.
-* **Mill Owner Portal (`/dashboard/mill-owner`)**: Manage sawn timber batches, log daily sawing output, and publish available seasoned stock.
-* **Carpenter Portal (`/dashboard/carpenter`)**: Receive joinery enquiries, manage wood carving commissions, and display verified artisan credentials.
-* **Transport Owner Portal (`/dashboard/transport`)**: Register haulage fleet vehicles, display tonnage capacities, and confirm transit consignments.
-* **Admin Control Cell (`/admin`)**: Moderate new business registrations, review depot license certificates, audit user activity logs, and resolve support grievances.
-
-### 7. Support Grievances & Live Notification Cell
-* In-dashboard notification bell and live feed polling for instant status updates (order delivery, review confirmations, admin approvals).
-* Authoritative support ticketing system assigning serial ticket numbers (`TKT-YYYY-NNNN`) with priority escalations.
-
-### 8. Full Loading States & Skeleton UX
-* Comprehensive loading states across every page, filter change, modal submission, and asynchronous API dispatch.
-* Interactive buttons automatically disable and render animated spinners (`Loader2`) to eliminate double submissions and provide immediate feedback.
-
-### 9. Bilingual Localization (English & Malayalam)
-* 1-Click language toggle on every screen with natural Malayalam (*മലയാളം*) typography and localized trade terms.
-
----
-
-## 🔑 Pre-Seeded Demo Accounts (Instant Evaluation)
-
-The production Supabase PostgreSQL database is pre-seeded with 6 role-specific demo accounts. You can click any role on the `/login` screen for 1-click authentication or log in with the credentials below:
-
-| Role | Contact Name | Mobile Number | Security PIN | Direct Dashboard |
-| :--- | :--- | :--- | :--- | :--- |
-| **Timber Buyer** | Suresh Kumar | `9847987654` | `123456` | `/dashboard/buyer` |
-| **Individual Seller** | K. R. Madhavan | `9847120001` | `123456` | `/dashboard/seller` |
-| **Timber Mill Owner** | Perumbavoor Sawmill | `9847120002` | `123456` | `/dashboard/mill-owner` |
-| **Master Carpenter** | Master Binu Achari | `9847330001` | `123456` | `/dashboard/carpenter` |
-| **Transport Owner** | Malabar Haulage | `9847440001` | `123456` | `/dashboard/transport` |
-| **Admin Cell** | Chief Moderator | `9847000000` | `123456` | `/admin` |
-
----
-
-## 📁 Monorepo Architecture
+TIMORA™ is architected as a high-performance, modular monorepo powered by **Turborepo** and **npm workspaces**, delivering an instantaneous single-page application experience coupled with a serverless Express microservice backend.
 
 ```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        CLIENT LAYER (SPA)                              │
+│   React 18 · Vite 6 · Tailwind CSS · Lucide Icons · TanStack Query     │
+│       Bilingual i18n Engine (English & Malayalam / മലയാളം)             │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                         HTTPS / JSON REST API
+                        (Strict 15m JWT Session)
+                                    │
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                       SERVERLESS BACKEND LAYER                         │
+│     Node.js · Express.js · TypeScript · Vercel Serverless Functions    │
+│    Argon2id PIN Auth · Zod Validation · Pino Logger · Rate Limiters    │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                         PostgreSQL Wire Protocol
+                           (Connection Pooling)
+                                    │
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                         PERSISTENCE LAYER                              │
+│       PostgreSQL 15+ (Supabase / Neon Cloud) · Row-Level Cascades      │
+│      Relational Multi-Role Profiles · Audit Logs · Inventory Ledger    │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### Core Technologies
+
+| Layer | Technologies & Tools | Architectural Purpose |
+| :--- | :--- | :--- |
+| **Frontend Web Client** | **React 18.3**, **Vite 6.0**, **TypeScript 5.7**, **Tailwind CSS 3.4**, **Lucide React**, **TanStack React Query v5**, **Axios** | High-speed Single-Page Application (SPA) with zero-redundancy mobile viewports, responsive layouts, and PWA capabilities. |
+| **Backend REST API** | **Node.js 18+**, **Express.js 4.21**, **TypeScript**, **Argon2**, **jsonwebtoken**, **Zod**, **Helmet**, **Pino** | Serverless function runtime on Vercel handling multi-role RBAC, inventory mutations, grievance queues, and audit trails. |
+| **Database & Storage** | **PostgreSQL** (Supabase / Neon), **pg (node-postgres)** connection pool, **Supabase Cloud Storage** | Relational ACID data store with row-level constraints, indexed geo-lookups, and secure S3-compatible image buckets. |
+| **Deployment & Hosting** | **Vercel Edge & Serverless Platform**, Custom Domain DNS, Automatic SSL | Dual independent deployments for client and API with customized routing rewrites and zero cold-start caching headers. |
+| **Internationalization** | **Bilingual Native i18n Engine** (English & Malayalam) | In-memory language toggle preserving native timber terms (*തേക്ക്*, *മഹാഗണി*, *ആഞ്ഞിലി*, *ഈട്ടി*, *ഹോപ്പസ് സി.എഫ്.ടി*). |
+
+---
+
+## 2. 👥 Multi-Role Dashboard Ecosystem
+
+TIMORA™ implements strict Role-Based Access Control (RBAC) across six dedicated actor dashboards. Authenticating with a registered Kerala mobile number (`+91 XXXXXXXXXX`) and 6-digit security PIN dynamically directs users to their role-specific workspace.
+
+```
+                               ┌───────────────┐
+                               │ TIMORA™ Auth  │
+                               │ Mobile + PIN  │
+                               └───────┬───────┘
+                                       │
+        ┌──────────────┬───────────────┼───────────────┬──────────────┐
+        ▼              ▼               ▼               ▼              ▼
+┌──────────────┐┌──────────────┐┌──────────────┐┌──────────────┐┌──────────────┐
+│ Verified     ││ Individual   ││ Timber Mill  ││ Master       ││ Transporter  │
+│ Buyer        ││ Seller       ││ Owner        ││ Carpenter    ││ Owner        │
+│ Dashboard    ││ Dashboard    ││ Dashboard    ││ Dashboard    ││ Dashboard    │
+└──────────────┘└──────────────┘└──────────────┘└──────────────┘└──────────────┘
+                                       │ (Admin Role)
+                                       ▼
+                               ┌───────────────┐
+                               │ Super Admin   │
+                               │ Regulatory    │
+                               │ Cell Console  │
+                               └───────────────┘
+```
+
+### 1. Verified Buyer Dashboard (`/dashboard/buyer`)
+* **Live Timber Procurement**: Browse vetted raw round logs, sawn timber planks, and square trusses with transparent CFT pricing.
+* **Order Lifecycle & Delivery Confirmation**: Real-time order progress tracking (`Awaiting Confirmation` $\rightarrow$ `Transit Dispatched` $\rightarrow$ `Delivered`). Includes one-click **"Confirm Delivery Received"** mutation updating the ledger and releasing review privileges.
+* **Grievance Redressal**: File support tickets with image evidence and view administrative resolution notes.
+* **Artisan & Transit Directory Booking**: Directly request quotes from master joiners and licensed crane lorries.
+
+### 2. Individual Timber Seller Dashboard (`/dashboard/seller`)
+* **Farmstead & Estate Listing Studio**: Publish timber lots (Teak, Mahogany, Anjili, Rubberwood) with girth, length, and district tags.
+* **Inquiry Management**: Receive, evaluate, and counter buyer volume offers in real time.
+* **Sales Ledger & Batch Tracking**: Monitor active, completed, and archived tree harvests.
+
+### 3. Timber Mill / Sawmill Owner Dashboard (`/dashboard/mill`)
+* **Depot Batch Management**: Ingest rough timber logs and log processed sawn timber planks and squared beams.
+* **Live Stock Reconciliation**: Instant volume deduction upon order confirmation to prevent accidental overselling.
+* **Sawmill Credentials Showcase**: Display government sawmill licenses (e.g. `KL-SAW-EKM-1048`), heavy band saw counts, and daily CFT capacity.
+
+### 4. Master Carpenter / Artisan Dashboard (`/dashboard/carpenter`)
+* **Craftsmanship Showcase**: Display traditional Kerala roof truss joinery (*തച്ചുശാസ്ത്രം* / Nalukettu trusses), custom doors, and hand-carved panels.
+* **Client Work Requests**: Accept or decline custom project briefs from residential builders and heritage property renovators.
+* **Verified Artisan Badge**: Admin-audited verification ensuring authentic master craftsman credentials.
+
+### 5. Transporter / Logistics Owner Dashboard (`/dashboard/transport`)
+* **Timber Transit Manifests**: Log vehicle fleet (hydraulic crane carriers, heavy lorries) with Kerala registration numbers.
+* **Form IV Compliance Gate**: Ensure all active transit assignments possess valid Kerala Forest Department Form IV transit permits.
+* **Haulage Dispatch Management**: Update consignment statuses from mill pickup to destination timber depot or buyer site.
+
+### 6. Super Admin Console (`/admin`)
+* **Multi-Role Regulatory Verification**: Audit pending business credentials across Individual Sellers, Sawmills, Artisans, and Transporters. One-click Approve, Request Additional Documents, or Reject with audit reasons.
+* **Listing Quality Inspection**: Inspect raw timber listings, cross-check species validity, verify photo authenticity, and censor non-timber consumer products (e.g. finished furniture, plywood).
+* **Audit Trail & System Monitoring**: Immutable administrative action log tracking actor, target entity, timestamp, and notes.
+
+---
+
+## 3. ✨ Key Engineering & UX Highlights
+
+### 🆔 Memorable Identity System (`TMR-[ROLE]-[XXXX]`)
+Raw 36-character database UUIDs (e.g., `701321e1-55ed-4867-b551-12c301a22470`) have been eliminated from all user-facing interfaces. TIMORA™ dynamically formats deterministic, memorable identity badges using role classification and registration entropy:
+
+$$\text{User ID} = \mathbf{TMR}\text{-}[\text{ROLE\_CODE}]\text{-}[\text{4\_CHARS}]$$
+
+* **Master Carpenter**: `TMR-CRP-2247`
+* **Verified Buyer**: `TMR-BYR-7044`
+* **Individual Seller**: `TMR-SLR-3001`
+* **Timber Mill Owner**: `TMR-MIL-1200`
+* **Transport Provider**: `TMR-TRN-4400`
+* **Super Admin**: `TMR-ADM-0001`
+
+### ⏱️ Strict 15-Minute Session Security
+* **Automated Client-Side Idle Timeout**: Monitors DOM interaction events (`mousemove`, `keydown`, `touchstart`, `scroll`). After **15 minutes of inactivity**, the active session is cleared, local authentication state is destroyed, and a modal prompts re-authentication.
+* **Synchronized Backend JWT Expiration**: All signed authentication tokens enforce `expiresIn: '15m'`, guaranteeing that stale or compromised tokens cannot access serverless endpoints.
+
+### 👤 Standardized 3-Action Profile Menu
+The top-right user menu is standardized across every authenticated role to strictly three core destinations:
+1. **My Dashboard** — Instant routing to the user's role-specific command center.
+2. **Edit Profile & Settings** — Dedicated modal allowing profile updates, clean phone inspection (`+91 XXXXXXXXXX`), and district adjustments.
+3. **Sign Out** — Secure session revocation with confirmation guard.
+
+### 📱 Strict Mobile Navigation Guard (`< 768px`)
+* **Zero Visual Redundancy**: Redundant top-bar navigation links and duplicate auth buttons are hidden on mobile viewports (`hidden md:flex`), leaving only the TIMORA™ brand mark and language toggle.
+* **Fixed Mobile Bottom Navigation**: High-contrast, ergonomic bottom action bar for instantaneous switching between Marketplace, CFT Calculator, Service Directories, and User Account.
+* **Gesture & History Guard**: Uses `overscroll-behavior-x: none` and route-trapped UI navigation (`useStrictUINavigation`) to eliminate accidental browser back-swipe exits.
+
+### 📐 Kerala Standard Hoppus Rule CFT Calculator
+Implements the authentic formula specified by the Kerala Forest Department and PWD:
+
+$$\text{Round Log Volume (CFT)} = \left(\frac{G}{4}\right)^2 \times \frac{L}{144}$$
+
+$$\text{Sawn Beam Volume (CFT)} = \frac{L \times W \times T}{144} \times N$$
+
+*Where:*
+* $G$ = Mid-girth (circumference) in inches
+* $L$ = Length of log in feet
+* $W$ = Width in inches, $T$ = Thickness in inches
+* $N$ = Number of identical sawn pieces
+
+---
+
+## 4. 📁 Project Structure (Active Web App Only)
+
+```text
 mcakju_timber_new/
+├── package.json                         # Monorepo configuration (Turborepo + npm workspaces)
+├── turbo.json                           # Pipeline execution definitions (build, dev, test)
+│
 ├── apps/
-│   ├── web/                         # React 18 + Vite + Tailwind CSS Single-Page Application (PWA)
-│   │   ├── src/
-│   │   │   ├── components/          # Reusable UI widgets, Modals, Loaders, Navigation
-│   │   │   ├── context/             # AuthContext (JWT session, 25-min timeout, role routing)
-│   │   │   ├── lib/                 # Axios API client with dynamic host resolution & interceptors
-│   │   │   ├── pages/
-│   │   │   │   ├── public/          # Marketplace, ListingDetail, Calculator, Mills, Transport
-│   │   │   │   ├── auth/            # LoginPage, RegisterPage
-│   │   │   │   ├── buyer/           # BuyerDashboard
-│   │   │   │   ├── seller/          # SellerDashboard, TimberMillOwnerDashboard
-│   │   │   │   ├── carpenter/       # CarpenterDashboard, CarpenterDirectoryPage
-│   │   │   │   ├── transport/       # TransportOwnerDashboard
-│   │   │   │   └── admin/           # AdminDashboard
-│   │   │   └── utils/               # Local catalogue fallback, ticket service, Hoppus formatters
-│   │   ├── vercel.json              # Web rewrite proxy to backend API & SPA routing
-│   │   └── package.json
-│   ├── api/                         # Express.js REST API Microservice (Node.js + TypeScript)
-│   │   ├── src/
-│   │   │   ├── config/              # Environment variables, database pool, JWT secrets
-│   │   │   ├── db/                  # SQL migrations, database seeders, connection handlers
-│   │   │   ├── middleware/          # Auth guards, role checks, rate limiting, error handlers
-│   │   │   ├── modules/
-│   │   │   │   ├── auth/            # Authentication, registration, phone change, PIN validation
-│   │   │   │   ├── listings/        # Timber catalog, inventory query, photo uploads
-│   │   │   │   ├── orders/          # Trade order creation, delivery confirmation
-│   │   │   │   ├── directory/       # Sawmills, Carpenters, Transports queries
-│   │   │   │   ├── reviews/         # Verified buyer reviews & rating aggregations
-│   │   │   │   ├── support/         # Support grievance tickets & in-dashboard notifications
-│   │   │   │   └── admin/           # Seller verification & platform moderation
-│   │   │   ├── app.ts               # Express configuration, CORS, body parsers, routes
-│   │   │   └── index.ts             # Server entrypoint
-│   │   ├── vercel.json              # Serverless API deployment configuration
-│   │   └── package.json
-│   └── mobile/                      # Expo / React Native mobile codebase
-│       └── package.json
-├── packages/
-│   └── shared/                      # Isomorphic TypeScript shared business logic
-│       ├── src/
-│       │   ├── utils/               # Hoppus quarter-girth & rectangular CFT formulas
-│       │   ├── formatters/          # Indian Rupee (INR) and metric unit converters
-│       │   └── schemas/             # Shared Zod validation schemas
-│       └── package.json
-├── turbo.json                       # Turborepo task pipeline configuration
-├── package.json                     # Monorepo root workspace configuration
-└── README.md
+│   ├── web/                             # ACTIVE FRONTEND CLIENT
+│   │   ├── index.html                   # HTML entrypoint with PWA headers
+│   │   ├── package.json                 # Web dependencies (React, Vite, Tailwind, TanStack Query)
+│   │   ├── vite.config.ts               # Vite configuration (PWA plugin, asset optimization)
+│   │   ├── vercel.json                  # Client rewrite rules (SPA routing & asset headers)
+│   │   └── src/
+│   │       ├── main.tsx                 # React DOM mount point & chunk error listeners
+│   │       ├── App.tsx                  # Root router, AppHeader, UserNavMenu, strict auth guard
+│   │       ├── index.css                # Tailwind directives & responsive layout utilities
+│   │       ├── components/              # UI Components
+│   │       │   ├── BackButton.tsx       # Trapped back navigation button
+│   │       │   ├── BrandLogo.tsx        # High-res SVG brand identity mark
+│   │       │   ├── EditProfileModal.tsx # Universal profile editor & phone formatter
+│   │       │   ├── SessionTimeoutModal  # 15-minute inactivity timeout countdown
+│   │       │   ├── SignOutConfirmModal  # Safe sign-out confirmation dialog
+│   │       │   └── ...                  # Review, ticket, and status modals
+│   │       ├── pages/                   # Application Pages & Role Dashboards
+│   │       │   ├── admin/               # Super Admin verification & audit console
+│   │       │   ├── auth/                # Login & Registration pages
+│   │       │   ├── buyer/               # Verified Buyer order & procurement dashboard
+│   │       │   ├── carpenter/           # Master Carpenter dashboard & public directory
+│   │       │   ├── seller/              # Individual Seller & Timber Mill dashboards
+│   │       │   ├── transport/           # Transporter dashboard & haulage directory
+│   │       │   └── public/              # Marketplace, Calculator, Detail & Mill pages
+│   │       ├── context/
+│   │       │   └── AuthContext.tsx      # Authentication state, 15m timer, role switching
+│   │       ├── hooks/
+│   │       │   └── useStrictUINavigation # UI-trapped history navigation guard
+│   │       ├── lib/
+│   │       │   └── api.ts               # Axios client with JWT interceptor & demo handlers
+│   │       └── utils/
+│   │           ├── ticketService.ts     # Client ticket persistence & dispatch
+│   │           └── timberListings.ts    # Listing queries and status filters
+│   │
+│   └── api/                             # ACTIVE SERVERLESS REST API
+│       ├── api/
+│       │   └── index.ts                 # Vercel Serverless Function entrypoint
+│       ├── package.json                 # Backend dependencies (Express, Argon2, pg, Zod)
+│       ├── vercel.json                  # Serverless function rewrite rules (/(.*) -> /api)
+│       └── src/
+│           ├── app.ts                   # Express application factory, CORS, rate limiting
+│           ├── index.ts                 # Local development server bootstrapper
+│           ├── config/
+│           │   └── database.ts          # PostgreSQL connection pool (pg.Pool)
+│           ├── db/
+│           │   ├── migrate.ts           # Migration executor
+│           │   ├── migrations/          # Versioned SQL migrations (001 - 004)
+│           │   └── seed.ts              # Idempotent demo database seeder
+│           ├── middleware/
+│           │   ├── auth.ts              # JWT verification & 15m expiration validator
+│           │   ├── rbac.ts              # Role-Based Access Control validator
+│           │   └── errorHandler.ts      # Global centralized error handler
+│           └── modules/                 # Modular Domain Controllers & Routes
+│               ├── admin/               # Approvals, pending seller applications
+│               ├── auth/                # PIN verification, registration, OTP challenges
+│               ├── listings/            # Timber lot CRUD, species validation
+│               ├── orders/              # Order state transitions, delivery confirmation
+│               └── support/             # Grievance ticket redressal system
+│
+└── packages/
+    └── shared/                          # SHARED UTILITY & TYPINGS PACKAGE
+        ├── package.json                 # @timora/shared package manifest
+        └── src/
+            ├── index.ts                 # Main exports
+            ├── types/                   # Shared TypeScript interfaces & enums
+            └── utils/
+                ├── calculator.ts        # Hoppus rule CFT mathematical formulas
+                ├── formatters.ts        # TMR-ROLE-XXXX and clean +91 phone formatters
+                └── validation.ts        # Shared Zod validation schemas
 ```
 
 ---
 
-## 🛠️ REST API Reference
+## 5. 🗄️ Relational Entity-Relationship (ER) Diagram
 
-Base Production URL: `https://timora-backend-three.vercel.app/api/v1`
+The diagram below reflects the active PostgreSQL relational schema operating in production:
 
-### Authentication (`/auth`)
-* `POST /auth/login`: Authenticate with 10-digit mobile number and 6-digit security PIN. Returns JWT Bearer token.
-* `POST /auth/register`: Multi-step registration for buyers, sellers, sawmills, carpenters, or transport owners.
-* `GET  /auth/profile`: Fetch current authenticated user's profile and credentials.
-* `PATCH /auth/profile`: Update business name, sawmill brand, district, and operational details.
-* `POST /auth/phone/verify-change`: Secure self-service phone number update with OTP verification.
+```mermaid
+erDiagram
+    USERS ||--|| USER_PROFILES : "has profile"
+    USERS ||--o| SELLER_PROFILES : "extends as"
+    USERS ||--o| CARPENTER_PROFILES : "extends as"
+    USERS ||--o| TRANSPORT_OWNER_PROFILES : "extends as"
+    USERS ||--o{ TIMBER_MILLS : "owns"
+    USERS ||--o{ TIMBER_LISTINGS : "publishes"
+    USERS ||--o{ ORDERS : "places as buyer"
+    USERS ||--o{ SUPPORT_TICKETS : "submits"
+    USERS ||--o{ ADMIN_AUDIT_LOGS : "performed by"
 
-### Timber Listings (`/listings`)
-* `GET  /listings`: Search and filter timber stock by keyword, species, district, timber type, and grade.
-* `GET  /listings/:id`: Fetch listing details by UUID (with seller info, measurements, and photo gallery).
-* `POST /listings`: Post new timber lot for admin approval (requires seller/mill authentication).
-* `GET  /listings/seller/me`: Retrieve current seller's own timber inventory with approval status.
-* `POST /listings/:id/images`: Upload high-resolution timber photograph to Supabase Storage.
+    KERALA_DISTRICTS ||--o{ USER_PROFILES : "located in"
+    KERALA_DISTRICTS ||--o{ TIMBER_LISTINGS : "harvested in"
+    KERALA_DISTRICTS ||--o{ TIMBER_MILLS : "stationed in"
 
-### Service Directories (`/mills`, `/carpenters`, `/transports`)
-* `GET  /mills`: Retrieve registered Kerala sawmills with sawing rates and location.
-* `GET  /carpenters`: Retrieve verified master carpenters with specializations and contact info.
-* `GET  /transports`: Retrieve verified timber logistics fleets and vehicle specifications.
+    TIMBER_SPECIES ||--o{ TIMBER_LISTINGS : "classifies"
+    TIMBER_TYPES ||--o{ TIMBER_LISTINGS : "categorizes"
 
-### Orders & Enquiries (`/orders`, `/enquiries`)
-* `GET  /orders`: Fetch active and past timber trade consignments for the authenticated user.
-* `PATCH /orders/:id/confirm-delivery`: Buyer confirmation acknowledging delivery of timber lot.
-* `POST /enquiries`: Submit formal price offer and enquiry for a specific timber listing.
+    TIMBER_LISTINGS ||--o{ LISTING_IMAGES : "contains"
+    TIMBER_LISTINGS ||--o{ ORDERS : "ordered in"
 
-### Reviews & Support (`/reviews`, `/support`)
-* `POST /reviews`: Submit a verified review for a completed timber transaction.
-* `POST /support/tickets`: Create support grievance ticket and receive authoritative `TKT-YYYY-NNNN` ID.
-* `GET  /support/notifications`: Retrieve user's in-dashboard notifications.
-* `PATCH /support/notifications/:id/read`: Mark notification as read.
+    ORDERS ||--o{ ORDER_STATUS_HISTORY : "tracks"
+    ORDERS ||--o| REVIEWS : "evaluated in"
 
-### Admin Controls (`/admin`)
-* `GET   /admin/sellers/pending`: Retrieve pending seller, mill, and transport business registrations.
-* `PATCH /admin/sellers/:id/approve`: Approve applicant business and activate live selling privileges.
-* `PATCH /admin/sellers/:id/reject`: Request additional documentation or reject registration with recorded reason.
+    SUPPORT_TICKETS ||--o{ SUPPORT_TICKET_MESSAGES : "contains"
+
+    USERS {
+        uuid id PK
+        varchar phone UK
+        varchar pin_hash
+        varchar role
+        boolean is_active
+        timestamp created_at
+    }
+
+    USER_PROFILES {
+        uuid user_id PK,FK
+        varchar name
+        integer district_id FK
+        varchar language_pref
+        varchar account_tier
+    }
+
+    SELLER_PROFILES {
+        uuid user_id PK,FK
+        varchar business_name
+        varchar seller_subtype
+        varchar approval_status
+        uuid approved_by FK
+    }
+
+    CARPENTER_PROFILES {
+        uuid user_id PK,FK
+        varchar business_name
+        integer experience_yrs
+        numeric rating
+        varchar approval_status
+    }
+
+    TRANSPORT_OWNER_PROFILES {
+        uuid id PK
+        uuid user_id FK
+        varchar business_name
+        integer vehicle_count
+        numeric max_tonnage
+        boolean form_iv_cleared
+        varchar approval_status
+    }
+
+    TIMBER_MILLS {
+        uuid id PK
+        uuid owner_id FK
+        varchar mill_name
+        varchar license_no
+        numeric daily_cft_capacity
+        varchar approval_status
+    }
+
+    TIMBER_LISTINGS {
+        uuid id PK
+        uuid seller_id FK
+        varchar title
+        integer species_id FK
+        integer timber_type_id FK
+        numeric quantity
+        varchar unit
+        numeric price_per_cft
+        varchar status
+    }
+
+    ORDERS {
+        uuid id PK
+        uuid listing_id FK
+        uuid buyer_id FK
+        uuid seller_id FK
+        numeric agreed_qty
+        numeric agreed_price
+        varchar status
+        boolean buyer_confirmed
+    }
+
+    SUPPORT_TICKETS {
+        uuid id PK
+        uuid user_id FK
+        varchar reference UK
+        varchar category
+        varchar status
+    }
+```
 
 ---
 
-## 🎨 Color Palette & Visual Identity
+## 6. ⚙️ Environment Variables & Configuration
 
-Timora features an organic, minimal palette reflecting seasoned timber, foliage, and natural stone:
+### Frontend Client Configuration (`apps/web/.env`)
 
-| Color | Hex | Visual Role |
-| :--- | :--- | :--- |
-| **Sand Beige** | `#E7E1D6` | Primary background, surface badges, and soft containers |
-| **Moss Green** | `#5B6147` | Primary brand action color, active tabs, and primary buttons |
-| **Deep Olive** | `#3F452F` | Hover button states, bold headings, and emphasis |
-| **Dark Wood** | `#4A3626` | High-contrast typography, brand logo, and lot titles |
-| **Natural Wood** | `#7A5A3A` | Secondary text, measurements, and dimension metadata |
-| **Warm Taupe** | `#8E7F6B` | Dividers, subtle input borders, and badge borders |
+```env
+# Base URL for the Express REST API backend
+# Local Development:
+VITE_API_URL=http://localhost:3001/api/v1
+
+# Production Vercel Deployment:
+# VITE_API_URL=https://timora-backend-three.vercel.app/api/v1
+```
+
+### Backend API Configuration (`apps/api/.env`)
+
+```env
+# Server Runtime
+NODE_ENV=development
+PORT=3001
+LOG_LEVEL=info
+
+# Cross-Origin Resource Sharing (Comma-separated allowed domains)
+CORS_ORIGINS=http://localhost:5173,https://timora-rho.vercel.app,https://timora.vercel.app
+
+# PostgreSQL Cloud Database Connection
+DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/[DB_NAME]?sslmode=require
+DATABASE_SSL=true
+
+# Authentication & Session Security (Strict 15m)
+JWT_SECRET=super-secure-production-random-secret-key-min-32-chars
+JWT_ACCESS_EXPIRES=15m
+JWT_REFRESH_EXPIRES=7d
+
+# Argon2id PIN Hashing Parameters
+ARGON2_MEMORY=65536
+ARGON2_ITERATIONS=3
+ARGON2_PARALLELISM=4
+
+# Supabase Storage (Timber Listing Images)
+SUPABASE_URL=https://[YOUR_PROJECT_ID].supabase.co
+SUPABASE_SERVICE_ROLE_KEY=[YOUR_BACKEND_SERVICE_ROLE_KEY]
+SUPABASE_STORAGE_BUCKET=timber-listings
+IMAGE_MAX_SIZE_BYTES=10485760
+
+# OTP Configuration
+OTP_DEMO_MODE=true
+OTP_EXPIRY_SECONDS=300
+OTP_MAX_ATTEMPTS=3
+```
 
 ---
 
-## 🚀 Local Development Setup
+## 7. 🚀 Getting Started & Local Development
 
 ### Prerequisites
-* **Node.js**: v18.0.0 or later (v20+ LTS recommended)
-* **npm**: v9.0.0 or later
-* **PostgreSQL / Supabase**: Connection string (optional for local mock preview, required for live DB)
+* **Node.js**: `v18.0.0` or later (LTS recommended)
+* **npm**: `v9.0.0` or later
+* **PostgreSQL**: Local instance or remote cloud database (Supabase / Neon)
 
-### 1. Clone the Repository
+### 1. Clone the Repository & Install Dependencies
 ```bash
+# Clone the repository
 git clone https://github.com/rohancherian2003/Timora.git
 cd Timora
-```
 
-### 2. Install Dependencies
-```bash
+# Install all workspace dependencies from root
 npm install
 ```
 
-### 3. Environment Variables
-Create `.env` in `apps/api/`:
-```env
-PORT=3001
-NODE_ENV=development
-DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
-JWT_SECRET=your_super_secret_jwt_key_min_32_chars
-JWT_EXPIRES_IN=7d
-SUPABASE_URL=https://[YOUR_PROJECT_ID].supabase.co
-SUPABASE_KEY=your_supabase_service_role_key
-```
-
-Create `.env` in `apps/web/`:
-```env
-VITE_API_URL=http://localhost:3001/api/v1
-```
-
-### 4. Run Database Migrations & Seed Demo Accounts
+### 2. Configure Environment Files
 ```bash
-npm run db:migrate --workspace=apps/api
-npm run db:seed --workspace=apps/api
+# Set up backend environment
+cp .env.example apps/api/.env
+
+# Set up frontend environment
+cp apps/web/.env.example apps/web/.env
+```
+*(Ensure `DATABASE_URL` in `apps/api/.env` points to a live PostgreSQL database).*
+
+### 3. Initialize Database Migrations & Seed Data
+```bash
+# Build the shared utility library first
+npm run build -w @timora/shared
+
+# Execute PostgreSQL schema migrations
+npm run db:migrate
+
+# Seed demo profiles for all roles (Buyer, Sellers, Carpenters, Transporters, Admin)
+npm run db:seed
 ```
 
-### 5. Start Development Servers
-Run the full stack via Turborepo:
+### 4. Run Development Servers Concurrently
 ```bash
+# Starts both frontend (Vite :5173) and backend (Express :3001) concurrently via Turborepo
 npm run dev
 ```
-Or run workspaces individually:
-```bash
-# Start backend API (runs on http://localhost:3001)
-npm run dev --workspace=apps/api
+* **Web Client**: [http://localhost:5173](http://localhost:5173)
+* **REST API**: [http://localhost:3001/api/v1](http://localhost:3001/api/v1)
 
-# Start web frontend (runs on http://localhost:5173)
-npm run dev --workspace=apps/web
+### 5. Execute Test Suite
+```bash
+# Run all unit and integration tests across all workspaces
+npm test
+
+# Run workspace-specific tests
+npm test --workspace=apps/web
+npm test --workspace=apps/api
+npm test --workspace=packages/shared
+```
+
+### 6. Production Compilation
+```bash
+# Typecheck and compile production assets
+npm run build
 ```
 
 ---
 
-## 🧪 Automated Testing & Code Quality
+## 8. 🌐 Deployment & Vercel Configuration
 
-The codebase maintains **186 automated tests** spanning unit formulas, API endpoints, integration flows, and frontend navigation:
+TIMORA™ is optimized for zero-maintenance serverless deployment on **Vercel** across two distinct projects (Frontend SPA and Backend API).
 
-```bash
-# Run all tests across the monorepo (186 passing tests)
-npm run test
-
-# Run API test suite (138 tests)
-npm run test --workspace=apps/api
-
-# Run Frontend test suite (40 tests)
-npm run test --workspace=apps/web
-
-# Run Shared calculations test suite (8 tests)
-npm run test --workspace=packages/shared
-
-# Run TypeScript typechecks
-npm run typecheck
+### Frontend Routing (`apps/web/vercel.json`)
+```json
+{
+  "rewrites": [
+    {
+      "source": "/api/:match*",
+      "destination": "https://timora-backend-three.vercel.app/api/:match*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/index.html",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ]
+}
 ```
 
----
+### Backend Serverless Routing (`apps/api/vercel.json`)
+```json
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api"
+    }
+  ]
+}
+```
 
-## 📦 Deployment
-
-### Deploy Frontend to Vercel
-1. Set Root Directory to `apps/web`.
-2. Build Command: `npm run build`
-3. Output Directory: `dist`
-4. Environment Variables:
-   - `VITE_API_URL`: `https://timora-backend-three.vercel.app/api/v1`
-
-### Deploy Backend to Vercel
-1. Set Root Directory to `apps/api`.
-2. Ensure `apps/api/vercel.json` routes all requests to `src/index.ts`.
-3. Set environment variables (`DATABASE_URL`, `JWT_SECRET`, `SUPABASE_URL`, `SUPABASE_KEY`).
-
----
-
-## ⚖️ Regulatory & Forest Transit Compliance
-
-All transactions, log specifications, and depot entries within Timora are architected to uphold:
-* **The Kerala Forest Produce Transit Rules, 1975**
-* **Form IV / Form III Transit Permits** issued by the Kerala State Forest Department
-* Standard volume measurement conventions certified by the Forest Research Institutes (KFRI)
+### Custom Domain DNS Configuration
+To route your branded domain (e.g., `timora.in`) to the Vercel edge network:
+* **Root Domain (`@`)**: Add a DNS `A` record pointing to `76.76.21.21`.
+* **Subdomain (`www` or `api`)**: Add a DNS `CNAME` record pointing to `cname.vercel-dns.com`.
+* **SSL Certificates**: Provisioned and renewed automatically via Vercel Let's Encrypt CA integration.
 
 ---
 
-## 👨‍💻 Author & Maintainer
+## 9. 🛡️ Security & Regulatory Compliance
 
-* **Rohan Cherian** — [GitHub Profile](https://github.com/rohancherian2003)
-* Repository: [https://github.com/rohancherian2003/Timora](https://github.com/rohancherian2003/Timora)
-* License: [MIT License](LICENSE)
+### Authentication & Token Security
+* **Argon2id Key Derivation**: User PINs are hashed using memory-hard Argon2id (`memoryCost: 65536`, `iterations: 3`). Plaintext PINs are never persisted or logged.
+* **JWT Token Sanitization**: User identity tokens carry strict `15m` validity windows, signing only non-sensitive claims (`userId`, `role`).
+* **Connection Security**: Cloud database access requires SSL encryption (`sslmode=require`), rejecting plaintext network traffic.
+
+### Kerala Forest Produce Transit Rules (1975) Compliance
+TIMORA™ embeds statutory forestry compliance directly into its digital workflows:
+* **Form IV Transit Clearance**: Transporters registered on TIMORA must declare clearance under the *Kerala Forest Produce Transit Rules, 1975*.
+* **Permit Attachment**: Timber consignments moving across Kerala revenue districts support attaching Forest Department Form IV transit permits, enabling real-time inspection at forest check-posts.
+* **Species Categorization**: Native reserved species (Nilambur Teak, Rosewood/Veetti, Sandalwood) are flagged for mandatory transit passes before dispatch orders are approved.
+
+---
+
+## 📄 License & Attribution
+
+TIMORA™ — Kerala's Smart Timber Marketplace. Proprietary software. All rights reserved.  
+Engineered for Kerala's timber growers, sawmillers, wood artisans, and builders.
