@@ -16,7 +16,8 @@ import {
   Layers,
   ArrowRight,
   Factory,
-  Menu
+  Menu,
+  X
 } from 'lucide-react';
 import { AuthProvider, useAuth, UserRole } from './context/AuthContext';
 import { formatUserProfileId, formatCleanPhone } from '@timora/shared';
