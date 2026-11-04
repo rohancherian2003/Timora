@@ -147,6 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const sessionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastStorageWriteRef = useRef<number>(0);
+  const lastRefreshTimeRef = useRef<number>(0);
 
   const doLogout = useCallback((timedOut: boolean = false) => {
     setUser(null);
@@ -446,6 +447,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!currentToken || currentToken.startsWith('demo-')) {
       return null;
     }
+
+    // Deduplicate burst calls within 3 seconds
+    const now = Date.now();
+    if (now - lastRefreshTimeRef.current < 3000) {
+      return user;
+    }
+    lastRefreshTimeRef.current = now;
 
     try {
       const res = await api.get('/auth/me');

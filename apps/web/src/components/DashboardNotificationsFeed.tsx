@@ -50,11 +50,11 @@ export function DashboardNotificationsFeed({
         const items: InDashboardNotification[] = res.data.data;
         setNotifications(items);
 
-        // If there is an unread verification notification, refresh user profile to detect approval
+        // If there is an unread verification notification and user is not yet approved, refresh user profile
         const hasUnreadVerification = items.some(
           (n) => !n.is_read && n.category === 'verification'
         );
-        if (hasUnreadVerification && refreshUser) {
+        if (hasUnreadVerification && refreshUser && user?.approvalStatus !== 'APPROVED') {
           refreshUser();
         }
       }
@@ -65,7 +65,11 @@ export function DashboardNotificationsFeed({
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 20000);
+    // Only poll when the tab is actively visible to eliminate background pings
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchNotifications();
+    }, 45000);
     return () => clearInterval(interval);
   }, [user?.id]);
 

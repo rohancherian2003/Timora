@@ -89,10 +89,10 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     message: string;
   } | null>(null);
 
-  // Live Listings Fetcher with Graceful Offline Fallback
+  // Live Listings Fetcher with Graceful Offline Fallback & 300ms Search Debounce
   useEffect(() => {
     let isMounted = true;
-    async function fetchLiveListings() {
+    const debounceTimer = setTimeout(async () => {
       try {
         setIsLoadingLive(true);
         const res = await api.get('/listings', {
@@ -110,11 +110,11 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       } finally {
         if (isMounted) setIsLoadingLive(false);
       }
-    }
+    }, 300);
 
-    fetchLiveListings();
     return () => {
       isMounted = false;
+      clearTimeout(debounceTimer);
     };
   }, [searchQuery]);
 
