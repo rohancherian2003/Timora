@@ -96,7 +96,25 @@ const INITIAL_PENDING_APPLICATIONS: PendingBusiness[] = [
   },
 ];
 
-const DEMO_PENDING_LISTINGS = [
+interface PendingListing {
+  id: string;
+  title: string;
+  seller_name?: string;
+  business_name?: string;
+  species?: string;
+  species_name?: string;
+  district?: string;
+  district_name?: string;
+  quantity: number;
+  unit: string;
+  price_per_cft: number;
+  image_count?: number;
+  images?: Array<{ id: string; url: string; is_primary?: boolean }>;
+  created_at?: string;
+  submitted_at?: string;
+}
+
+const DEMO_PENDING_LISTINGS: PendingListing[] = [
   {
     id: 'lst-101',
     title: 'Aanjili Wild Jack Squared Beams (Heavy Joinery)',
@@ -125,7 +143,9 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [activeTab, setActiveTab] = useState<'business' | 'listings' | 'tickets' | 'audit'>('business');
   const [businessFilter, setBusinessFilter] = useState<'all' | 'seller' | 'mill' | 'carpenter' | 'transport'>('all');
   const [applications, setApplications] = useState<PendingBusiness[]>(INITIAL_PENDING_APPLICATIONS);
-  const [listings, setListings] = useState(DEMO_PENDING_LISTINGS);
+  const [listings, setListings] = useState<PendingListing[]>(DEMO_PENDING_LISTINGS);
+  const [isLoadingListings, setIsLoadingListings] = useState(false);
+  const [listingActionLoadingId, setListingActionLoadingId] = useState<string | null>(null);
   const [tickets, setTickets] = useState<SupportTicket[]>(getStoredTickets());
   const [ticketFilter, setTicketFilter] = useState<'all' | 'open' | 'resolved'>('all');
   const [message, setMessage] = useState<string | null>(null);
@@ -209,6 +229,31 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchPendingListings() {
+      try {
+        setIsLoadingListings(true);
+        const res = await api.get('/admin/listings/pending');
+        if (isMounted && res.data?.success && Array.isArray(res.data?.data)) {
+          if (res.data.data.length > 0) {
+            setListings(res.data.data);
+          } else {
+            setListings([]);
+          }
+        }
+      } catch {
+        // Fall back gracefully to DEMO_PENDING_LISTINGS
+      } finally {
+        if (isMounted) setIsLoadingListings(false);
+      }
+    }
+    fetchPendingListings();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const openTicketsCount = tickets.filter((t) => t.status === 'open').length;
 
   const addAudit = (action: string, target: string, note?: string) => {
@@ -245,6 +290,36 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         ? `${app.businessName} has been approved and activated.`
         : `${app.businessName} അംഗീകരിക്കുകയും സജീവമാക്കുകയും ചെയ്തു.`
     );
+  };
+
+  const handleApproveListing = async (lst: PendingListing) => {
+    setListingActionLoadingId(lst.id);
+    addAudit('APPROVE_LISTING', lst.title);
+    try {
+      await api.patch(`/admin/listings/${lst.id}/approve`);
+    } catch (err: any) {
+      console.warn('Backend approval failed, applied locally:', err);
+    } finally {
+      setListingActionLoadingId(null);
+      setListings((prev) => prev.filter((l) => l.id !== lst.id));
+      setMessage(lang === 'en' ? 'Listing approved and live on marketplace.' : 'ലിസ്റ്റിംഗ് അംഗീകരിച്ചു — മാർക്കറ്റ്‌പ്ലേസിൽ ദൃശ്യമാകും.');
+    }
+  };
+
+  const handleRejectListing = async (lst: PendingListing) => {
+    setListingActionLoadingId(lst.id);
+    addAudit('REJECT_LISTING', lst.title, 'Rejected by Moderator');
+    try {
+      await api.post(`/admin/listings/${lst.id}/reject`, {
+        reason: 'Listing details or photographs do not meet community standards.',
+      });
+    } catch (err: any) {
+      console.warn('Backend rejection failed, applied locally:', err);
+    } finally {
+      setListingActionLoadingId(null);
+      setListings((prev) => prev.filter((l) => l.id !== lst.id));
+      setMessage(lang === 'en' ? 'Listing rejected.' : 'ലിസ്റ്റിംഗ് നിരസിച്ചു.');
+    }
   };
 
   const handleConfirmActionModal = async (e: React.FormEvent) => {
@@ -574,56 +649,88 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       {/* TAB 2: TIMBER LISTINGS APPROVAL */}
       {activeTab === 'listings' && (
         <div className="bg-white rounded-3xl border border-stone-300 overflow-hidden shadow-xs divide-y divide-stone-200">
-          {listings.length === 0 ? (
+          {isLoadingListings ? (
+            <div className="p-8 text-center text-stone-500 text-xs flex items-center justify-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-[#5B6147]" />
+              <span>{lang === 'en' ? 'Loading pending listings...' : 'ലിസ്റ്റിംഗുകൾ ലോഡ് ചെയ്യുന്നു...'}</span>
+            </div>
+          ) : listings.length === 0 ? (
             <div className="p-8 text-center text-stone-500 text-xs">
               {lang === 'en' ? 'No pending timber listings.' : 'പരിശോധിക്കാനുള്ള തടി ലിസ്റ്റിംഗുകൾ ഇല്ല.'}
             </div>
           ) : (
-            listings.map((lst) => (
-              <div
-                key={lst.id}
-                className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
-              >
-                <div>
-                  <h4 className="font-serif font-bold text-base text-[#4A3626]">
-                    {translateWoodTitle(lst.title, lang)}
-                  </h4>
-                  <div className="text-xs text-stone-500 mt-1 flex items-center gap-2 flex-wrap">
-                    <span>{lang === 'en' ? 'Seller:' : 'വിൽക്കുന്നയാൾ:'} <b>{lst.seller_name}</b></span>
-                    <span>•</span>
-                    <span>{lang === 'en' ? 'Species:' : 'ഇനം:'} <b>{translateSpecies(lst.species, lang)}</b></span>
-                    <span>•</span>
-                    <span>{lang === 'en' ? 'Volume:' : 'അളവ്:'} <b>{lst.quantity} {translateUnit(lst.unit, lang)}</b></span>
-                    <span>•</span>
-                    <span>{lang === 'en' ? 'Rate:' : 'നിരക്ക്:'} <b>{formatINR(lst.price_per_cft)}/{translateUnit('CFT', lang)}</b></span>
+            listings.map((lst) => {
+              const speciesDisplay = lst.species_name || lst.species || 'Timber';
+              const districtDisplay = lst.district_name || lst.district || '';
+              const sellerDisplay = lst.business_name || lst.seller_name || 'Individual Seller';
+              const imagesCount = Array.isArray(lst.images) ? lst.images.length : (lst.image_count || 0);
+              const primaryImage = Array.isArray(lst.images) && lst.images.length > 0 ? (lst.images.find((img) => img.is_primary)?.url || lst.images[0]?.url) : null;
+
+              return (
+                <div
+                  key={lst.id}
+                  className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                >
+                  <div className="flex items-start gap-4">
+                    {primaryImage && (
+                      <img
+                        src={primaryImage}
+                        alt={lst.title}
+                        className="w-16 h-16 rounded-xl object-cover border border-stone-200 shrink-0"
+                      />
+                    )}
+                    <div>
+                      <h4 className="font-serif font-bold text-base text-[#4A3626]">
+                        {translateWoodTitle(lst.title, lang)}
+                      </h4>
+                      <div className="text-xs text-stone-500 mt-1 flex items-center gap-2 flex-wrap">
+                        <span>{lang === 'en' ? 'Seller:' : 'വിൽക്കുന്നയാൾ:'} <b>{sellerDisplay}</b></span>
+                        {districtDisplay && (
+                          <>
+                            <span>•</span>
+                            <span>{lang === 'en' ? 'District:' : 'ജില്ല:'} <b>{districtDisplay}</b></span>
+                          </>
+                        )}
+                        <span>•</span>
+                        <span>{lang === 'en' ? 'Species:' : 'ഇനം:'} <b>{translateSpecies(speciesDisplay, lang)}</b></span>
+                        <span>•</span>
+                        <span>{lang === 'en' ? 'Volume:' : 'അളവ്:'} <b>{lst.quantity} {translateUnit(lst.unit, lang)}</b></span>
+                        <span>•</span>
+                        <span>{lang === 'en' ? 'Rate:' : 'നിരക്ക്:'} <b>{formatINR(lst.price_per_cft)}/{translateUnit('CFT', lang)}</b></span>
+                        {imagesCount > 0 && (
+                          <>
+                            <span>•</span>
+                            <span>{imagesCount} {lang === 'en' ? 'Photos' : 'ഫോട്ടോകൾ'}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={listingActionLoadingId === lst.id}
+                      onClick={() => handleApproveListing(lst)}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition"
+                    >
+                      {listingActionLoadingId === lst.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Check className="w-3.5 h-3.5" />
+                      )}
+                      <span>{lang === 'en' ? 'Approve & Publish' : 'അംഗീകരിച്ച് പ്രസിദ്ധീകരിക്കുക'}</span>
+                    </button>
+                    <button
+                      disabled={listingActionLoadingId === lst.id}
+                      onClick={() => handleRejectListing(lst)}
+                      className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-800 border border-rose-300 font-bold text-xs hover:bg-rose-100 disabled:opacity-50 transition"
+                    >
+                      {lang === 'en' ? 'Reject' : 'നിരസിക്കുക'}
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      setListings(listings.filter((l) => l.id !== lst.id));
-                      addAudit('APPROVE_LISTING', lst.title);
-                      setMessage(lang === 'en' ? 'Listing approved and live.' : 'ലിസ്റ്റിംഗ് അംഗീകരിച്ചു.');
-                    }}
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    <span>{lang === 'en' ? 'Approve & Publish' : 'അംഗീകരിച്ച് പ്രസിദ്ധീകരിക്കുക'}</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setListings(listings.filter((l) => l.id !== lst.id));
-                      addAudit('REJECT_LISTING', lst.title, 'Photo quality inadequate');
-                      setMessage(lang === 'en' ? 'Listing rejected.' : 'ലിസ്റ്റിംഗ് നിരസിച്ചു.');
-                    }}
-                    className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-800 border border-rose-300 font-bold text-xs"
-                  >
-                    {lang === 'en' ? 'Reject' : 'നിരസിക്കുക'}
-                  </button>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}

@@ -59,6 +59,8 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [isSubmittingListing, setIsSubmittingListing] = useState(false);
   const [managingPhotosListing, setManagingPhotosListing] = useState<any | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [apiSpecies, setApiSpecies] = useState<Array<{id: number; name_en: string; name_ml: string; slug: string}>>([]);
+  const [apiDistricts, setApiDistricts] = useState<Array<{id: number; name_en: string; name_ml: string}>>([]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageError(null);
@@ -171,7 +173,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       try {
         setIsLoadingListings(true);
         const res = await api.get('/listings/seller/me');
-        if (isMounted && res.data?.success && Array.isArray(res.data?.data) && res.data.data.length > 0) {
+        if (isMounted && res.data?.success && Array.isArray(res.data?.data)) {
           setSellerListings(res.data.data);
         }
       } catch {
@@ -185,6 +187,24 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       isMounted = false;
     };
   }, [user?.id, submitted]);
+
+  useEffect(() => {
+    const VALID_SLUGS = ['teak', 'mahogany', 'rosewood', 'anjili', 'jackfruit', 'rubberwood', 'firewood'];
+    api.get('/species').then(r => {
+      if (r.data?.success && Array.isArray(r.data?.data)) {
+        let filtered = r.data.data.filter((s: any) => VALID_SLUGS.includes(s.slug));
+        if (!filtered.some((s: any) => s.slug === 'firewood')) {
+          filtered.push({ id: 8, name_en: 'Firewood', name_ml: 'വിറക്', slug: 'firewood' });
+        }
+        setApiSpecies(filtered);
+      }
+    }).catch(() => {});
+    api.get('/districts').then(r => {
+      if (r.data?.success && Array.isArray(r.data?.data)) {
+        setApiDistricts(r.data.data);
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -548,14 +568,23 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     onChange={(e) => setSpeciesId(Number(e.target.value))}
                     className="w-full px-3 py-2.5 border rounded-xl text-sm bg-white"
                   >
-                    <option value={1}>Teak (തേക്ക്)</option>
-                    <option value={2}>Mahogany (മഹാഗണി)</option>
-                    <option value={3}>Anjili (ആഞ്ഞിലി)</option>
-                    <option value={4}>Rubberwood (റബർ)</option>
-                    <option value={5}>Mango Wood (മാവ്)</option>
-                    <option value={6}>Jackfruit (പ്ലാവ്)</option>
-                    <option value={7}>Rosewood (ഇടപ്പിലി)</option>
-                    <option value={8}>Coconut (തെങ്ങ്)</option>
+                    {apiSpecies.length > 0 ? (
+                      apiSpecies.map(sp => (
+                        <option key={sp.id} value={sp.id}>
+                          {sp.name_en} ({sp.name_ml})
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value={1}>Teak (തേക്ക്)</option>
+                        <option value={2}>Mahogany (മഹാഗണി)</option>
+                        <option value={7}>Rosewood (ഈട്ടി)</option>
+                        <option value={3}>Anjili (ആഞ്ഞിലി)</option>
+                        <option value={6}>Jackfruit (പ്ലാവ്)</option>
+                        <option value={4}>Rubberwood (റബ്ബർ)</option>
+                        <option value={8}>Firewood (വിറക്)</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -584,11 +613,30 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     onChange={(e) => setDistrictId(Number(e.target.value))}
                     className="w-full px-3 py-2.5 border rounded-xl text-sm bg-white"
                   >
-                    <option value={5}>Kottayam (കോട്ടയം)</option>
-                    <option value={7}>Ernakulam (എറണാകുളം)</option>
-                    <option value={8}>Thrissur (തൃശ്ശൂർ)</option>
-                    <option value={10}>Malappuram (മലപ്പുറം)</option>
-                    <option value={11}>Kozhikode (കോഴിക്കോട്)</option>
+                    {apiDistricts.length > 0 ? (
+                      apiDistricts.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name_en} ({d.name_ml})
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value={1}>Thiruvananthapuram (തിരുവനന്തപുരം)</option>
+                        <option value={2}>Kollam (കൊല്ലം)</option>
+                        <option value={3}>Pathanamthitta (പത്തനംതിട്ട)</option>
+                        <option value={4}>Alappuzha (ആലപ്പുഴ)</option>
+                        <option value={5}>Kottayam (കോട്ടയം)</option>
+                        <option value={6}>Idukki (ഇടുക്കി)</option>
+                        <option value={7}>Ernakulam (എറണാകുളം)</option>
+                        <option value={8}>Thrissur (തൃശ്ശൂർ)</option>
+                        <option value={9}>Palakkad (പാലക്കാട്)</option>
+                        <option value={10}>Malappuram (മലപ്പുറം)</option>
+                        <option value={11}>Kozhikode (കോഴിക്കോട്)</option>
+                        <option value={12}>Wayanad (വയനാട്)</option>
+                        <option value={13}>Kannur (കണ്ണൂർ)</option>
+                        <option value={14}>Kasaragod (കാസർഗോഡ്)</option>
+                      </>
+                    )}
                   </select>
                 </div>
               </div>
@@ -600,9 +648,12 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   </label>
                   <input
                     type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm"
+                    value={quantity === 0 ? '' : quantity}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/^0+(?=\d)/, '');
+                      setQuantity(val === '' ? 0 : Number(val));
+                    }}
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     min={1}
                     required
                   />
@@ -614,9 +665,12 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   </label>
                   <input
                     type="number"
-                    value={pricePerCft}
-                    onChange={(e) => setPricePerCft(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm"
+                    value={pricePerCft === 0 ? '' : pricePerCft}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/^0+(?=\d)/, '');
+                      setPricePerCft(val === '' ? 0 : Number(val));
+                    }}
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     min={1}
                     required
                   />
@@ -712,7 +766,9 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             {lang === 'en' ? 'My Timber Stock Inventory' : 'എന്റെ തടി സ്റ്റോക്കുകൾ'}
           </h3>
           <span className="text-xs text-[#5B6147] font-semibold">
-            {lang === 'en' ? '1 Active · 1 Pending Review' : '1 സജീവം · 1 പരിശോധനയിൽ'}
+            {sellerListings.length > 0
+              ? `${sellerListings.filter((l: any) => l.status === 'approved').length} ${lang === 'en' ? 'Active' : 'സജീവം'} · ${sellerListings.filter((l: any) => l.status !== 'approved').length} ${lang === 'en' ? 'Pending Review' : 'പരിശോധനയിൽ'}`
+              : (lang === 'en' ? '0 Stock Items' : 'സ്റ്റോക്കുകൾ ഇല്ല')}
           </span>
         </div>
 
@@ -760,7 +816,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                         )}
                       </div>
                       <div className="text-xs text-stone-500 mt-0.5">
-                        {translateSpecies(item.species_name_en || 'Timber', lang)} · {translateCutType(item.type_name_en || 'Planks', lang)} · {lang === 'ml' ? 'കേരളം' : (item.district_name_en || 'Kerala')}
+                        {translateSpecies(item.species_name_en || 'Timber', lang)} · {translateCutType(item.type_name_en || 'Planks', lang)} · {lang === 'ml' ? (item.district_name_ml || item.district_name_en || 'കേരളം') : (item.district_name_en || 'Kerala')}
                       </div>
                     </div>
                   </div>
@@ -789,45 +845,11 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               );
             })
           ) : (
-            <>
-              <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#E7E1D6]/50">
-                <div>
-                  <div className="font-bold text-[#4A3626]">
-                    {translateWoodTitle('First-Grade Nilambur Teak Planks', lang)}
-                  </div>
-                  <div className="text-xs text-stone-500 mt-0.5">
-                    {translateSpecies('Teak', lang)} · {translateCutType('Rough-sawn Planks', lang)} · {lang === 'ml' ? 'കോട്ടയം' : 'Kottayam'}
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="font-mono font-bold text-[#4A3626]">
-                    45 {translateUnit('cft', lang)} @ ₹2,800/{translateUnit('cft', lang)}
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
-                    {lang === 'en' ? 'Approved (Live)' : 'പരിശോധിച്ചു (സജീവം)'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#E7E1D6]/50">
-                <div>
-                  <div className="font-bold text-[#4A3626]">
-                    {translateWoodTitle('Anjili Wild Jack Sawn Beams', lang)}
-                  </div>
-                  <div className="text-xs text-stone-500 mt-0.5">
-                    {translateSpecies('Anjili', lang)} · {translateCutType('Squared Beams', lang)} · {lang === 'ml' ? 'കോട്ടയം' : 'Kottayam'}
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="font-mono font-bold text-stone-700">
-                    80 {translateUnit('cft', lang)} @ ₹1,400/{translateUnit('cft', lang)}
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full bg-stone-100 text-[#4A3626] border border-stone-300 text-xs font-semibold">
-                    {lang === 'en' ? 'Pending Review' : 'പരിശോധനയിൽ'}
-                  </span>
-                </div>
-              </div>
-            </>
+            <div className="p-8 text-center text-stone-500 text-xs">
+              {lang === 'en'
+                ? 'No timber stock listings found. Click "+ List New Timber Stock" above to add your stock.'
+                : 'തടി ലിസ്റ്റിംഗുകൾ ഒന്നും ലഭ്യമല്ല. മുകളിലെ "+ പുതിയ തടി ലിസ്റ്റ് ചെയ്യുക" ക്ലിക്ക് ചെയ്യുക.'}
+            </div>
           )}
         </div>
       </div>

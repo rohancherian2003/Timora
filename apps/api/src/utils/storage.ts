@@ -206,7 +206,7 @@ export async function uploadListingImage(
   );
   return {
     storageKey,
-    publicUrl: `https://images.unsplash.com/photo-1546484396-fb3fc6f95f98?auto=format&fit=crop&w=800&q=80&timora_storage=mock_dev&demo=${fileHash}`,
+    publicUrl: `data:${normalizedMime};base64,${buffer.toString('base64')}#timora_storage=mock_dev`,
   };
 }
 
