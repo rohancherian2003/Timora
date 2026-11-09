@@ -267,7 +267,7 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#5B6147]" />
-              <span>{lang === 'en' ? 'Quick Demo Accounts (Evaluation & Presentation)' : 'ഡെമോ അക്കൗണ്ടുകൾ (വിലയിരുത്തലിനായി)'}</span>
+              <span>{lang === 'en' ? 'Quick Demo Accounts' : 'ഡെമോ അക്കൗണ്ടുകൾ'}</span>
             </div>
             {isDemoSectionOpen ? (
               <ChevronUp className="w-4 h-4 text-[#8E7F6B]" />
