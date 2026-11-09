@@ -2,7 +2,7 @@
 ### *Connecting Timber, People & Possibilities across God's Own Country*
 
 [![Production Web Client](https://img.shields.io/badge/Live%20Web%20App-timora--rho.vercel.app-5B6147?style=for-the-badge&logo=vercel&logoColor=white)](https://timora-rho.vercel.app/)
-[![Production Backend API](https://img.shields.io/badge/Live%20API-timora--backend--three.vercel.app-4A3626?style=for-the-badge&logo=vercel&logoColor=white)](https://timora-backend-three.vercel.app/api/v1)
+[![Production Backend API](https://img.shields.io/badge/Live%20API-api.timorah.me-4A3626?style=for-the-badge&logo=vercel&logoColor=white)](https://api.timorah.me/api/v1)
 [![Tests Passing](https://img.shields.io/badge/Vitest-223%20Tests%20Passing-emerald?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://supabase.com/)
@@ -368,8 +368,8 @@ erDiagram
 # Local Development:
 VITE_API_URL=http://localhost:3001/api/v1
 
-# Production Vercel Deployment:
-# VITE_API_URL=https://timora-backend-three.vercel.app/api/v1
+# Production Deployment:
+# VITE_API_URL=https://api.timorah.me/api/v1
 ```
 
 ### Backend API Configuration (`apps/api/.env`)
@@ -487,7 +487,7 @@ TIMORA™ is optimized for zero-maintenance serverless deployment on **Vercel** 
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://timora-backend-three.vercel.app/api/:match*"
+      "destination": "https://api.timorah.me/api/:match*"
     },
     {
       "source": "/(.*)",

@@ -21,44 +21,54 @@ export function createApp(): express.Application {
   app.set('trust proxy', 1);
 
   // Security headers & CORS
-  // Security headers & CORS
   app.use(helmet());
 
-  const allowedOrigins = (env.CORS_ORIGINS || '')
+  // Explicit front-end custom domain origins
+  const customDomainOrigins = [
+    'https://timorah.me',
+    'https://www.timorah.me',
+  ];
+
+  const envOrigins = (env.CORS_ORIGINS || '')
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
 
-  app.use(
-    cors({
-      origin: (origin, callback) => {
-        // Allow server-to-server, curl, Postman, mobile requests
-        if (!origin) return callback(null, true);
+  const allowedOrigins = Array.from(new Set([...customDomainOrigins, ...envOrigins]));
 
-        // Allow explicitly defined origins or wildcard
-        if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
-          return callback(null, true);
-        }
+  const corsOptions: cors.CorsOptions = {
+    origin: (origin, callback) => {
+      // Allow server-to-server, curl, Postman, mobile requests (no origin header)
+      if (!origin) return callback(null, true);
 
-        // Dynamically allow all Vercel domains (production & preview URLs)
-        if (origin.endsWith('.vercel.app')) {
-          return callback(null, true);
-        }
+      // Explicitly allow custom domains (https://timorah.me, https://www.timorah.me) and env origins
+      if (
+        customDomainOrigins.includes(origin) ||
+        allowedOrigins.includes('*') ||
+        allowedOrigins.includes(origin)
+      ) {
+        return callback(null, true);
+      }
 
-        // Allow local development
-        if (origin.startsWith('http://localhost:')) {
-          return callback(null, true);
-        }
+      // Dynamically allow all Vercel domains (production & preview URLs)
+      if (origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
 
-        callback(new Error(`Origin ${origin} not allowed by CORS`));
-      },
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    })
-  );
+      // Allow local development
+      if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+        return callback(null, true);
+      }
 
-  app.options('*', cors());
+      callback(null, false);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  };
+
+  app.use(cors(corsOptions));
+  app.options('*', cors(corsOptions));
 
   // Body parsing middleware
   app.use(express.json());
@@ -168,6 +178,41 @@ export function createApp(): express.Application {
   });
 
   app.get('/api/v1/districts', async (_req, res, next) => {
+    try {
+      const result = await query('SELECT id, name_en, name_ml FROM kerala_districts ORDER BY id ASC');
+      res.json({ success: true, data: result.rows });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Direct route aliases for subdomain routing flexibility (e.g. api.timorah.me/*)
+  app.use('/auth', authRouter);
+  app.use('/listings', listingsRouter);
+  app.use('/enquiries', enquiriesRouter);
+  app.use('/orders', ordersRouter);
+  app.use('/transport', transportRouter);
+  app.use('/mills', millsRouter);
+  app.use('/carpenters', carpentersRouter);
+  app.use('/support', supportRouter);
+  app.use('/admin', adminRouter);
+  app.get('/species', async (_req, res, next) => {
+    try {
+      const result = await query('SELECT id, name_en, name_ml, slug FROM timber_species ORDER BY id ASC');
+      res.json({ success: true, data: result.rows });
+    } catch (err) {
+      next(err);
+    }
+  });
+  app.get('/timber-types', async (_req, res, next) => {
+    try {
+      const result = await query('SELECT id, name_en, name_ml, slug, description FROM timber_types ORDER BY id ASC');
+      res.json({ success: true, data: result.rows });
+    } catch (err) {
+      next(err);
+    }
+  });
+  app.get('/districts', async (_req, res, next) => {
     try {
       const result = await query('SELECT id, name_en, name_ml FROM kerala_districts ORDER BY id ASC');
       res.json({ success: true, data: result.rows });

@@ -65,4 +65,43 @@ describe('Auth & Health Endpoints', () => {
     expect(res.body.success).toBe(false);
     expect(res.body.error.code).toBe('INVALID_REFRESH_TOKEN');
   });
+
+  describe('CORS Configuration for Custom Domain', () => {
+    it('allows CORS requests from https://timorah.me with credentials', async () => {
+      const res = await request(app)
+        .get('/health')
+        .set('Origin', 'https://timorah.me');
+
+      expect(res.headers['access-control-allow-origin']).toBe('https://timorah.me');
+      expect(res.headers['access-control-allow-credentials']).toBe('true');
+    });
+
+    it('allows CORS requests from https://www.timorah.me with credentials', async () => {
+      const res = await request(app)
+        .get('/health')
+        .set('Origin', 'https://www.timorah.me');
+
+      expect(res.headers['access-control-allow-origin']).toBe('https://www.timorah.me');
+      expect(res.headers['access-control-allow-credentials']).toBe('true');
+    });
+
+    it('handles preflight OPTIONS request for https://timorah.me', async () => {
+      const res = await request(app)
+        .options('/api/v1/auth/login')
+        .set('Origin', 'https://timorah.me')
+        .set('Access-Control-Request-Method', 'POST');
+
+      expect(res.status).toBe(204);
+      expect(res.headers['access-control-allow-origin']).toBe('https://timorah.me');
+      expect(res.headers['access-control-allow-credentials']).toBe('true');
+    });
+
+    it('does not allow CORS for unauthorized arbitrary domains', async () => {
+      const res = await request(app)
+        .get('/health')
+        .set('Origin', 'https://unauthorized-domain.com');
+
+      expect(res.headers['access-control-allow-origin']).toBeUndefined();
+    });
+  });
 });

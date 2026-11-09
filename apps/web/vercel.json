@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://timora-backend-three.vercel.app/api/:match*"
+      "destination": "https://api.timorah.me/api/:match*"
     },
     {
       "source": "/(.*)",

@@ -17,8 +17,8 @@ const envSchema = z.object({
     .default('false'),
 
   // Frontend / CORS
-  FRONTEND_URL: z.string().url().default('http://localhost:5173'),
-  CORS_ORIGINS: z.string().default('http://localhost:5173'),
+  FRONTEND_URL: z.string().url().default('https://timorah.me'),
+  CORS_ORIGINS: z.string().default('https://timorah.me,https://www.timorah.me,http://localhost:5173'),
 
   // JWT
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
