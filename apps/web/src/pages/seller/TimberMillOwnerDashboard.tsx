@@ -92,9 +92,46 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
     return () => window.removeEventListener('timora_tickets_updated', handleUpdate);
   }, [user]);
 
-  const latestResolvedTicket = tickets.find(
-    (t) => t.status === 'resolved' && t.resolutionReply
-  );
+  const [showAdminReply, setShowAdminReply] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(`timora_dismissed_admin_reply_${user?.id || 'mill_owner'}`) !== 'true';
+    } catch {
+      return true;
+    }
+  });
+  const [dismissedTicketIds, setDismissedTicketIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('timora_dismissed_ticket_ids');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleDismissAdminReply = (ticketId?: string) => {
+    setShowAdminReply(false);
+    if (ticketId) {
+      setDismissedTicketIds((prev) => {
+        const next = prev.includes(ticketId) ? prev : [...prev, ticketId];
+        try {
+          localStorage.setItem('timora_dismissed_ticket_ids', JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    }
+    try {
+      localStorage.setItem(`timora_dismissed_admin_reply_${user?.id || 'mill_owner'}`, 'true');
+    } catch {}
+  };
+
+  const latestResolvedTicket = showAdminReply
+    ? tickets.find(
+        (t) =>
+          t.status === 'resolved' &&
+          t.resolutionReply &&
+          !dismissedTicketIds.includes(t.id)
+      ) || null
+    : null;
 
   const unreadTicketsCount = tickets.filter(
     (t) => !t.isRead && (t.status === 'resolved' || Boolean(t.resolutionReply))
@@ -276,6 +313,54 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
 
       {/* IN-DASHBOARD NOTIFICATION FEED */}
       <DashboardNotificationsFeed lang={lang} />
+
+      {/* RESOLVED TICKET NOTIFICATION POP-UP BANNER */}
+      {latestResolvedTicket && (
+        <div className="p-5 rounded-3xl bg-gradient-to-r from-emerald-50 via-[#E7E1D6] to-stone-100 border-2 border-emerald-400 shadow-md animate-fadeIn space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold flex-shrink-0">
+                <ShieldCheck className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-200 text-emerald-900 font-bold text-[10px] uppercase tracking-wider">
+                    {lang === 'en' ? 'Admin Solution Reply' : 'അഡ്മിൻ നൽകിയ പരിഹാരം'}
+                  </span>
+                  <span className="font-mono text-xs font-bold text-stone-600">
+                    {latestResolvedTicket.id}
+                  </span>
+                </div>
+                <h3 className="font-extrabold font-serif text-[#4A3626] text-base mt-0.5">
+                  {lang === 'en' ? latestResolvedTicket.category : latestResolvedTicket.categoryMl}
+                </h3>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleDismissAdminReply(latestResolvedTicket.id)}
+              aria-label={lang === 'en' ? 'Dismiss notification' : 'അറിയിപ്പ് ഒഴിവാക്കുക'}
+              className="text-stone-400 hover:text-stone-700 font-bold p-1 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 rounded-lg cursor-pointer"
+              title="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-white border border-emerald-200 shadow-xs text-xs space-y-1">
+            <div className="flex items-center justify-between text-stone-500 text-[11px] font-semibold">
+              <span>{lang === 'en' ? 'Resolved by Timora Admin Cell' : 'ടിമോറ അഡ്മിൻ മറുപടി:'}</span>
+              <span className="font-mono">{latestResolvedTicket.resolvedAt}</span>
+            </div>
+            <p className="text-stone-900 text-xs sm:text-sm font-medium leading-relaxed">
+              "{lang === 'en'
+                ? (latestResolvedTicket.resolutionReply || latestResolvedTicket.resolutionReplyMl)
+                : (latestResolvedTicket.resolutionReplyMl || latestResolvedTicket.resolutionReply)}"
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* MILL OPERATIONAL METRICS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

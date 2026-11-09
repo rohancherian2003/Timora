@@ -677,8 +677,8 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     <span>
                       {isAuthenticated
                         ? lang === 'en'
-                          ? `Call ${mill.phone}`
-                          : `വിളിക്കുക: ${mill.phone}`
+                          ? `Call ${formatCleanPhone(mill.phone)}`
+                          : `വിളിക്കുക: ${formatCleanPhone(mill.phone)}`
                         : lang === 'en'
                         ? 'Call Mill Owner (Login)'
                         : 'വിളിക്കാൻ ലോഗിൻ ചെയ്യുക'}

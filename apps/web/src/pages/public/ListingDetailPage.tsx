@@ -19,7 +19,7 @@ import {
   MessageSquare,
   Loader2,
 } from 'lucide-react';
-import { formatINR, formatUserProfileId } from '@timora/shared';
+import { formatINR, formatUserProfileId, formatCleanPhone } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { getTimberListingById, TimberListingItem, mapApiListingToItem } from '../../utils/timberListings';
 import { LoginAlertModal, AlertEntityType } from '../../components/LoginAlertModal';
@@ -373,11 +373,11 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
               {isAuthenticated ? (
                 <a
-                  href={`tel:${listing.seller_phone || listing.phone || '+919847120001'}`}
+                  href={`tel:${(listing.seller_phone || listing.phone || '9847120001').replace(/\D/g, '')}`}
                   className="px-4 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-50 text-[#4A3626] font-bold text-xs transition flex items-center gap-1.5 shadow-2xs"
                 >
                   <Phone className="w-3.5 h-3.5 text-[#5B6147]" />
-                  <span>{listing.seller_phone || listing.phone || '+91 98471 20001'}</span>
+                  <span>{formatCleanPhone(listing.seller_phone || listing.phone || '9847120001')}</span>
                 </a>
               ) : (
                 <button
