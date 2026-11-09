@@ -279,6 +279,65 @@ export class ListingsController {
       next(err);
     }
   }
+
+  async appendPhotos(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const uploadedImages: string[] = [];
+    try {
+      const sellerId = req.user!.id;
+      const listingId = req.params.id as string;
+      const files: Express.Multer.File[] = [];
+
+      if (req.file) files.push(req.file);
+      if (Array.isArray((req as any).files)) {
+        files.push(...(req as any).files);
+      }
+
+      const results = [];
+
+      if (files.length > 0) {
+        for (const file of files) {
+          const uploaded = await uploadListingImage(
+            file.buffer,
+            file.originalname,
+            file.mimetype,
+            listingId
+          );
+          if (uploaded.storageKey) uploadedImages.push(uploaded.storageKey);
+          const saved = await listingsService.addListingImage(sellerId, listingId, uploaded);
+          results.push(saved);
+        }
+      } else if (req.body?.imageUrl || req.body?.imageUrls || req.body?.photos) {
+        const urls: string[] = Array.isArray(req.body.imageUrls)
+          ? req.body.imageUrls
+          : Array.isArray(req.body.photos)
+          ? req.body.photos
+          : [req.body.imageUrl];
+        for (const url of urls) {
+          if (url && typeof url === 'string') {
+            const saved = await listingsService.addListingImage(sellerId, listingId, {
+              storageKey: `external-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+              publicUrl: url,
+            });
+            results.push(saved);
+          }
+        }
+      } else {
+        throw new AppError(400, 'NO_PHOTOS', 'No image file or image URLs provided.');
+      }
+
+      const response: ApiSuccessResponse = {
+        success: true,
+        data: results.length === 1 ? results[0] : results,
+        message: 'Photos appended to timber listing successfully.',
+      };
+      res.status(200).json(response);
+    } catch (err) {
+      for (const key of uploadedImages) {
+        await deleteListingImage(key).catch(() => {});
+      }
+      next(err);
+    }
+  }
 }
 
 export const listingsController = new ListingsController();

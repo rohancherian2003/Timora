@@ -76,6 +76,15 @@ listingsRouter.patch(
   listingsController.updateStatus.bind(listingsController)
 );
 
+// Append photos to timber listing
+listingsRouter.patch(
+  '/:id/photos',
+  authenticate,
+  requireRole('seller'),
+  upload.any(),
+  listingsController.appendPhotos.bind(listingsController)
+);
+
 // Submit listing for approval
 listingsRouter.post(
   '/:id/submit',
