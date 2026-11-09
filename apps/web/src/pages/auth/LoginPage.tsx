@@ -298,7 +298,9 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   )}
                   <div className="truncate">
                     <div className="font-bold text-[#4A3626] text-[11px] truncate">
-                      {loadingDemoRole === 'buyer' ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...') : 'Buyer'}
+                      {loadingDemoRole === 'buyer'
+                        ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...')
+                        : (lang === 'en' ? 'Buyer' : 'ഉപഭോക്താവ്')}
                     </div>
                     <div className="text-[10px] text-[#8E7F6B] truncate">Suresh Kumar</div>
                   </div>
@@ -318,7 +320,9 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   )}
                   <div className="truncate">
                     <div className="font-bold text-[#4A3626] text-[11px] truncate">
-                      {loadingDemoRole === 'seller_individual' ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...') : 'Individual Seller'}
+                      {loadingDemoRole === 'seller_individual'
+                        ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...')
+                        : (lang === 'en' ? 'Individual Seller' : 'തടി കച്ചവടക്കാരൻ')}
                     </div>
                     <div className="text-[10px] text-[#8E7F6B] truncate">K. R. Madhavan</div>
                   </div>
@@ -338,9 +342,13 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   )}
                   <div className="truncate">
                     <div className="font-bold text-[#4A3626] text-[11px] truncate">
-                      {loadingDemoRole === 'seller_mill_owner' ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...') : 'Mill Owner'}
+                      {loadingDemoRole === 'seller_mill_owner'
+                        ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...')
+                        : (lang === 'en' ? 'Mill Owner' : 'മില്ല് ഉടമ')}
                     </div>
-                    <div className="text-[10px] text-[#8E7F6B] truncate">Perumbavoor Sawmill</div>
+                    <div className="text-[10px] text-[#8E7F6B] truncate">
+                      {lang === 'en' ? 'Perumbavoor Sawmill' : 'പെരുമ്പാവൂർ സോമില്ല്'}
+                    </div>
                   </div>
                 </button>
 
@@ -358,9 +366,13 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   )}
                   <div className="truncate">
                     <div className="font-bold text-[#4A3626] text-[11px] truncate">
-                      {loadingDemoRole === 'carpenter' ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...') : 'Carpenter'}
+                      {loadingDemoRole === 'carpenter'
+                        ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...')
+                        : (lang === 'en' ? 'Carpenter' : 'വിദഗ്ദ്ധ ആശാരി')}
                     </div>
-                    <div className="text-[10px] text-[#8E7F6B] truncate">Master Binu Achari</div>
+                    <div className="text-[10px] text-[#8E7F6B] truncate">
+                      {lang === 'en' ? 'Master Binu Achari' : 'ബിനു ആശാരി'}
+                    </div>
                   </div>
                 </button>
 
@@ -378,9 +390,13 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   )}
                   <div className="truncate">
                     <div className="font-bold text-[#4A3626] text-[11px] truncate">
-                      {loadingDemoRole === 'transport' ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...') : 'Transport Owner'}
+                      {loadingDemoRole === 'transport'
+                        ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...')
+                        : (lang === 'en' ? 'Transport Owner' : 'വാഹന ഉടമ')}
                     </div>
-                    <div className="text-[10px] text-[#8E7F6B] truncate">Malabar Haulage</div>
+                    <div className="text-[10px] text-[#8E7F6B] truncate">
+                      {lang === 'en' ? 'Malabar Haulage' : 'മലബാർ ട്രാൻസ്പോർട്ട്'}
+                    </div>
                   </div>
                 </button>
 
@@ -398,9 +414,13 @@ export function LoginPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   )}
                   <div className="truncate">
                     <div className="font-bold text-[#4A3626] text-[11px] truncate">
-                      {loadingDemoRole === 'admin' ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...') : 'Admin Cell'}
+                      {loadingDemoRole === 'admin'
+                        ? (lang === 'en' ? 'Signing in...' : 'ലോഗിൻ ചെയ്യുന്നു...')
+                        : (lang === 'en' ? 'Admin Cell' : 'അഡ്മിൻ')}
                     </div>
-                    <div className="text-[10px] text-[#8E7F6B] truncate">Chief Moderator</div>
+                    <div className="text-[10px] text-[#8E7F6B] truncate">
+                      {lang === 'en' ? 'Chief Moderator' : 'ചീഫ് മോഡറേറ്റർ'}
+                    </div>
                   </div>
                 </button>
               </div>

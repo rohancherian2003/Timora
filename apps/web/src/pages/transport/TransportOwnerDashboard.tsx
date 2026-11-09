@@ -371,9 +371,11 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
             {lang === 'en' ? 'Total Active Lorries' : 'വാഹനങ്ങളുടെ എണ്ണം'}
           </span>
           <div className="text-2xl font-black font-serif text-[#4A3626]">
-            {fleet.length} <span className="text-xs font-normal text-stone-500">Vehicles</span>
+            {fleet.length} <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Vehicles' : 'വാഹനങ്ങൾ'}</span>
           </div>
-          <p className="text-[10px] text-emerald-700 font-semibold">All GPS & Crane equipped</p>
+          <p className="text-[10px] text-emerald-700 font-semibold">
+            {lang === 'en' ? 'All GPS & Crane equipped' : 'ജി.പി.എസ് & ക്രെയിൻ സഹിതം'}
+          </p>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
@@ -382,9 +384,11 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
           </span>
           <div className="text-2xl font-black font-serif text-[#4A3626]">
             {fleet.reduce((acc, v) => acc + v.capacityTonnes, 0)}{' '}
-            <span className="text-xs font-normal text-stone-500">Tonnes</span>
+            <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Tonnes' : 'ടൺ'}</span>
           </div>
-          <p className="text-[10px] text-stone-500">Up to 600 CFT per trip</p>
+          <p className="text-[10px] text-stone-500">
+            {lang === 'en' ? 'Up to 600 CFT per trip' : 'ഒരു ട്രിപ്പിൽ 600 സി.എഫ്.ടി വരെ'}
+          </p>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
@@ -392,9 +396,11 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
             {lang === 'en' ? 'Active Transit Trips' : 'സജീവ ഓട്ടങ്ങൾ'}
           </span>
           <div className="text-2xl font-black font-serif text-amber-700">
-            1 <span className="text-xs font-normal text-stone-500">On Trip</span>
+            1 <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'On Trip' : 'യാത്രയിൽ'}</span>
           </div>
-          <p className="text-[10px] text-stone-500">Nilambur &rarr; Perumbavoor</p>
+          <p className="text-[10px] text-stone-500">
+            {lang === 'en' ? 'Nilambur → Perumbavoor' : 'നിലമ്പൂർ → പെരുമ്പാവൂർ'}
+          </p>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
@@ -403,9 +409,11 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
           </span>
           <div className="text-2xl font-black font-serif text-[#4A3626]">
             {bookings.filter((b) => b.status === 'requested').length}{' '}
-            <span className="text-xs font-normal text-stone-500">Requests</span>
+            <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Requests' : 'അന്വേഷണങ്ങൾ'}</span>
           </div>
-          <p className="text-[10px] text-emerald-700 font-semibold">Direct Mill & Buyer Bookings</p>
+          <p className="text-[10px] text-emerald-700 font-semibold">
+            {lang === 'en' ? 'Direct Mill & Buyer Bookings' : 'മില്ല് & ബയർ ബുക്കിംഗുകൾ'}
+          </p>
         </div>
       </div>
 
@@ -528,17 +536,17 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
                   </span>
                   {veh.hasCrane && (
                     <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[10px] font-bold">
-                      Crane Equipped (ഹൈഡ്രോളിക് ക്രെയിൻ)
+                      {lang === 'en' ? 'Crane Equipped' : 'ഹൈഡ്രോളിക് ക്രെയിൻ സഹിതം'}
                     </span>
                   )}
                   {veh.formIvPermitted && (
                     <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                      Form IV Forest Cleared
+                      {lang === 'en' ? 'Form IV Forest Cleared' : 'ഫോറസ്റ്റ് ഫോം IV പാസ്സ് ലഭ്യം'}
                     </span>
                   )}
                 </div>
                 <div className="text-xs text-stone-500">
-                  Capacity: <b>{veh.capacityTonnes} Tonnes</b> (approx. {Math.round(veh.capacityTonnes * 35)} CFT Round Logs)
+                  {lang === 'en' ? 'Capacity' : 'ശേഷി'}: <b>{veh.capacityTonnes} {lang === 'en' ? 'Tonnes' : 'ടൺ'}</b> ({lang === 'en' ? 'approx.' : 'ഏകദേശം'} {Math.round(veh.capacityTonnes * 35)} {lang === 'en' ? 'CFT Round Logs' : 'സി.എഫ്.ടി ഉരുപ്പടികൾ'})
                 </div>
               </div>
 
@@ -573,26 +581,42 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
         </div>
 
         <div className="divide-y divide-stone-200">
-          {bookings.map((b) => (
-            <div
-              key={b.id}
-              className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#E7E1D6]/40 transition"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-[#4A3626] text-sm sm:text-base">
-                    {b.pickupLocation} → {b.dropLocation}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-[#E7E1D6] text-[#4A3626] text-[10px] font-bold">
-                    {b.timberSpecies} ({b.cftVolume} CFT)
-                  </span>
+          {bookings.map((b) => {
+            const locationDict: Record<string, string> = {
+              'Nilambur Forest Depot (Malappuram)': 'നിലമ്പൂർ ഫോറസ്റ്റ് ഡിപ്പോ (മലപ്പുറം)',
+              'Perumbavoor Mill Yard (Ernakulam)': 'പെരുമ്പാവൂർ മില്ല് യാർഡ് (എറണാകുളം)',
+              'Kottayam Depot': 'കോട്ടയം ഡിപ്പോ',
+              'Pala Residential Site': 'പാലാ റെസിഡൻഷ്യൽ സൈറ്റ്',
+            };
+            const speciesDict: Record<string, string> = {
+              'Teak Round Logs': 'തേക്ക് ഉരുപ്പടികൾ',
+              'Anjili Squared Beams': 'ആഞ്ഞിലി തടി ഉത്തരങ്ങൾ',
+            };
+
+            const pickup = lang === 'ml' && locationDict[b.pickupLocation] ? locationDict[b.pickupLocation] : b.pickupLocation;
+            const drop = lang === 'ml' && locationDict[b.dropLocation] ? locationDict[b.dropLocation] : b.dropLocation;
+            const species = lang === 'ml' && speciesDict[b.timberSpecies] ? speciesDict[b.timberSpecies] : b.timberSpecies;
+
+            return (
+              <div
+                key={b.id}
+                className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#E7E1D6]/40 transition"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-[#4A3626] text-sm sm:text-base">
+                      {pickup} → {drop}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-[#E7E1D6] text-[#4A3626] text-[10px] font-bold">
+                      {species} ({b.cftVolume} {lang === 'en' ? 'CFT' : 'സി.എഫ്.ടി'})
+                    </span>
+                  </div>
+                  <div className="text-xs text-stone-500 flex items-center gap-2">
+                    <span>{lang === 'en' ? 'Client' : 'ഉപഭോക്താവ്'}: <b>{b.clientName}</b></span>
+                    <span>•</span>
+                    <span>{lang === 'en' ? 'Quote' : 'ക്വോട്ടേഷൻ'}: <b className="font-mono text-[#4A3626]">{formatINR(b.rateQuoted)}</b></span>
+                  </div>
                 </div>
-                <div className="text-xs text-stone-500 flex items-center gap-2">
-                  <span>Client: <b>{b.clientName}</b></span>
-                  <span>•</span>
-                  <span>Quote: <b className="font-mono text-[#4A3626]">{formatINR(b.rateQuoted)}</b></span>
-                </div>
-              </div>
 
               <div className="flex items-center gap-3">
                 <span
@@ -635,9 +659,10 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
                 </a>
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
+    </div>
 
       <RaiseTicketModal
         isOpen={isRaiseModalOpen}

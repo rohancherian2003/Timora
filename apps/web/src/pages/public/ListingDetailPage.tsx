@@ -430,36 +430,51 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
               {showAllReviews && (
                 <div className="space-y-2 pt-1 animate-fadeIn">
-                  {sellerReviews.map((rev) => (
-                    <div
-                      key={rev.id}
-                      className="p-3 rounded-xl bg-white border border-stone-200 text-xs space-y-1 shadow-2xs"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-[#4A3626]">{rev.author}</span>
-                          <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[9px] font-bold flex items-center gap-0.5">
-                            <ShieldCheck className="w-2.5 h-2.5" />
-                            <span>{rev.role}</span>
+                  {sellerReviews.map((rev) => {
+                    const authorMl: Record<string, string> = {
+                      'George Varghese (Sawmill Owner)': 'ജോർജ്ജ് വർഗ്ഗീസ് (മില്ല് ഉടമ)',
+                      'Binu Achari (Master Carpenter)': 'ബിനു ആശാരി (വിദഗ്ദ്ധ ആശാരി)',
+                    };
+                    const dateMl: Record<string, string> = {
+                      '2 weeks ago': '2 ആഴ്ച മുൻപ്',
+                      '1 month ago': '1 മാസം മുൻപ്',
+                    };
+
+                    return (
+                      <div
+                        key={rev.id}
+                        className="p-3 rounded-xl bg-white border border-stone-200 text-xs space-y-1 shadow-2xs"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-[#4A3626]">
+                              {lang === 'ml' && authorMl[rev.author] ? authorMl[rev.author] : rev.author}
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[9px] font-bold flex items-center gap-0.5">
+                              <ShieldCheck className="w-2.5 h-2.5" />
+                              <span>{lang === 'en' ? rev.role : 'സ്ഥിരീകരിച്ച ഉപഭോക്താവ്'}</span>
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-stone-400">
+                            {lang === 'ml' && dateMl[rev.date] ? dateMl[rev.date] : rev.date}
                           </span>
                         </div>
-                        <span className="text-[10px] text-stone-400">{rev.date}</span>
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              className={`w-3 h-3 ${
+                                s <= rev.rating ? 'fill-amber-400 text-amber-500' : 'fill-stone-100 text-stone-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-stone-600 leading-relaxed text-[11px]">
+                          {lang === 'en' ? rev.comment : (rev.commentMl || rev.comment)}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-0.5">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star
-                            key={s}
-                            className={`w-3 h-3 ${
-                              s <= rev.rating ? 'fill-amber-400 text-amber-500' : 'fill-stone-100 text-stone-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-stone-600 leading-relaxed text-[11px]">
-                        {lang === 'en' ? rev.comment : (rev.commentMl || rev.comment)}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

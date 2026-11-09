@@ -28,6 +28,14 @@ import { useAuth } from '../../context/AuthContext';
 import { getStoredTickets, resolveTicket, SupportTicket } from '../../utils/ticketService';
 import { EditProfileModal } from '../../components/EditProfileModal';
 import { api } from '../../lib/api';
+import {
+  translateWoodTitle,
+  translateTicketCategory,
+  translateTicketStatus,
+  translateSpecies,
+  translateUnit,
+  translateRole,
+} from '../../utils/i18n';
 
 interface PendingBusiness {
   id: string;
@@ -439,11 +447,11 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
             <span className="text-stone-500 font-semibold whitespace-nowrap flex-shrink-0">{lang === 'en' ? 'Role Filter:' : 'വിഭാഗം:'}</span>
             {[
-              { key: 'all', label: 'All Businesses' },
-              { key: 'seller', label: 'Individual Sellers' },
-              { key: 'mill', label: 'Timber Mills' },
-              { key: 'carpenter', label: 'Carpenters' },
-              { key: 'transport', label: 'Transport Lorries' },
+              { key: 'all', label: lang === 'en' ? 'All Businesses' : 'എല്ലാം' },
+              { key: 'seller', label: lang === 'en' ? 'Individual Sellers' : 'തടി കച്ചവടക്കാർ' },
+              { key: 'mill', label: lang === 'en' ? 'Timber Mills' : 'തടി മില്ലുകൾ' },
+              { key: 'carpenter', label: lang === 'en' ? 'Carpenters' : 'ആശാരിമാർ' },
+              { key: 'transport', label: lang === 'en' ? 'Transport Lorries' : 'തടി ലോറികൾ' },
             ].map((f) => (
               <button
                 key={f.key}
@@ -492,19 +500,19 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                         {app.businessName}
                       </span>
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#E7E1D6] text-[#4A3626] uppercase">
-                        {app.role === 'mill' ? 'Timber Mill' : app.role}
+                        {app.role === 'mill' ? (lang === 'en' ? 'Timber Mill' : 'തടി മിൽ') : translateRole(app.role, lang)}
                       </span>
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-amber-100 text-amber-900 font-bold">
-                        PENDING_APPROVAL
+                        {lang === 'en' ? 'PENDING_APPROVAL' : 'അംഗീകാരം കാക്കുന്നു'}
                       </span>
                     </div>
 
                     <div className="text-xs text-stone-600 flex items-center gap-3 flex-wrap">
-                      <span>Owner/Applicant: <b>{app.name}</b></span>
+                      <span>{lang === 'en' ? 'Owner/Applicant:' : 'അപേക്ഷകൻ:'} <b>{app.name}</b></span>
                       <span>•</span>
-                      <span>Phone: <b>{formatCleanPhone(app.phone)}</b></span>
+                      <span>{lang === 'en' ? 'Phone:' : 'ഫോൺ:'} <b>{formatCleanPhone(app.phone)}</b></span>
                       <span>•</span>
-                      <span>District: <b>{app.district}</b></span>
+                      <span>{lang === 'en' ? 'District:' : 'ജില്ല:'} <b>{app.district}</b></span>
                     </div>
 
                     <p className="text-xs text-stone-500 bg-stone-50 p-2 rounded-xl border border-stone-200">
@@ -577,15 +585,17 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
                 <div>
-                  <h4 className="font-serif font-bold text-base text-[#4A3626]">{lst.title}</h4>
-                  <div className="text-xs text-stone-500 mt-1 flex items-center gap-2">
-                    <span>Seller: <b>{lst.seller_name}</b></span>
+                  <h4 className="font-serif font-bold text-base text-[#4A3626]">
+                    {translateWoodTitle(lst.title, lang)}
+                  </h4>
+                  <div className="text-xs text-stone-500 mt-1 flex items-center gap-2 flex-wrap">
+                    <span>{lang === 'en' ? 'Seller:' : 'വിൽക്കുന്നയാൾ:'} <b>{lst.seller_name}</b></span>
                     <span>•</span>
-                    <span>Species: <b>{lst.species}</b></span>
+                    <span>{lang === 'en' ? 'Species:' : 'ഇനം:'} <b>{translateSpecies(lst.species, lang)}</b></span>
                     <span>•</span>
-                    <span>Volume: <b>{lst.quantity} {lst.unit}</b></span>
+                    <span>{lang === 'en' ? 'Volume:' : 'അളവ്:'} <b>{lst.quantity} {translateUnit(lst.unit, lang)}</b></span>
                     <span>•</span>
-                    <span>Rate: <b>{formatINR(lst.price_per_cft)}/CFT</b></span>
+                    <span>{lang === 'en' ? 'Rate:' : 'നിരക്ക്:'} <b>{formatINR(lst.price_per_cft)}/{translateUnit('CFT', lang)}</b></span>
                   </div>
                 </div>
 
@@ -599,7 +609,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs"
                   >
                     <Check className="w-3.5 h-3.5" />
-                    <span>Approve & Publish</span>
+                    <span>{lang === 'en' ? 'Approve & Publish' : 'അംഗീകരിച്ച് പ്രസിദ്ധീകരിക്കുക'}</span>
                   </button>
                   <button
                     onClick={() => {
@@ -609,7 +619,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     }}
                     className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-800 border border-rose-300 font-bold text-xs"
                   >
-                    Reject
+                    {lang === 'en' ? 'Reject' : 'നിരസിക്കുക'}
                   </button>
                 </div>
               </div>
@@ -636,7 +646,11 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       : 'bg-white border text-stone-600'
                   }`}
                 >
-                  {filter}
+                  {filter === 'all'
+                    ? (lang === 'en' ? 'ALL' : 'എല്ലാം')
+                    : filter === 'open'
+                    ? (lang === 'en' ? 'OPEN' : 'തുറന്നവ')
+                    : (lang === 'en' ? 'RESOLVED' : 'പരിഹരിച്ചവ')}
                 </button>
               ))}
             </div>
@@ -655,7 +669,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                         t.status === 'open' ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'
                       }`}
                     >
-                      {t.status.toUpperCase()}
+                      {translateTicketStatus(t.status, lang)}
                     </span>
                   </div>
                   <p className="text-xs text-stone-600 italic">"{t.description}"</p>
@@ -674,7 +688,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     className="px-4 py-2 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs flex items-center gap-1 shadow-xs"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
-                    <span>Resolve & Reply</span>
+                    <span>{lang === 'en' ? 'Resolve & Reply' : 'പരിഹരിച്ചു മറുപടി നൽകുക'}</span>
                   </button>
                 )}
               </div>
@@ -689,7 +703,9 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             <span className="font-serif font-bold text-sm text-[#4A3626]">
               {lang === 'en' ? 'Append-Only Regulatory Audit Logs' : 'ഓഡിറ്റ് ലോഗുകൾ'}
             </span>
-            <span className="text-[11px] text-stone-500">Immutable Records</span>
+            <span className="text-[11px] text-stone-500">
+              {lang === 'en' ? 'Immutable Records' : 'മാറ്റമില്ലാത്ത രേഖകൾ'}
+            </span>
           </div>
 
           <div className="space-y-2">
@@ -701,10 +717,14 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 <div>
                   <span className="font-bold text-[#5B6147]">[{log.action}]</span>{' '}
                   <span className="text-[#4A3626] font-semibold">{log.target}</span>
-                  {log.note && <div className="text-[11px] text-stone-500 mt-0.5 italic">Note: "{log.note}"</div>}
+                  {log.note && (
+                    <div className="text-[11px] text-stone-500 mt-0.5 italic">
+                      {lang === 'en' ? 'Note:' : 'കുറിപ്പ്:'} "{log.note}"
+                    </div>
+                  )}
                 </div>
                 <div className="text-[10px] text-stone-400 sm:text-right">
-                  <div>Actor: {log.actor}</div>
+                  <div>{lang === 'en' ? 'Actor:' : 'ഉദ്യോഗസ്ഥൻ:'} {log.actor}</div>
                   <div>{log.timestamp}</div>
                 </div>
               </div>
@@ -753,7 +773,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   onClick={() => setActionModal(null)}
                   className="px-4 py-2 rounded-xl bg-stone-200 text-stone-700 font-bold text-xs"
                 >
-                  Cancel
+                  {lang === 'en' ? 'Cancel' : 'റദ്ദാക്കുക'}
                 </button>
                 <button
                   type="submit"
@@ -770,7 +790,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       <span>{lang === 'en' ? 'Updating...' : 'പ്രോസസ്സ് ചെയ്യുന്നു...'}</span>
                     </>
                   ) : (
-                    <span>Confirm & Notify User</span>
+                    <span>{lang === 'en' ? 'Confirm & Notify User' : 'സ്ഥിരീകരിച്ച് ഉപഭോക്താവിനെ അറിയിക്കുക'}</span>
                   )}
                 </button>
               </div>
@@ -786,7 +806,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             <div className="flex items-center justify-between border-b pb-3">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#5B6147]">
-                  Send Solution to User Dashboard
+                  {lang === 'en' ? 'Send Solution to User Dashboard' : 'ഡാഷ്‌ബോർഡിലേക്ക് പരിഹാരം അയക്കുക'}
                 </span>
                 <h3 className="font-extrabold font-serif text-[#4A3626] text-base">
                   Ticket {replyTicket.id} · {replyTicket.name}
@@ -816,7 +836,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   onClick={() => setReplyTicket(null)}
                   className="px-4 py-2 rounded-xl border text-stone-600 font-semibold"
                 >
-                  Cancel
+                  {lang === 'en' ? 'Cancel' : 'റദ്ദാക്കുക'}
                 </button>
                 <button
                   type="submit"
@@ -831,7 +851,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   ) : (
                     <>
                       <Send className="w-3.5 h-3.5" />
-                      <span>Send Solution & Resolve</span>
+                      <span>{lang === 'en' ? 'Send Solution & Resolve' : 'പരിഹാരം അയച്ചു ക്ലോസ് ചെയ്യുക'}</span>
                     </>
                   )}
                 </button>

@@ -601,7 +601,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                             {lang === 'en' ? 'Stock Volume' : 'ലഭ്യമായ അളവ്'}
                           </span>
                           <span className="font-bold">
-                            {item.quantity} {isFirewood ? 'Tonnes' : item.unit}
+                            {item.quantity} {isFirewood ? (lang === 'en' ? 'Tonnes' : 'ടൺ') : (lang === 'en' ? item.unit : (item.unit?.toLowerCase() === 'cft' ? 'സി.എഫ്.ടി' : item.unit))}
                           </span>
                         </div>
                         <div>
@@ -672,27 +672,51 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
                 KL-SAW-EKM-1048
               </span>
-              <h4 className="font-bold text-[#4A3626] text-sm">Perumbavoor Modern Sawmills</h4>
-              <p className="text-stone-500">Kandanthara, Perumbavoor, Ernakulam</p>
-              <p className="text-[11px] text-[#7A5A3A]">High-speed band saws, Anjili & Teak log slicing.</p>
+              <h4 className="font-bold text-[#4A3626] text-sm">
+                {lang === 'en' ? 'Perumbavoor Modern Sawmills' : 'പെരുമ്പാവൂർ മോഡേൺ സോമില്ല്'}
+              </h4>
+              <p className="text-stone-500">
+                {lang === 'en' ? 'Kandanthara, Perumbavoor, Ernakulam' : 'കണ്ടന്തറ, പെരുമ്പാവൂർ, എറണാകുളം'}
+              </p>
+              <p className="text-[11px] text-[#7A5A3A]">
+                {lang === 'en'
+                  ? 'High-speed band saws, Anjili & Teak log slicing.'
+                  : 'ഹൈ സ്പീഡ് ബാന്റ് സോ, ആഞ്ഞിലി, തേക്ക് തടി അറുക്കൽ.'}
+              </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#8E7F6B]/30 space-y-1.5">
               <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
                 KL-SAW-PTA-1982
               </span>
-              <h4 className="font-bold text-[#4A3626] text-sm">Adoor Central Timber Yard</h4>
-              <p className="text-stone-500">Adoor Bypass, Pathanamthitta</p>
-              <p className="text-[11px] text-[#7A5A3A]">Traditional joinery timber & squared door beams.</p>
+              <h4 className="font-bold text-[#4A3626] text-sm">
+                {lang === 'en' ? 'Adoor Central Timber Yard' : 'അടൂർ സെൻട്രൽ ടിമ്പർ യാർഡ്'}
+              </h4>
+              <p className="text-stone-500">
+                {lang === 'en' ? 'Adoor Bypass, Pathanamthitta' : 'അടൂർ ബൈപാസ്, പത്തനംതിട്ട'}
+              </p>
+              <p className="text-[11px] text-[#7A5A3A]">
+                {lang === 'en'
+                  ? 'Traditional joinery timber & squared door beams.'
+                  : 'പരമ്പരാഗത കഴുക്കോലുകൾ, കട്ടിള തടികൾ.'}
+              </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#8E7F6B]/30 space-y-1.5">
               <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
                 KL-SAW-PTA-2104
               </span>
-              <h4 className="font-bold text-[#4A3626] text-sm">Konni Forest Valley Plant</h4>
-              <p className="text-stone-500">Konni Depot, Pathanamthitta</p>
-              <p className="text-[11px] text-[#7A5A3A]">Kiln seasoning plant & Nilambur Teak logs.</p>
+              <h4 className="font-bold text-[#4A3626] text-sm">
+                {lang === 'en' ? 'Konni Forest Valley Plant' : 'കോന്നി ഫോറസ്റ്റ് വാലി പ്ലാന്റ്'}
+              </h4>
+              <p className="text-stone-500">
+                {lang === 'en' ? 'Konni Depot, Pathanamthitta' : 'കോന്നി ഡിപ്പോ, പത്തനംതിട്ട'}
+              </p>
+              <p className="text-[11px] text-[#7A5A3A]">
+                {lang === 'en'
+                  ? 'Kiln seasoning plant & Nilambur Teak logs.'
+                  : 'തടി ഉണക്കൽ പ്ലാന്റ് & നിലമ്പൂർ തേക്ക്.'}
+              </p>
             </div>
           </div>
         </div>
@@ -703,7 +727,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         <button
           onClick={() => setIsRaiseTicketOpen(true)}
           className="group relative flex items-center gap-2 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl bg-gradient-to-r from-[#5B6147] to-[#3F452F] text-white font-bold text-xs shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 border border-white/20"
-          title={lang === 'en' ? 'Raise a Support Ticket' : 'പരാതി സമർപ്പിക്കുക'}
+          title={lang === 'en' ? 'Raise a Support Ticket' : 'പരാതി നൽകുക (Support)'}
         >
           <LifeBuoy className="w-4 h-4 text-white group-hover:rotate-45 transition-transform duration-300 flex-shrink-0" />
           <div className="flex flex-col items-start text-left leading-tight">
@@ -711,7 +735,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               {lang === 'en' ? 'Support' : 'സഹായം'}
             </span>
             <span className="font-extrabold text-white text-xs">
-              {lang === 'en' ? 'Raise a Ticket' : 'റൈസ് എ ടിക്കറ്റ്'}
+              {lang === 'en' ? 'Raise a Ticket' : 'പരാതി നൽകുക (Support)'}
             </span>
           </div>
         </button>

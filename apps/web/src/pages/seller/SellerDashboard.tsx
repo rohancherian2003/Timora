@@ -29,6 +29,7 @@ import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { EditProfileModal } from '../../components/EditProfileModal';
 import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
 import { api } from '../../lib/api';
+import { translateWoodTitle, translateSpecies, translateCutType, translateUnit } from '../../utils/i18n';
 
 export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { user, refreshUser } = useAuth();
@@ -457,7 +458,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               {lang === 'en' ? 'Live Active Stock' : 'ലഭ്യമായ സ്റ്റോക്ക്'}
             </span>
             <div className="text-2xl font-black text-[#4A3626] font-serif mt-1">
-              125 <span className="text-sm font-sans font-semibold text-[#5B6147]">CFT</span>
+              125 <span className="text-sm font-sans font-semibold text-[#5B6147]">{translateUnit('cft', lang)}</span>
             </div>
           </div>
           <div className="w-10 h-10 rounded-2xl bg-stone-100 text-[#5B6147] flex items-center justify-center border border-stone-300/60">
@@ -471,7 +472,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               {lang === 'en' ? 'Awaiting Admin Review' : 'റിവ്യൂവിലുള്ളവ'}
             </span>
             <div className="text-2xl font-black text-[#5B6147] font-serif mt-1">
-              2 <span className="text-sm font-sans font-semibold text-stone-500">Listings</span>
+              2 <span className="text-sm font-sans font-semibold text-stone-500">{lang === 'en' ? 'Listings' : 'ലിസ്റ്റിംഗുകൾ'}</span>
             </div>
           </div>
           <div className="w-10 h-10 rounded-2xl bg-[#E7E1D6] text-[#5B6147] flex items-center justify-center border border-stone-300/60">
@@ -482,10 +483,10 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         <div className="bg-white p-5 rounded-3xl border border-stone-300/80 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
-              {lang === 'en' ? 'Active Enquiries' : 'ലഭിച്ച അന്വേഷണങ്ങൾ'}
+              {lang === 'en' ? 'Active Enquiries' : 'സജീവ അന്വേഷണങ്ങൾ'}
             </span>
             <div className="text-2xl font-black text-[#4A3626] font-serif mt-1">
-              5 <span className="text-sm font-sans font-semibold text-stone-500">Open</span>
+              5 <span className="text-sm font-sans font-semibold text-stone-500">{lang === 'en' ? 'Open' : 'നിലവിലുണ്ട്'}</span>
             </div>
           </div>
           <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/60">
@@ -710,7 +711,9 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           <h3 className="font-extrabold font-serif text-[#4A3626] text-base">
             {lang === 'en' ? 'My Timber Stock Inventory' : 'എന്റെ തടി സ്റ്റോക്കുകൾ'}
           </h3>
-          <span className="text-xs text-[#5B6147] font-semibold">1 Active · 1 Pending Review</span>
+          <span className="text-xs text-[#5B6147] font-semibold">
+            {lang === 'en' ? '1 Active · 1 Pending Review' : '1 സജീവം · 1 പരിശോധനയിൽ'}
+          </span>
         </div>
 
         <div className="divide-y divide-stone-200 text-xs sm:text-sm">
@@ -748,7 +751,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     </div>
                     <div>
                       <div className="font-bold text-[#4A3626] flex items-center gap-2">
-                        <span>{item.title}</span>
+                        <span>{translateWoodTitle(item.title, lang)}</span>
                         {photoCount > 0 && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-600 font-mono font-medium flex items-center gap-0.5">
                             <ImageIcon className="w-2.5 h-2.5 text-[#5B6147]" />
@@ -757,21 +760,21 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                         )}
                       </div>
                       <div className="text-xs text-stone-500 mt-0.5">
-                        {item.species_name_en || 'Timber'} · {item.type_name_en || 'Planks'} · {item.district_name_en || 'Kerala'}
+                        {translateSpecies(item.species_name_en || 'Timber', lang)} · {translateCutType(item.type_name_en || 'Planks', lang)} · {lang === 'ml' ? 'കേരളം' : (item.district_name_en || 'Kerala')}
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
                     <span className="font-mono font-bold text-[#4A3626]">
-                      {item.quantity} CFT @ ₹{Number(item.price_per_cft).toLocaleString('en-IN')}/CFT
+                      {item.quantity} {translateUnit(item.unit || 'cft', lang)} @ ₹{Number(item.price_per_cft).toLocaleString('en-IN')}/{translateUnit(item.unit || 'cft', lang)}
                     </span>
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                       item.status === 'approved'
                         ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                         : 'bg-stone-100 text-[#4A3626] border border-stone-300'
                     }`}>
-                      {item.status === 'approved' ? (lang === 'en' ? 'Approved (Live)' : 'ലൈവ്') : (lang === 'en' ? 'Pending Review' : 'പരിശോധനയിൽ')}
+                      {item.status === 'approved' ? (lang === 'en' ? 'Approved (Live)' : 'പരിശോധിച്ചു (സജീവം)') : (lang === 'en' ? 'Pending Review' : 'പരിശോധനയിൽ')}
                     </span>
                     <button
                       onClick={() => setManagingPhotosListing(item)}
@@ -789,26 +792,38 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             <>
               <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#E7E1D6]/50">
                 <div>
-                  <div className="font-bold text-[#4A3626]">First-Grade Nilambur Teak Planks</div>
-                  <div className="text-xs text-stone-500 mt-0.5">Teak · Rough-sawn Planks · Kottayam</div>
+                  <div className="font-bold text-[#4A3626]">
+                    {translateWoodTitle('First-Grade Nilambur Teak Planks', lang)}
+                  </div>
+                  <div className="text-xs text-stone-500 mt-0.5">
+                    {translateSpecies('Teak', lang)} · {translateCutType('Rough-sawn Planks', lang)} · {lang === 'ml' ? 'കോട്ടയം' : 'Kottayam'}
+                  </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="font-mono font-bold text-[#4A3626]">45 CFT @ ₹2,800/CFT</span>
+                  <span className="font-mono font-bold text-[#4A3626]">
+                    45 {translateUnit('cft', lang)} @ ₹2,800/{translateUnit('cft', lang)}
+                  </span>
                   <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
-                    Approved (ലൈവ്)
+                    {lang === 'en' ? 'Approved (Live)' : 'പരിശോധിച്ചു (സജീവം)'}
                   </span>
                 </div>
               </div>
 
               <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#E7E1D6]/50">
                 <div>
-                  <div className="font-bold text-[#4A3626]">Aanjili Wild Jack Beams</div>
-                  <div className="text-xs text-stone-500 mt-0.5">Anjili · Squared Beams · Kottayam</div>
+                  <div className="font-bold text-[#4A3626]">
+                    {translateWoodTitle('Anjili Wild Jack Sawn Beams', lang)}
+                  </div>
+                  <div className="text-xs text-stone-500 mt-0.5">
+                    {translateSpecies('Anjili', lang)} · {translateCutType('Squared Beams', lang)} · {lang === 'ml' ? 'കോട്ടയം' : 'Kottayam'}
+                  </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="font-mono font-bold text-stone-700">80 CFT @ ₹1,400/CFT</span>
+                  <span className="font-mono font-bold text-stone-700">
+                    80 {translateUnit('cft', lang)} @ ₹1,400/{translateUnit('cft', lang)}
+                  </span>
                   <span className="px-2.5 py-1 rounded-full bg-stone-100 text-[#4A3626] border border-stone-300 text-xs font-semibold">
-                    Pending Review (പരിശോധനയിൽ)
+                    {lang === 'en' ? 'Pending Review' : 'പരിശോധനയിൽ'}
                   </span>
                 </div>
               </div>

@@ -27,6 +27,13 @@ import { EditProfileModal } from '../../components/EditProfileModal';
 import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
 import { api } from '../../lib/api';
 import { getTicketsForUser, markTicketAsRead, SupportTicket } from '../../utils/ticketService';
+import {
+  translateWoodTitle,
+  translateCutType,
+  translateSpecies,
+  translateUnit,
+  translateTicketCategory,
+} from '../../utils/i18n';
 
 interface SawnBatch {
   id: string;
@@ -332,7 +339,7 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
                   </span>
                 </div>
                 <h3 className="font-extrabold font-serif text-[#4A3626] text-base mt-0.5">
-                  {lang === 'en' ? latestResolvedTicket.category : latestResolvedTicket.categoryMl}
+                  {lang === 'en' ? latestResolvedTicket.category : (latestResolvedTicket.categoryMl || translateTicketCategory(latestResolvedTicket.category, lang))}
                 </h3>
               </div>
             </div>
@@ -369,9 +376,11 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
             {lang === 'en' ? 'Daily Sawing Capacity' : 'പ്രതിദിന ശേഷി'}
           </span>
           <div className="text-xl sm:text-2xl font-black font-serif text-[#4A3626]">
-            350 <span className="text-xs font-normal text-stone-500">CFT/day</span>
+            350 <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'CFT/day' : 'സി.എഫ്.ടി/ദിവസം'}</span>
           </div>
-          <p className="text-[10px] text-stone-500">2 Heavy Band Saws Active</p>
+          <p className="text-[10px] text-stone-500">
+            {lang === 'en' ? '2 Heavy Band Saws Active' : '2 ഹെവി ബാന്റ് സോ സജീവം'}
+          </p>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
@@ -379,9 +388,11 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
             {lang === 'en' ? 'Available Sawn Stock' : 'സ്റ്റോക്ക് തടികൾ'}
           </span>
           <div className="text-xl sm:text-2xl font-black font-serif text-[#4A3626]">
-            395 <span className="text-xs font-normal text-stone-500">CFT</span>
+            395 <span className="text-xs font-normal text-stone-500">{translateUnit('CFT', lang)}</span>
           </div>
-          <p className="text-[10px] text-emerald-700 font-semibold">Ready for Dispatch</p>
+          <p className="text-[10px] text-emerald-700 font-semibold">
+            {lang === 'en' ? 'Ready for Dispatch' : 'അയക്കാൻ തയ്യാറായവ'}
+          </p>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
@@ -389,9 +400,11 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
             {lang === 'en' ? 'Active Sawing Orders' : 'സജീവ ജോലികൾ'}
           </span>
           <div className="text-xl sm:text-2xl font-black font-serif text-[#4A3626]">
-            4 <span className="text-xs font-normal text-stone-500">Orders</span>
+            4 <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Orders' : 'ഓർഡറുകൾ'}</span>
           </div>
-          <p className="text-[10px] text-amber-700 font-semibold">120 CFT in processing</p>
+          <p className="text-[10px] text-amber-700 font-semibold">
+            {lang === 'en' ? '120 CFT in processing' : '120 സി.എഫ്.ടി പ്രോസസ്സിംഗിൽ'}
+          </p>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
@@ -400,9 +413,11 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
           </span>
           <div className="text-xl sm:text-2xl font-black font-serif text-emerald-700 flex items-center gap-1">
             <ShieldCheck className="w-5 h-5 text-emerald-600" />
-            <span>Active</span>
+            <span>{lang === 'en' ? 'Active' : 'സജീവം'}</span>
           </div>
-          <p className="text-[10px] text-stone-500">Transit Permits Enabled</p>
+          <p className="text-[10px] text-stone-500">
+            {lang === 'en' ? 'Transit Permits Enabled' : 'ട്രാൻസിറ്റ് പെർമിറ്റുകൾ ലഭ്യമാണ്'}
+          </p>
         </div>
       </div>
 
@@ -561,29 +576,29 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-[#4A3626] text-sm sm:text-base">
-                    {batch.title}
+                    {translateWoodTitle(batch.title, lang)}
                   </span>
                   <span className="px-2 py-0.5 rounded-md bg-[#E7E1D6] text-[#4A3626] text-[10px] font-bold">
-                    {batch.species}
+                    {translateSpecies(batch.species, lang)}
                   </span>
                   <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 text-[10px] font-semibold">
-                    {batch.cutType}
+                    {translateCutType(batch.cutType, lang)}
                   </span>
                 </div>
                 <div className="text-xs text-stone-500 flex items-center gap-3">
-                  <span>Dim: <b>{batch.dimensions}</b></span>
+                  <span>{lang === 'en' ? 'Dim:' : 'അളവ്:'} <b>{batch.dimensions}</b></span>
                   <span>•</span>
-                  <span>Batch: <b className="font-mono">{batch.id}</b></span>
+                  <span>{lang === 'en' ? 'Batch:' : 'ബാച്ച്:'} <b className="font-mono">{batch.id}</b></span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 flex-wrap">
                 <div className="text-left sm:text-right">
                   <div className="font-mono font-bold text-sm text-[#4A3626]">
-                    {batch.quantityCft} CFT @ {formatINR(batch.ratePerCft)}/CFT
+                    {batch.quantityCft} {translateUnit('CFT', lang)} @ {formatINR(batch.ratePerCft)}/{translateUnit('CFT', lang)}
                   </div>
                   <div className="text-[11px] text-[#7A5A3A] font-semibold">
-                    Est: {formatINR(batch.quantityCft * batch.ratePerCft)}
+                    {lang === 'en' ? 'Est:' : 'ആകെ:'} {formatINR(batch.quantityCft * batch.ratePerCft)}
                   </div>
                 </div>
 

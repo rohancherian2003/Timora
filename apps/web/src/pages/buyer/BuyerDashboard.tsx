@@ -24,6 +24,13 @@ import { EditProfileModal } from '../../components/EditProfileModal';
 import { SubmitReviewModal } from '../../components/SubmitReviewModal';
 import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
 import { api } from '../../lib/api';
+import {
+  translateWoodTitle,
+  translateTicketCategory,
+  translateTicketStatus,
+  translateSpecies,
+  translateUnit,
+} from '../../utils/i18n';
 
 const DEMO_BUYER_ORDERS = [
   {
@@ -264,7 +271,7 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   </span>
                 </div>
                 <h3 className="font-extrabold font-serif text-[#4A3626] text-base mt-0.5">
-                  {lang === 'en' ? latestResolvedTicket.category : latestResolvedTicket.categoryMl}
+                  {lang === 'en' ? latestResolvedTicket.category : (latestResolvedTicket.categoryMl || translateTicketCategory(latestResolvedTicket.category, lang))}
                 </h3>
               </div>
             </div>
@@ -377,14 +384,16 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-extrabold font-serif text-[#4A3626] text-base">{order.listing_title}</h3>
+                    <h3 className="font-extrabold font-serif text-[#4A3626] text-base">
+                      {translateWoodTitle(order.listing_title, lang)}
+                    </h3>
                     <span className="text-xs text-stone-400 font-mono">({order.id})</span>
                   </div>
                   <div className="text-xs text-stone-600 mt-1 font-medium">
-                    {lang === 'en' ? 'Seller:' : 'വിൽക്കുന്നയാൾ:'} {order.seller_name} · {order.agreed_qty} {order.unit} · {formatINR(order.agreed_price)}
+                    {lang === 'en' ? 'Seller:' : 'വിൽക്കുന്നയാൾ:'} {order.seller_name} · {order.agreed_qty} {translateUnit(order.unit, lang)} · {formatINR(order.agreed_price)}
                   </div>
                   <div className="text-[11px] text-stone-400 mt-0.5">
-                    Ordered on {order.ordered_at}
+                    {lang === 'en' ? `Ordered on ${order.ordered_at}` : `ഓർഡർ ചെയ്ത തീയതി: ${order.ordered_at}`}
                   </div>
                 </div>
 
@@ -453,12 +462,14 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           {DEMO_SAVED_LISTINGS.map((item) => (
             <div key={item.id} className="bg-white p-5 rounded-3xl border border-stone-300/80 shadow-sm space-y-2">
               <span className="text-[10px] uppercase font-bold text-[#5B6147] tracking-wider">
-                {item.species}
+                {translateSpecies(item.species, lang)}
               </span>
-              <h4 className="font-serif font-bold text-[#4A3626] text-sm">{item.title}</h4>
+              <h4 className="font-serif font-bold text-[#4A3626] text-sm">
+                {translateWoodTitle(item.title, lang)}
+              </h4>
               <div className="text-xs text-stone-500">{item.district}</div>
               <div className="pt-2 font-black text-[#4A3626] text-base">
-                {formatINR(item.price_per_cft)} / CFT
+                {formatINR(item.price_per_cft)} / {translateUnit('CFT', lang)}
               </div>
             </div>
           ))}
@@ -505,7 +516,7 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       {t.id}
                     </span>
                     <span className="text-xs font-bold text-stone-800">
-                      {lang === 'en' ? t.category : t.categoryMl}
+                      {lang === 'en' ? t.category : (t.categoryMl || translateTicketCategory(t.category, lang))}
                     </span>
                   </div>
                   <span

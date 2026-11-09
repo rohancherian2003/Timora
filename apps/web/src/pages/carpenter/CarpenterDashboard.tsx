@@ -189,7 +189,7 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             </span>
             <div className="flex items-center gap-1 text-xs text-amber-900 font-bold bg-amber-100 px-2 py-0.5 rounded-md">
               <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-              <span>4.9 / 5.0 (28 reviews)</span>
+              <span>4.9 / 5.0 ({lang === 'en' ? '28 reviews' : '28 അഭിപ്രായങ്ങൾ'})</span>
             </div>
           </div>
 
@@ -295,12 +295,12 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
           <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
-            {lang === 'en' ? 'Active Client Inquiries' : 'ലഭിച്ച അന്വേഷണങ്ങൾ'}
+            {lang === 'en' ? 'Active Client Inquiries' : 'സജീവ അന്വേഷണങ്ങൾ'}
           </span>
           <div className="text-2xl font-black font-serif text-[#4A3626]">
-            {enquiries.length} <span className="text-xs font-normal text-stone-500">Active</span>
+            {enquiries.length} <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Active' : 'സജീവം'}</span>
           </div>
-          <p className="text-[10px] text-emerald-700 font-semibold">1 New this week</p>
+          <p className="text-[10px] text-emerald-700 font-semibold">{lang === 'en' ? '1 New this week' : 'ഈ ആഴ്ചയിൽ 1 പുതിയത്'}</p>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
@@ -308,9 +308,11 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             {lang === 'en' ? 'Service Districts' : 'സേവന മേഖലകൾ'}
           </span>
           <div className="text-2xl font-black font-serif text-[#4A3626]">
-            4 <span className="text-xs font-normal text-stone-500">Districts</span>
+            4 <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Districts' : 'ജില്ലകൾ'}</span>
           </div>
-          <p className="text-[10px] text-stone-500">Alappuzha, Kottayam, Pathanamthitta, Ernakulam</p>
+          <p className="text-[10px] text-stone-500">
+            {lang === 'en' ? 'Alappuzha, Kottayam, Pathanamthitta, Ernakulam' : 'ആലപ്പുഴ, കോട്ടയം, പത്തനംതിട്ട, എറണാകുളം'}
+          </p>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
@@ -318,9 +320,11 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             {lang === 'en' ? 'Completed Works' : 'പൂർത്തിയാക്കിയവ'}
           </span>
           <div className="text-2xl font-black font-serif text-[#4A3626]">
-            84 <span className="text-xs font-normal text-stone-500">Projects</span>
+            84 <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Projects' : 'പ്രോജക്ടുകൾ'}</span>
           </div>
-          <p className="text-[10px] text-stone-500">Verified by Timber Owners</p>
+          <p className="text-[10px] text-stone-500">
+            {lang === 'en' ? 'Verified by Timber Owners' : 'തടി ഉടമകൾ സാക്ഷ്യപ്പെടുത്തിയത്'}
+          </p>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
@@ -329,9 +333,11 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </span>
           <div className="text-2xl font-black font-serif text-emerald-700 flex items-center gap-1">
             <ShieldCheck className="w-5 h-5 text-emerald-600" />
-            <span>Listed</span>
+            <span>{lang === 'en' ? 'Listed' : 'ലിസ്റ്റ് ചെയ്തു'}</span>
           </div>
-          <p className="text-[10px] text-stone-500">Public Profile Active</p>
+          <p className="text-[10px] text-stone-500">
+            {lang === 'en' ? 'Public Profile Active' : 'പ്രൊഫൈൽ സജീവം'}
+          </p>
         </div>
       </div>
 
@@ -341,18 +347,28 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           <h3 className="font-extrabold font-serif text-[#4A3626] text-base">
             {lang === 'en' ? 'Carpentry & Joinery Specializations' : 'തടിപ്പണി വൈദഗ്ധ്യങ്ങൾ'}
           </h3>
-          <span className="text-xs text-stone-500">Visible on public artisan directory</span>
+          <span className="text-xs text-stone-500">
+            {lang === 'en' ? 'Visible on public artisan directory' : 'പൊതു ഡയറക്ടറിയിൽ ലഭ്യമാണ്'}
+          </span>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {specializations.map((spec, i) => (
-            <span
-              key={i}
-              className="px-3 py-1.5 rounded-xl bg-[#E7E1D6]/70 border border-[#8E7F6B]/30 text-xs font-bold text-[#4A3626]"
-            >
-              {spec}
-            </span>
-          ))}
+          {specializations.map((spec, i) => {
+            const specTranslations: Record<string, string> = {
+              'Traditional Kerala Temple & Nalukettu Joinery': 'പരമ്പരാഗത നാലുകെട്ട്, അമ്പല നിർമ്മാണം',
+              'Heavy Timber Roof Trusses (കഴുക്കോൽ പണി)': 'മേൽക്കൂര കഴുക്കോൽ പണി',
+              'Teak Front Doors & Intricate Wood Carving': 'തേക്ക് കൊത്തുപണി മുൻവാതിലുകൾ',
+              'Kiln Seasoning & Moisture Testing': 'തടി ഉണക്കലും ഈർപ്പ പരിശോധനയും',
+            };
+            return (
+              <span
+                key={i}
+                className="px-3 py-1.5 rounded-xl bg-[#E7E1D6]/70 border border-[#8E7F6B]/30 text-xs font-bold text-[#4A3626]"
+              >
+                {lang === 'ml' && specTranslations[spec] ? specTranslations[spec] : spec}
+              </span>
+            );
+          })}
         </div>
 
         <form onSubmit={handleAddSpec} className="flex gap-2 pt-2">
@@ -387,28 +403,42 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         </div>
 
         <div className="divide-y divide-stone-200">
-          {enquiries.map((enq) => (
-            <div
-              key={enq.id}
-              className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#E7E1D6]/40 transition"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-[#4A3626] text-sm sm:text-base">
-                    {enq.workType}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-[#E7E1D6] text-[#4A3626] text-[10px] font-bold">
-                    Timber: {enq.timberSpecies}
-                  </span>
+          {enquiries.map((enq) => {
+            const workTypeMl: Record<string, string> = {
+              'Traditional Kerala Nalukettu Roof Truss Joinery': 'പരമ്പരാഗത നാലുകെട്ട് മേൽക്കൂര നിർമ്മാണം',
+              'Solid Teak Front Door Carving & Seasoning': 'തേക്ക് തടി വാതിൽ കൊത്തുപണികൾ',
+            };
+            const timberMl: Record<string, string> = {
+              'Anjili & Teak': 'ആഞ്ഞിലി, തേക്ക്',
+              'First-Grade Nilambur Teak': 'ഒന്നാം തരം നിലമ്പൂർ തേക്ക്',
+            };
+            const locationMl: Record<string, string> = {
+              'Changanassery, Kottayam': 'ചങ്ങനാശ്ശേരി, കോട്ടയം',
+              'Alappuzha Town': 'ആലപ്പുഴ ടൗൺ',
+            };
+
+            return (
+              <div
+                key={enq.id}
+                className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#E7E1D6]/40 transition"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-[#4A3626] text-sm sm:text-base">
+                      {lang === 'ml' && workTypeMl[enq.workType] ? workTypeMl[enq.workType] : enq.workType}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-[#E7E1D6] text-[#4A3626] text-[10px] font-bold">
+                      {lang === 'en' ? 'Timber' : 'തടി'}: {lang === 'ml' && timberMl[enq.timberSpecies] ? timberMl[enq.timberSpecies] : enq.timberSpecies}
+                    </span>
+                  </div>
+                  <div className="text-xs text-stone-500 flex items-center gap-3">
+                    <span>{lang === 'en' ? 'Client' : 'ഉപഭോക്താവ്'}: <b>{enq.clientName}</b></span>
+                    <span>•</span>
+                    <span>{lang === 'en' ? 'Location' : 'സ്ഥലം'}: {lang === 'ml' && locationMl[enq.location] ? locationMl[enq.location] : enq.location}</span>
+                    <span>•</span>
+                    <span>{lang === 'en' ? 'Date' : 'തീയതി'}: {enq.date}</span>
+                  </div>
                 </div>
-                <div className="text-xs text-stone-500 flex items-center gap-3">
-                  <span>Client: <b>{enq.clientName}</b></span>
-                  <span>•</span>
-                  <span>Location: {enq.location}</span>
-                  <span>•</span>
-                  <span>Date: {enq.date}</span>
-                </div>
-              </div>
 
               <div className="flex items-center gap-3">
                 <span
@@ -478,9 +508,10 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 </a>
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
+    </div>
 
       <RaiseTicketModal
         isOpen={isRaiseModalOpen}
