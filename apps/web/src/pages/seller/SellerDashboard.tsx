@@ -189,7 +189,9 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const handleMarkAsSold = async (listingId: string) => {
     try {
       setIsMarkingSoldId(listingId);
-      await api.patch(`/listings/${listingId}/sold`);
+      await api.patch(`/listings/${listingId}/status`, { status: 'sold' }).catch(() =>
+        api.patch(`/listings/${listingId}/sold`)
+      );
       setSellerListings((prev) =>
         prev.map((l) => (l.id === listingId ? { ...l, status: 'sold' } : l))
       );
@@ -735,20 +737,21 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
       {/* New Listing Modal / Form */}
       {showAddForm && (
-        <div className="bg-[#FDFBF7] rounded-3xl border-2 border-[#8E7F6B]/30 p-6 sm:p-8 shadow-md space-y-6 animate-fadeIn">
-          <div className="flex items-center justify-between border-b border-[#8E7F6B]/20 pb-4">
-            <h2 className="text-lg font-extrabold font-serif text-[#4A3626]">
-              {lang === 'en' ? 'Submit Timber Stock for Approval' : 'പുതിയ തടി അനുമതിക്കായി സമർപ്പിക്കുക'}
-            </h2>
-            <button
-              type="button"
-              onClick={() => setShowAddForm(false)}
-              aria-label={lang === 'en' ? 'Close form' : 'ഫോം അടയ്ക്കുക'}
-              className="text-xs text-[#8E7F6B] hover:text-[#4A3626] font-bold px-2 py-1 rounded-lg hover:bg-[#E7E1D6]/50 transition focus:outline-none focus:ring-2 focus:ring-[#5B6147]"
-            >
-              ✕ Close
-            </button>
-          </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-2xl bg-[#FDFBF7] rounded-3xl border-2 border-[#8E7F6B]/30 p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#8E7F6B]/20 pb-4">
+              <h2 className="text-lg font-extrabold font-serif text-[#4A3626]">
+                {lang === 'en' ? 'Submit Timber Stock for Approval' : 'പുതിയ തടി അനുമതിക്കായി സമർപ്പിക്കുക'}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowAddForm(false)}
+                aria-label={lang === 'en' ? 'Close form' : 'ഫോം അടയ്ക്കുക'}
+                className="text-xs text-[#8E7F6B] hover:text-[#4A3626] font-bold px-2 py-1 rounded-lg hover:bg-[#E7E1D6]/50 transition focus:outline-none focus:ring-2 focus:ring-[#5B6147]"
+              >
+                ✕ Close
+              </button>
+            </div>
 
           {submitted ? (
             <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-center text-emerald-900 space-y-1">
@@ -1048,6 +1051,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               </button>
             </form>
           )}
+          </div>
         </div>
       )}
 

@@ -952,8 +952,8 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   {filter === 'all'
                     ? (lang === 'en' ? 'ALL' : 'എല്ലാം')
                     : filter === 'open'
-                    ? (lang === 'en' ? 'OPEN' : 'തുറന്നവ')
-                    : (lang === 'en' ? 'RESOLVED' : 'പരിഹരിച്ചവ')}
+                    ? (lang === 'en' ? 'OPEN' : 'നിലവിലുണ്ട്')
+                    : (lang === 'en' ? 'RESOLVED' : 'പരിഹരിച്ചു')}
                 </button>
               ))}
             </div>

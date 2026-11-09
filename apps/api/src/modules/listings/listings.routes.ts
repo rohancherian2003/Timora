@@ -69,6 +69,13 @@ listingsRouter.patch(
   listingsController.markAsSold.bind(listingsController)
 );
 
+// Seller or Admin update listing status (e.g. sold, deleted)
+listingsRouter.patch(
+  '/:id/status',
+  authenticate,
+  listingsController.updateStatus.bind(listingsController)
+);
+
 // Submit listing for approval
 listingsRouter.post(
   '/:id/submit',

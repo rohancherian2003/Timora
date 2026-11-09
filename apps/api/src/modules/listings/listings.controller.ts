@@ -244,6 +244,41 @@ export class ListingsController {
       next(err);
     }
   }
+
+  async updateStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+      const listingId = req.params.id as string;
+      const { status } = req.body || {};
+
+      if (status === 'sold') {
+        const result = await listingsService.markAsSold(userId, userRole, listingId);
+        const response: ApiSuccessResponse = {
+          success: true,
+          data: result,
+          message: 'Timber listing marked as sold successfully.',
+        };
+        res.status(200).json(response);
+        return;
+      }
+
+      if (status === 'deleted') {
+        const result = await listingsService.deleteListing(userId, userRole, listingId);
+        const response: ApiSuccessResponse = {
+          success: true,
+          data: result,
+          message: 'Timber listing removed successfully.',
+        };
+        res.status(200).json(response);
+        return;
+      }
+
+      throw new AppError(400, 'INVALID_STATUS', `Status '${status}' is not supported via this endpoint.`);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const listingsController = new ListingsController();

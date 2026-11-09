@@ -1,5 +1,6 @@
 import { query, withTransaction } from '../../config/database.js';
 import { AppError } from '../../middleware/errorHandler.js';
+import { deleteListingImage } from '../../utils/storage.js';
 
 export class ListingsService {
   /**
@@ -15,8 +16,8 @@ export class ListingsService {
     page?: number;
     limit?: number;
   }) {
-    const page = Math.max(1, filters.page || 1);
-    const limit = Math.min(100, Math.max(1, filters.limit || 8));
+    const page = Math.max(1, parseInt(String(filters.page || 1), 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(String(filters.limit || 8), 10) || 8));
     const offset = (page - 1) * limit;
 
     const conditions: string[] = [
@@ -450,6 +451,19 @@ export class ListingsService {
        RETURNING id, title, status, updated_at`,
       [listingId]
     );
+
+    // Clean up associated images in DB and storage
+    const imgRes = await query<{ storage_key: string }>(
+      `DELETE FROM listing_images WHERE listing_id = $1 RETURNING storage_key`,
+      [listingId]
+    ).catch(() => ({ rows: [] }));
+    if (imgRes && imgRes.rows) {
+      for (const row of imgRes.rows) {
+        if (row.storage_key) {
+          deleteListingImage(row.storage_key).catch(() => {});
+        }
+      }
+    }
 
     // Record review history event
     await query(

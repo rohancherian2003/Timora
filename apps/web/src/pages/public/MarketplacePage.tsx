@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
   Search,
   MapPin,
@@ -24,7 +25,7 @@ import {
   Sparkles,
   Loader2,
 } from 'lucide-react';
-import { formatINR } from '@timora/shared';
+import { formatINR, formatTimberListingId } from '@timora/shared';
 import { TIMBER_LISTINGS, TimberListingItem, mapApiListingToItem } from '../../utils/timberListings';
 import { api } from '../../lib/api';
 
@@ -96,7 +97,25 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setCurrentPage(1);
   }, [selectedSpecies, selectedType, selectedDistrict, searchQuery]);
 
-  // Live Listings Fetcher with Graceful Offline Fallback & 300ms Search Debounce
+  // TanStack Query for live marketplace listings with automatic revalidation
+  const { data: queryListings, isLoading: isQueryLoading } = useQuery({
+    queryKey: ['listings', searchQuery],
+    queryFn: async () => {
+      const res = await api.get('/listings', {
+        params: {
+          search: searchQuery.trim() || undefined,
+          limit: 100,
+        },
+      });
+      const rawList = res.data?.listings || res.data?.data?.listings || res.data?.data?.items;
+      if (res.data?.success && Array.isArray(rawList)) {
+        return rawList.map(mapApiListingToItem);
+      }
+      return null;
+    },
+  });
+
+  // Fallback Live Listings Fetcher
   useEffect(() => {
     let isMounted = true;
     const debounceTimer = setTimeout(async () => {
@@ -172,7 +191,11 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   };
 
   // Filter listings across authoritative live items or cached directory
-  const sourceListings = (liveListings && liveListings.length > 0) ? liveListings : TIMBER_LISTINGS;
+  const sourceListings = (queryListings && queryListings.length > 0)
+    ? queryListings
+    : (liveListings && liveListings.length > 0)
+    ? liveListings
+    : TIMBER_LISTINGS;
   const filteredListings = sourceListings.filter((item) => {
     if (selectedSpecies !== 'all') {
       if (selectedSpecies === 'firewood') {
@@ -611,6 +634,9 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                         </span>
                         <span className="text-[11px] text-[#8E7F6B] font-medium">
                           {lang === 'en' ? item.type : item.type_ml}
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-stone-100 text-stone-600 border border-stone-200">
+                          {formatTimberListingId(item.id)}
                         </span>
                       </div>
 

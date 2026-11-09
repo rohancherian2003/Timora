@@ -19,13 +19,14 @@ import {
   MessageSquare,
   Loader2,
 } from 'lucide-react';
-import { formatINR, formatUserProfileId, formatCleanPhone } from '@timora/shared';
+import { formatINR, formatUserProfileId, formatCleanPhone, formatTimberListingId } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { getTimberListingById, TimberListingItem, mapApiListingToItem } from '../../utils/timberListings';
 import { LoginAlertModal, AlertEntityType } from '../../components/LoginAlertModal';
 import { BackButton } from '../../components/BackButton';
 import { SubmitReviewModal } from '../../components/SubmitReviewModal';
 import { api } from '../../lib/api';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 export interface SellerReviewItem {
   id: string;
@@ -79,6 +80,8 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
   const [selectedImage, setSelectedImage] = useState<string>(listing.image_url);
   const [showEnquiryModal, setShowEnquiryModal] = useState(false);
+
+  useBodyScrollLock(Boolean(showEnquiryModal));
   const [loginAlert, setLoginAlert] = useState<{
     isOpen: boolean;
     entityType: AlertEntityType;
@@ -264,6 +267,9 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         <div className="space-y-6">
           <div>
             <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="px-2.5 py-1 rounded-md bg-stone-100 text-stone-700 border border-stone-300 text-xs font-mono font-bold">
+                {formatTimberListingId(listing.id)}
+              </span>
               <span className="px-3 py-1 rounded-full bg-[#E7E1D6] border border-[#8E7F6B]/30 text-[#4A3626] text-xs font-bold flex items-center gap-1">
                 <Tag className="w-3.5 h-3.5 text-[#5B6147]" />
                 {lang === 'en' ? listing.species : listing.species_ml}
