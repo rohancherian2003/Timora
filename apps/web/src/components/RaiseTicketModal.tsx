@@ -111,8 +111,8 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
       newErrors.phone = lang === 'en' ? 'Phone number is required' : 'ഫോൺ നമ്പർ നൽകേണ്ടതാണ്';
     } else if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
       newErrors.phone = lang === 'en'
-        ? 'Enter a valid 10-digit Indian mobile number (starting 6-9)'
-        : 'സാധുവായ 10-അക്ക മൊബൈൽ നമ്പർ നൽകുക (6-9 ൽ ആരംഭിക്കുന്നത്)';
+        ? 'Enter a valid 10-digit mobile number'
+        : 'സാധുവായ 10-അക്ക മൊബൈൽ നമ്പർ നൽകുക';
     }
 
     // Description validation
@@ -273,12 +273,12 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
                       {role === 'mill_owner'
                         ? (lang === 'en' ? 'Timber Mill Owner' : 'ടിംബർ മില്ല് ഉടമ')
                         : role === 'seller'
-                        ? (lang === 'en' ? 'Individual Timber Seller' : 'വ്യക്തിഗത തടി വ്യാപാരി')
-                        : role === 'carpenter'
-                        ? (lang === 'en' ? 'Carpenter' : 'ആശാരി')
-                        : role === 'transport'
-                        ? (lang === 'en' ? 'Transport Owner' : 'തടി ലോറി ഉടമ')
-                        : (lang === 'en' ? 'Buyer' : 'ഉപഭോക്താവ്')}
+                          ? (lang === 'en' ? 'Individual Timber Seller' : 'വ്യക്തിഗത തടി വ്യാപാരി')
+                          : role === 'carpenter'
+                            ? (lang === 'en' ? 'Carpenter' : 'ആശാരി')
+                            : role === 'transport'
+                              ? (lang === 'en' ? 'Transport Owner' : 'തടി ലോറി ഉടമ')
+                              : (lang === 'en' ? 'Buyer' : 'ഉപഭോക്താവ്')}
                     </span>
                   </div>
                   <span className="flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
@@ -304,11 +304,10 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
                       key={item.key}
                       type="button"
                       onClick={() => setRole(item.key as TicketRole)}
-                      className={`py-2 px-1.5 rounded-xl text-center font-bold text-[11px] border transition ${
-                        role === item.key
+                      className={`py-2 px-1.5 rounded-xl text-center font-bold text-[11px] border transition ${role === item.key
                           ? 'bg-[#5B6147] text-white border-[#5B6147] shadow-xs'
                           : 'bg-white text-[#4A3626] border-[#8E7F6B]/30 hover:bg-[#E7E1D6]/40'
-                      }`}
+                        }`}
                     >
                       {lang === 'en' ? item.en : item.ml}
                     </button>
@@ -333,11 +332,10 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
                       setName(e.target.value);
                       if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
                     }}
-                    className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold text-[#4A3626] bg-white focus:outline-none focus:ring-2 ${
-                      errors.name
+                    className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold text-[#4A3626] bg-white focus:outline-none focus:ring-2 ${errors.name
                         ? 'border-red-500 focus:ring-red-400 bg-red-50/20'
                         : 'border-[#8E7F6B]/30 focus:ring-[#5B6147] focus:border-[#5B6147]'
-                    }`}
+                      }`}
                   />
                 </div>
                 {errors.name && (
@@ -364,11 +362,10 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
                       setPhone(val);
                       if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
                     }}
-                    className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold text-[#4A3626] bg-white focus:outline-none focus:ring-2 ${
-                      errors.phone
+                    className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold text-[#4A3626] bg-white focus:outline-none focus:ring-2 ${errors.phone
                         ? 'border-red-500 focus:ring-red-400 bg-red-50/20'
                         : 'border-[#8E7F6B]/30 focus:ring-[#5B6147] focus:border-[#5B6147]'
-                    }`}
+                      }`}
                   />
                 </div>
                 {errors.phone && (
@@ -421,11 +418,10 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
                   setDescription(e.target.value);
                   if (errors.description) setErrors((prev) => ({ ...prev, description: undefined }));
                 }}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-medium text-[#4A3626] bg-white focus:outline-none focus:ring-2 ${
-                  errors.description
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-medium text-[#4A3626] bg-white focus:outline-none focus:ring-2 ${errors.description
                     ? 'border-red-500 focus:ring-red-400 bg-red-50/20'
                     : 'border-[#8E7F6B]/30 focus:ring-[#5B6147] focus:border-[#5B6147]'
-                }`}
+                  }`}
               />
               {errors.description && (
                 <div className="flex items-center gap-1 text-[11px] font-semibold text-red-600 mt-1">
@@ -444,22 +440,20 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
                 <button
                   type="button"
                   onClick={() => setPriority('normal')}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition ${
-                    priority === 'normal'
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition ${priority === 'normal'
                       ? 'bg-[#E7E1D6] text-[#4A3626] border-[#8E7F6B]/40 shadow-xs'
                       : 'bg-white text-[#7A5A3A] border-[#8E7F6B]/20 hover:bg-[#E7E1D6]/30'
-                  }`}
+                    }`}
                 >
                   {lang === 'en' ? 'Normal' : 'സാധാരണ'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setPriority('urgent')}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition ${
-                    priority === 'urgent'
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition ${priority === 'urgent'
                       ? 'bg-[#8B3A2B] text-white border-[#8B3A2B] shadow-xs'
                       : 'bg-white text-[#8B3A2B] border-[#8B3A2B]/30 hover:bg-[#8B3A2B]/10'
-                  }`}
+                    }`}
                 >
                   ⚡ {lang === 'en' ? 'Urgent' : 'അടിയന്തിരം'}
                 </button>
