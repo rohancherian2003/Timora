@@ -1,9 +1,9 @@
 # 🌲 TIMORA™ — Kerala's Smart Timber Marketplace
 ### *Connecting Timber, People & Possibilities across God's Own Country*
 
-[![Production Web Client](https://img.shields.io/badge/Live%20Web%20App-timora--rho.vercel.app-5B6147?style=for-the-badge&logo=vercel&logoColor=white)](https://timora-rho.vercel.app/)
+[![Production Web Client](https://img.shields.io/badge/Live%20Web%20App-timorah.me-5B6147?style=for-the-badge&logo=vercel&logoColor=white)](https://timorah.me)
 [![Production Backend API](https://img.shields.io/badge/Live%20API-api.timorah.me-4A3626?style=for-the-badge&logo=vercel&logoColor=white)](https://api.timorah.me/api/v1)
-[![Tests Passing](https://img.shields.io/badge/Vitest-223%20Tests%20Passing-emerald?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Tests Passing](https://img.shields.io/badge/Vitest-229%20Tests%20Passing-emerald?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://supabase.com/)
 [![License](https://img.shields.io/badge/License-Proprietary-stone?style=for-the-badge)](LICENSE)
@@ -138,8 +138,26 @@ $$\text{User ID} = \mathbf{TMR}\text{-}[\text{ROLE\_CODE}]\text{-}[\text{4\_CHAR
 ### 👤 Standardized 3-Action Profile Menu
 The top-right user menu is standardized across every authenticated role to strictly three core destinations:
 1. **My Dashboard** — Instant routing to the user's role-specific command center.
-2. **Edit Profile & Settings** — Dedicated modal allowing profile updates, clean phone inspection (`+91 XXXXXXXXXX`), and district adjustments.
+2. **Edit Profile & Settings** — Dedicated modal allowing profile updates, clean 10-digit phone inspection, and district adjustments.
 3. **Sign Out** — Secure session revocation with confirmation guard.
+
+### 📞 Strict 10-Digit Phone Number Normalization
+To prevent inconsistent telephone formatting across user roles and form submissions, TIMORA™ enforces a strict 10-digit numeric standard (`XXXXXXXXXX`):
+* **Visual Layer Sanitization**: Leading country codes (`+91` or `+91 `) are systematically stripped across profile header badges, user avatars, account edit modals, and "Raise a Support Ticket" dialogs via the shared `formatCleanPhone()` utility.
+* **Locked & Read-Only Pre-fills**: In support modals and profile inspection badges, authenticated contact numbers are locked in clean 10-digit format, preventing manual user tampering.
+* **Schema Integrity**: Preserves underlying E.164 database compatibility while delivering a uniform domestic UX across all 14 districts of Kerala.
+
+### ✕ Admin Solution Reply Reactive Dismissal
+When Super Admin resolves an escalated grievance, the official solution is surfaced directly in the user's dashboard via an "ADMIN SOLUTION REPLY" announcement card:
+* **One-Click Dismissal**: Users can dismiss the solution card via an active top-right close action (`✕`).
+* **Persistent Local Synchronization**: The dismissal state is remembered across page refreshes and browser tabs using `localStorage` synchronization (`timora_dismissed_ticket_ids` and `timora_dismissed_admin_reply_${role}`).
+* **Zero History Loss**: Dismissing the highlight banner preserves the complete chronological ticket history and resolution record in the user's ticket table below.
+
+### ⚡ Optimized Network Architecture & Debounced Polling
+Following comprehensive systems auditing, high-frequency network overhead has been systematically eliminated:
+* **Keystroke Debouncing**: Marketplace search queries (`GET /listings?search=...`) use a 300ms debounce timer to prevent burst HTTP calls during rapid typing.
+* **Tab-Aware Notification Polling**: Dashboard notification intervals check `document.hidden` and throttle polling to 45 seconds, eliminating phantom background requests when tabs are idle.
+* **Auth Session Deduplication**: Burst calls to `GET /auth/me` during multi-component mounting are debounced with a 3-second guard window in `AuthContext`.
 
 ### 📱 Strict Mobile Navigation Guard (`< 768px`)
 * **Zero Visual Redundancy**: Redundant top-bar navigation links and duplicate auth buttons are hidden on mobile viewports (`hidden md:flex`), leaving only the TIMORA™ brand mark and language toggle.
@@ -161,7 +179,86 @@ $$\text{Sawn Beam Volume (CFT)} = \frac{L \times W \times T}{144} \times N$$
 
 ---
 
-## 4. 📁 Project Structure (Active Web App Only)
+## 4. 🔄 Level-1 Data Flow Diagram (DFD)
+
+The Level-1 Data Flow Diagram models the decomposition of the TIMORA™ ecosystem into five primary operational processes, mapping interactions between external human actors, functional system boundaries, and persistent database stores:
+
+```mermaid
+flowchart TD
+    %% External Entities
+    subgraph Entities ["External Actors"]
+        E1["👤 Verified Buyer"]
+        E2["🌲 Seller / Sawmill"]
+        E3["🪓 Master Carpenter"]
+        E4["🚚 Transporter"]
+        E5["🛡️ Super Admin"]
+    end
+
+    %% Processes
+    subgraph Processes ["Functional Subsystems"]
+        P1["1.0<br/>Authentication &<br/>Session Security"]
+        P2["2.0<br/>Timber Cataloging &<br/>Hoppus CFT Engine"]
+        P3["3.0<br/>Order Fulfillment &<br/>Stock Deduction"]
+        P4["4.0<br/>Grievance Redressal &<br/>Solution Dispatch"]
+        P5["5.0<br/>Regulatory Audit &<br/>Role Verification"]
+    end
+
+    %% Data Stores
+    subgraph Stores ["PostgreSQL Data Stores"]
+        D1[("D1: User & Role Registry<br/>(users, profiles)")]
+        D2[("D2: Timber Inventory Ledger<br/>(timber_listings, mills)")]
+        D3[("D3: Transactions Ledger<br/>(orders, history, reviews)")]
+        D4[("D4: Grievance Store<br/>(support_tickets, messages)")]
+        D5[("D5: Regulatory Audit Log<br/>(admin_audit_logs)")]
+    end
+
+    %% Flows for P1
+    E1 & E2 & E3 & E4 & E5 -->|"Mobile + PIN"| P1
+    P1 <-->|"Verify Hash / PIN"| D1
+    P1 -->|"15m JWT Session Token"| E1 & E2 & E3 & E4 & E5
+
+    %% Flows for P2
+    E2 -->|"Log Measurements (G, L, W, T)"| P2
+    P2 -->|"Calculate CFT & Persist"| D2
+    D2 -->|"Filtered Marketplace Feed"| P2
+    P2 -->|"Browse Verified Lots"| E1
+
+    %% Flows for P3
+    E1 -->|"Initiate Purchase Order"| P3
+    P3 <-->|"Reserve Stock / Decrement CFT"| D2
+    P3 -->|"Record Order Status"| D3
+    E2 -->|"Accept & Dispatch Transit"| P3
+    E1 -->|"Confirm Delivery Received"| P3
+    P3 -->|"Completed Order Receipt"| E1 & E2
+
+    %% Flows for P4
+    E1 & E2 & E3 & E4 -->|"Raise Support Ticket"| P4
+    P4 -->|"Store Ticket & Attachments"| D4
+    D4 -->|"Escalated Grievance Queue"| P4
+    P4 -->|"Inspect & Author Solution"| E5
+    E5 -->|"Publish Admin Reply"| P4
+    P4 -->|"Dismissible Admin Solution Banner"| E1 & E2 & E3 & E4
+
+    %% Flows for P5
+    E2 & E3 & E4 -->|"Submit Business Licenses / Form IV"| P5
+    P5 -->|"Update Approval Status"| D1
+    E5 -->|"Audit Listings & Business Credentials"| P5
+    P5 -->|"Write Immutable Event"| D5
+```
+
+### Data Flow Process Specifications
+
+| Process | Inputs | Outputs | Interacting Stores | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| **1.0 Auth & Session Security** | Mobile No, 6-digit PIN, Registration Details | 15-min JWT token, Memorized Identity (`TMR-XXX`), Role Context | **D1: User Registry** | Authenticates users using Argon2id key derivation, issues time-bounded JWT sessions, and locks 10-digit phone identity. |
+| **2.0 Timber Cataloging & CFT Engine** | Mid-girth ($G$), Length ($L$), species, pricing, sawmill specs | Validated listing record, Hoppus CFT volume, Marketplace feed | **D2: Inventory Ledger** | Computes standardized quarter-girth volume, validates species compliance, and indexes active stock. |
+| **3.0 Order Fulfillment & Stock Deduction** | Volume selection, delivery acceptance, buyer confirmation | Order state transitions, inventory deduction, settlement receipts | **D2: Inventory**, **D3: Orders** | Prevents overselling by decrementing stock upon order creation, tracks dispatch, and captures final delivery acknowledgment. |
+| **4.0 Grievance Redressal & Redirection** | Support ticket subject, category, description, evidence photo | Admin reply cards, persistent ticket records, status alerts | **D4: Grievance Store** | Facilitates dispute resolution with cross-dashboard dismissible alert banners and persistent localStorage synchronization. |
+| **5.0 Regulatory Audit & Verification** | Sawmill licenses, master joiner portfolios, vehicle permits | Verified merchant badges, permit clearances, audit entries | **D1: User Registry**, **D5: Audit Log** | Enforces Kerala Forest Produce Transit Rules 1975, audits sawmill licenses, and tracks all admin mutations. |
+
+---
+
+## 5. 📁 Project Structure (Active Web App Only)
 
 ```text
 mcakju_timber_new/
@@ -236,13 +333,13 @@ mcakju_timber_new/
             ├── types/                   # Shared TypeScript interfaces & enums
             └── utils/
                 ├── calculator.ts        # Hoppus rule CFT mathematical formulas
-                ├── formatters.ts        # TMR-ROLE-XXXX and clean +91 phone formatters
+                ├── formatters.ts        # TMR-ROLE-XXXX and clean 10-digit phone formatters
                 └── validation.ts        # Shared Zod validation schemas
 ```
 
 ---
 
-## 5. 🗄️ Relational Entity-Relationship (ER) Diagram
+## 6. 🗄️ Relational Entity-Relationship (ER) Diagram
 
 The diagram below reflects the active PostgreSQL relational schema operating in production:
 
@@ -354,12 +451,49 @@ erDiagram
         varchar reference UK
         varchar category
         varchar status
+        timestamp created_at
+    }
+
+    SUPPORT_TICKET_MESSAGES {
+        uuid id PK
+        uuid ticket_id FK
+        uuid sender_id FK
+        text message
+        timestamp created_at
+    }
+
+    ORDER_STATUS_HISTORY {
+        uuid id PK
+        uuid order_id FK
+        varchar from_status
+        varchar to_status
+        uuid updated_by FK
+        timestamp created_at
+    }
+
+    REVIEWS {
+        uuid id PK
+        uuid order_id FK
+        uuid author_id FK
+        uuid target_id FK
+        integer rating
+        text review_text
+        timestamp created_at
+    }
+
+    ADMIN_AUDIT_LOGS {
+        uuid id PK
+        uuid admin_id FK
+        varchar target_entity
+        varchar action
+        jsonb metadata
+        timestamp created_at
     }
 ```
 
 ---
 
-## 6. ⚙️ Environment Variables & Configuration
+## 7. ⚙️ Environment Variables & Configuration
 
 ### Frontend Client Configuration (`apps/web/.env`)
 
@@ -381,7 +515,7 @@ PORT=3001
 LOG_LEVEL=info
 
 # Cross-Origin Resource Sharing (Comma-separated allowed domains)
-CORS_ORIGINS=http://localhost:5173,https://timora-rho.vercel.app,https://timora.vercel.app
+CORS_ORIGINS=http://localhost:5173,https://timorah.me,https://www.timorah.me,https://timora-rho.vercel.app,https://timora.vercel.app
 
 # PostgreSQL Cloud Database Connection
 DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/[DB_NAME]?sslmode=require
@@ -411,7 +545,7 @@ OTP_MAX_ATTEMPTS=3
 
 ---
 
-## 7. 🚀 Getting Started & Local Development
+## 8. 🚀 Getting Started & Local Development
 
 ### Prerequisites
 * **Node.js**: `v18.0.0` or later (LTS recommended)
@@ -477,7 +611,7 @@ npm run build
 
 ---
 
-## 8. 🌐 Deployment & Vercel Configuration
+## 9. 🌐 Deployment & Vercel Configuration
 
 TIMORA™ is optimized for zero-maintenance serverless deployment on **Vercel** across two distinct projects (Frontend SPA and Backend API).
 
@@ -521,14 +655,14 @@ TIMORA™ is optimized for zero-maintenance serverless deployment on **Vercel** 
 ```
 
 ### Custom Domain DNS Configuration
-To route your branded domain (e.g., `timora.in`) to the Vercel edge network:
-* **Root Domain (`@`)**: Add a DNS `A` record pointing to `76.76.21.21`.
-* **Subdomain (`www` or `api`)**: Add a DNS `CNAME` record pointing to `cname.vercel-dns.com`.
+To route your branded domain (`timorah.me` / `api.timorah.me`) to the Vercel edge network:
+* **Root Web Domain (`timorah.me` / `@`)**: Add a DNS `A` record pointing to `76.76.21.21`.
+* **Subdomains (`www` or `api`)**: Add DNS `CNAME` records pointing to `cname.vercel-dns.com`.
 * **SSL Certificates**: Provisioned and renewed automatically via Vercel Let's Encrypt CA integration.
 
 ---
 
-## 9. 🛡️ Security & Regulatory Compliance
+## 10. 🛡️ Security & Regulatory Compliance
 
 ### Authentication & Token Security
 * **Argon2id Key Derivation**: User PINs are hashed using memory-hard Argon2id (`memoryCost: 65536`, `iterations: 3`). Plaintext PINs are never persisted or logged.
@@ -543,7 +677,7 @@ TIMORA™ embeds statutory forestry compliance directly into its digital workflo
 
 ---
 
-## 📄 License & Attribution
+## 11. 📄 License & Attribution
 
 TIMORA™ — Kerala's Smart Timber Marketplace. Proprietary software. All rights reserved.  
 Engineered for Kerala's timber growers, sawmillers, wood artisans, and builders.
