@@ -82,8 +82,6 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const searchQuery = searchParams.get('q') || '';
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
-  const [liveListings, setLiveListings] = useState<TimberListingItem[] | null>(null);
-  const [isLoadingLive, setIsLoadingLive] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
   const [validationAlert, setValidationAlert] = useState<{
@@ -114,36 +112,6 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       return null;
     },
   });
-
-  // Fallback Live Listings Fetcher
-  useEffect(() => {
-    let isMounted = true;
-    const debounceTimer = setTimeout(async () => {
-      try {
-        setIsLoadingLive(true);
-        const res = await api.get('/listings', {
-          params: {
-            search: searchQuery.trim() || undefined,
-            limit: 100,
-          },
-        });
-        const rawList = res.data?.listings || res.data?.data?.listings || res.data?.data?.items;
-        if (isMounted && res.data?.success && Array.isArray(rawList) && rawList.length > 0) {
-          const mapped = rawList.map(mapApiListingToItem);
-          setLiveListings(mapped);
-        }
-      } catch {
-        // Gracefully preserve fallback TIMBER_LISTINGS
-      } finally {
-        if (isMounted) setIsLoadingLive(false);
-      }
-    }, 300);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(debounceTimer);
-    };
-  }, [searchQuery]);
 
   // Update query params helper
   const updateFilter = (key: string, value: string) => {
@@ -193,8 +161,6 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   // Filter listings across authoritative live items or cached directory
   const sourceListings = (queryListings && queryListings.length > 0)
     ? queryListings
-    : (liveListings && liveListings.length > 0)
-    ? liveListings
     : TIMBER_LISTINGS;
   const filteredListings = sourceListings.filter((item) => {
     if (selectedSpecies !== 'all') {
@@ -519,7 +485,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         {/* Active Results Summary */}
         <div className="flex items-center justify-between text-xs text-[#7A5A3A] px-1 font-medium">
           <span className="flex items-center gap-1.5">
-            {isLoadingLive && <Loader2 className="w-3.5 h-3.5 text-[#5B6147] animate-spin" />}
+            {isQueryLoading && <Loader2 className="w-3.5 h-3.5 text-[#5B6147] animate-spin" />}
             {lang === 'en'
               ? `Showing ${filteredListings.length} verified timber lots`
               : `${filteredListings.length} തടി ലോറ്റുകൾ ലഭ്യമാണ്`}
@@ -536,7 +502,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         </div>
 
         {/* 3. TIMBER CARDS GRID WITH 6-POINT VISUAL HIERARCHY */}
-        {isLoadingLive && !liveListings ? (
+        {isQueryLoading && !queryListings ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-pulse" data-testid="marketplace-loading">
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <div

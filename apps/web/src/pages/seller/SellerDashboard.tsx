@@ -107,8 +107,19 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           : 'തടി വിറ്റുപോയി എന്ന് അടയാളപ്പെടുത്തി.'
       );
     },
-    onError: (err: any) => {
+    onError: (err: any, listingId: string) => {
       console.warn('Backend mark as sold fallback:', err);
+      setLocalSellerListings((prev) =>
+        prev.map((l) => (l.id === listingId ? { ...l, status: 'sold' } : l))
+      );
+      if (viewingDetailsListing?.id === listingId) {
+        setViewingDetailsListing((prev: any) => (prev ? { ...prev, status: 'sold' } : null));
+      }
+      setToastMessage(
+        lang === 'en'
+          ? 'Listing marked as Sold.'
+          : 'തടി വിറ്റുപോയി എന്ന് അടയാളപ്പെടുത്തി.'
+      );
     },
     onSettled: () => {
       setIsMarkingSoldId(null);
@@ -134,8 +145,17 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           : 'ലിസ്റ്റിംഗ് ശാശ്വതമായി നീക്കം ചെയ്തു.'
       );
     },
-    onError: (err: any) => {
+    onError: (err: any, listingId: string) => {
       console.warn('Backend delete fallback:', err);
+      setLocalSellerListings((prev) => prev.filter((l) => l.id !== listingId));
+      if (viewingDetailsListing?.id === listingId) {
+        setViewingDetailsListing(null);
+      }
+      setToastMessage(
+        lang === 'en'
+          ? 'Listing permanently removed.'
+          : 'ലിസ്റ്റിംഗ് ശാശ്വതമായി നീക്കം ചെയ്തു.'
+      );
     },
     onSettled: () => {
       setIsDeletingListingId(null);

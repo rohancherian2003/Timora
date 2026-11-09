@@ -108,7 +108,7 @@ export class ListingsService {
    * Get listing by ID (increments view count)
    */
   async getListingById(id: string) {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     if (!isUuid) {
       throw new AppError(404, 'NOT_FOUND', 'Timber listing not found.');
     }
@@ -423,7 +423,7 @@ export class ListingsService {
    * Delete / remove a timber listing (Seller owner or Super Admin only)
    */
   async deleteListing(userId: string, userRole: string, listingId: string) {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(listingId);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(listingId);
     if (!isUuid) {
       throw new AppError(404, 'NOT_FOUND', 'Timber listing not found.');
     }
@@ -488,7 +488,7 @@ export class ListingsService {
    * Mark a timber listing as sold (Seller owner or Super Admin)
    */
   async markAsSold(userId: string, userRole: string, listingId: string) {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(listingId);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(listingId);
     if (!isUuid) {
       throw new AppError(404, 'NOT_FOUND', 'Timber listing not found.');
     }

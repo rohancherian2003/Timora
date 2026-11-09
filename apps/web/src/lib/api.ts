@@ -110,12 +110,14 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   } else if (token && token.startsWith('demo-')) {
     // In local demo session mode, mock protected background endpoints so they do not fail with 401
+    const method = config.method?.toLowerCase();
     if (
       url.includes('/support/notifications') ||
       url.includes('/listings/seller/me') ||
       url.includes('/orders') ||
       url.includes('/admin/sellers/pending') ||
-      url.includes('/auth/me')
+      url.includes('/auth/me') ||
+      (url.includes('/listings') && method && ['post', 'patch', 'put', 'delete'].includes(method))
     ) {
       config.adapter = async () => ({
         data: { success: true, data: [] },

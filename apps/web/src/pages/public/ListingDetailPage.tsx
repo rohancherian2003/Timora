@@ -46,13 +46,13 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { isAuthenticated } = useAuth();
 
   const [liveListing, setLiveListing] = useState<TimberListingItem | null>(null);
-  const [isLoadingDetail, setIsLoadingDetail] = useState(() => Boolean(id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)));
+  const [isLoadingDetail, setIsLoadingDetail] = useState(() => Boolean(id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)));
 
   useEffect(() => {
     let isMounted = true;
     async function fetchLiveDetail() {
       if (!id) return;
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
       if (!isUuid) {
         // Fallback demo listing IDs (e.g. '1', '2', etc.) are resolved directly from local catalog
         setIsLoadingDetail(false);
