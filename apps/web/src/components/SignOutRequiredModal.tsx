@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LogOut, Loader2, AlertTriangle } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface SignOutRequiredModalProps {
   isOpen: boolean;
@@ -17,6 +18,8 @@ export function SignOutRequiredModal({
 }: SignOutRequiredModalProps) {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useBodyScrollLock(isOpen);
 
   if (!isOpen) return null;
 

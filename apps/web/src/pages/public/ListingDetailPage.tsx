@@ -280,6 +280,11 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   <span>{lang === 'en' ? 'Forest Form IV Pass' : 'ഫോറസ്റ്റ് പാസ്സ് ഉണ്ട്'}</span>
                 </span>
               )}
+              {listing.status === 'sold' && (
+                <span className="px-3 py-1 rounded-md bg-rose-600 text-white text-[11px] font-extrabold uppercase tracking-wider">
+                  {lang === 'en' ? 'SOLD' : 'വിറ്റുപോയി'}
+                </span>
+              )}
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold font-serif text-[#4A3626] tracking-tight leading-tight">
@@ -314,13 +319,20 @@ export function ListingDetailPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               </span>
             </div>
 
-            <button
-              onClick={handleEnquiryClick}
-              className="px-6 py-3.5 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-sm shadow-md shadow-amber-950/10 transition flex items-center gap-2"
-            >
-              <Send className="w-4 h-4" />
-              <span>{lang === 'en' ? 'Send Enquiry' : 'അന്വേഷണം അയക്കുക'}</span>
-            </button>
+            {listing.status === 'sold' ? (
+              <div className="px-6 py-3.5 rounded-2xl bg-stone-400 text-white font-bold text-sm flex items-center gap-2 cursor-not-allowed">
+                <AlertCircle className="w-4 h-4" />
+                <span>{lang === 'en' ? 'Sold Out' : 'വിറ്റുപോയി'}</span>
+              </div>
+            ) : (
+              <button
+                onClick={handleEnquiryClick}
+                className="px-6 py-3.5 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-sm shadow-md shadow-amber-950/10 transition flex items-center gap-2"
+              >
+                <Send className="w-4 h-4" />
+                <span>{lang === 'en' ? 'Send Enquiry' : 'അന്വേഷണം അയക്കുക'}</span>
+              </button>
+            )}
           </div>
 
           {/* Specs Grid */}

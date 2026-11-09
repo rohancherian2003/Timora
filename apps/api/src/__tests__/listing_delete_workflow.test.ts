@@ -232,14 +232,16 @@ describe('Listing Delete Workflow Suite (Seller & Admin)', () => {
       expect(checkRes.rows[0]?.status).toBe('sold');
     });
 
-    it('excludes sold listing from public search but retains it in seller private listings archive', async () => {
-      // Public search excludes sold item
+    it('keeps sold listing visible on public search with sold status and in seller private listings archive', async () => {
+      // Public search includes sold item tagged as 'sold'
       const searchRes = await request(app).get(`/api/v1/listings?search=Sold+Test+Anjili`);
       expect(searchRes.status).toBe(200);
       const items = searchRes.body.data?.items || searchRes.body.data?.listings || [];
-      expect(items.some((item: any) => item.id === listingId3)).toBe(false);
+      const foundPublic = items.find((item: any) => item.id === listingId3);
+      expect(foundPublic).toBeDefined();
+      expect(foundPublic.status).toBe('sold');
 
-      // Seller's own listings still retains sold items
+      // Seller's own listings also retains sold items
       const myRes = await request(app)
         .get(`/api/v1/listings/seller/me`)
         .set('Authorization', `Bearer ${sellerAToken}`);

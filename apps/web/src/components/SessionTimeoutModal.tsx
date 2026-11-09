@@ -3,10 +3,13 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Clock, LogIn, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export function SessionTimeoutModal({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { isSessionTimedOut, dismissTimeoutModal } = useAuth();
   const navigate = useNavigate();
+
+  useBodyScrollLock(isSessionTimedOut);
 
   if (!isSessionTimedOut) return null;
 

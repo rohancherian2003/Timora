@@ -591,6 +591,15 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       <div className="absolute top-3 right-3 px-2.5 py-1 rounded-md bg-stone-900/80 text-white text-[10px] font-bold backdrop-blur-xs">
                         {item.grade}
                       </div>
+
+                      {/* SOLD Overlay Badge */}
+                      {item.status === 'sold' && (
+                        <div className="absolute inset-0 bg-stone-900/40 flex items-center justify-center">
+                          <span className="px-4 py-2 rounded-xl bg-rose-600/95 text-white text-sm font-extrabold uppercase tracking-wider backdrop-blur-xs shadow-md">
+                            {lang === 'en' ? 'SOLD' : 'വിറ്റുപോയി'}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Card Body */}
@@ -658,9 +667,13 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     <Link
                       to={`/listing/${item.id}`}
                       state={{ fromSearch: searchParams.toString() }}
-                      className="px-4 py-2.5 rounded-2xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5"
+                      className={`px-4 py-2.5 rounded-2xl font-bold text-xs shadow-xs transition flex items-center gap-1.5 ${
+                        item.status === 'sold'
+                          ? 'bg-stone-400 text-white cursor-default'
+                          : 'bg-[#5B6147] hover:bg-[#3F452F] text-white'
+                      }`}
                     >
-                      <span>{lang === 'en' ? 'View Details' : 'വിശദാംശങ്ങൾ'}</span>
+                      <span>{lang === 'en' ? (item.status === 'sold' ? 'View Sold Item' : 'View Details') : (item.status === 'sold' ? 'വിവരങ്ങൾ കാണുക' : 'വിശദാംശങ്ങൾ')}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Lock, X, ArrowRight, UserPlus } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export type AlertEntityType = 'seller' | 'mill' | 'carpenter' | 'transport' | 'enquiry';
 
@@ -33,6 +34,8 @@ export function LoginAlertModal({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  useBodyScrollLock(isOpen);
 
   if (!isOpen) return null;
 

@@ -29,6 +29,7 @@ export interface TimberListingItem {
   description_ml?: string;
   seller_id?: string;
   phone?: string;
+  status?: 'approved' | 'sold' | 'pending_review' | 'draft' | 'rejected' | 'deleted';
 }
 
 export const TIMBER_LISTINGS: TimberListingItem[] = [
@@ -276,5 +277,6 @@ export function mapApiListingToItem(row: any): TimberListingItem {
     condition_notes_ml: row.condition_notes_ml || 'കേരള അംഗീകൃത തടി ഡിപ്പോയിൽ നിന്നുള്ള സ്റ്റോക്ക്.',
     description: row.description,
     seller_id: row.seller_id,
+    status: row.status || 'approved',
   };
 }

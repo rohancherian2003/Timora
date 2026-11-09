@@ -4,6 +4,7 @@ import { Star, X, CheckCircle2, AlertCircle, ShieldCheck, Lock, Send, Loader2 } 
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export interface SubmitReviewModalProps {
   isOpen: boolean;
@@ -46,6 +47,8 @@ export function SubmitReviewModal({
   const [resolvedOrderId, setResolvedOrderId] = useState<string | null>(orderId || null);
   const [hasEligibleOrder, setHasEligibleOrder] = useState<boolean>(Boolean(orderId));
   const [isCheckingOrders, setIsCheckingOrders] = useState(false);
+
+  useBodyScrollLock(isOpen);
 
   // Check for eligible completed orders when modal opens without a pre-supplied orderId
   React.useEffect(() => {

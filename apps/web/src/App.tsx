@@ -20,6 +20,8 @@ import {
   X
 } from 'lucide-react';
 import { AuthProvider, useAuth, UserRole } from './context/AuthContext';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/queryClient';
 import { formatUserProfileId, formatCleanPhone } from '@timora/shared';
 import { BrandLogo } from './components/BrandLogo';
 import { OfflineBanner } from './components/OfflineBanner';
@@ -1075,7 +1077,8 @@ export function App() {
   };
 
   return (
-    <AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
       <Router>
         {/* Universal Strict UI-Only Navigation Guard */}
         <NavigationGuard />
@@ -1285,5 +1288,6 @@ export function App() {
         </div>
       </Router>
     </AuthProvider>
+    </QueryClientProvider>
   );
 }

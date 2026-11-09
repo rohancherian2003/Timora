@@ -20,7 +20,7 @@ export class ListingsService {
     const offset = (page - 1) * limit;
 
     const conditions: string[] = [
-      "l.status = 'approved'",
+      "l.status IN ('approved', 'sold')",
       "(sp.approval_status = 'approved' OR sp.approval_status = 'APPROVED')",
     ];
     const params: unknown[] = [];
@@ -86,7 +86,7 @@ export class ListingsService {
        LEFT JOIN listing_images img ON img.listing_id = l.id
        WHERE ${whereClause}
        GROUP BY l.id, s.id, t.id, d.id, sp.business_name, sp.approval_status, up.name
-       ORDER BY COALESCE(l.approved_at, l.created_at) DESC, l.created_at DESC
+       ORDER BY l.created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
       [...params, limit, offset]
     );

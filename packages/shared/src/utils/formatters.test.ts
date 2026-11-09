@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatUserProfileId, formatCleanPhone } from './formatters.js';
+import { formatUserProfileId, formatCleanPhone, formatTimberListingId } from './formatters.js';
 
 describe('formatUserProfileId & formatCleanPhone Utility Suite', () => {
   describe('formatUserProfileId', () => {
@@ -94,6 +94,26 @@ describe('formatUserProfileId & formatCleanPhone Utility Suite', () => {
       expect(formatCleanPhone('')).toBe('');
       expect(formatCleanPhone(null)).toBe('');
       expect(formatCleanPhone(undefined)).toBe('');
+    });
+  });
+
+  describe('formatTimberListingId', () => {
+    it('formats listing UUID into readable TMR-TMB-XXXX code', () => {
+      const listing = { id: 'a7d2c8b3-55ed-4867-b551-12c301a22470' };
+      expect(formatTimberListingId(listing)).toBe('TMR-TMB-2470');
+      expect(formatTimberListingId('a7d2c8b3-55ed-4867-b551-12c301a22470')).toBe('TMR-TMB-2470');
+    });
+
+    it('preserves existing TMR-TMB-XXXX formatted code', () => {
+      expect(formatTimberListingId('TMR-TMB-7F3A')).toBe('TMR-TMB-7F3A');
+      expect(formatTimberListingId({ id: 'tmr-tmb-8899' })).toBe('TMR-TMB-8899');
+    });
+
+    it('falls back safely on missing, empty, or short IDs', () => {
+      expect(formatTimberListingId(null)).toBe('TMR-TMB-0001');
+      expect(formatTimberListingId(undefined)).toBe('TMR-TMB-0001');
+      expect(formatTimberListingId('')).toBe('TMR-TMB-0001');
+      expect(formatTimberListingId('42')).toBe('TMR-TMB-0042');
     });
   });
 });

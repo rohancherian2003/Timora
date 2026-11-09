@@ -24,11 +24,13 @@ import {
   Loader2,
   Trash2,
 } from 'lucide-react';
-import { formatINR, formatUserProfileId, formatCleanPhone } from '@timora/shared';
+import { formatINR, formatUserProfileId, formatCleanPhone, formatTimberListingId } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
 import { getStoredTickets, resolveTicket, SupportTicket } from '../../utils/ticketService';
 import { EditProfileModal } from '../../components/EditProfileModal';
 import { api } from '../../lib/api';
+import { queryClient } from '../../lib/queryClient';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import {
   translateWoodTitle,
   translateTicketCategory,
@@ -189,6 +191,8 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [isLoadingApps, setIsLoadingApps] = useState(true);
 
+  useBodyScrollLock(Boolean(actionModal || replyTicket || isEditProfileOpen));
+
   useEffect(() => {
     const handleUpdate = () => {
       setTickets(getStoredTickets());
@@ -306,6 +310,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     } finally {
       setListingActionLoadingId(null);
       setListings((prev) => prev.filter((l) => l.id !== lst.id));
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
       setMessage(lang === 'en' ? 'Listing approved and live on marketplace.' : 'ലിസ്റ്റിംഗ് അംഗീകരിച്ചു — മാർക്കറ്റ്‌പ്ലേസിൽ ദൃശ്യമാകും.');
     }
   };
@@ -322,6 +327,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     } finally {
       setListingActionLoadingId(null);
       setListings((prev) => prev.filter((l) => l.id !== lst.id));
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
       setMessage(lang === 'en' ? 'Listing rejected.' : 'ലിസ്റ്റിംഗ് നിരസിച്ചു.');
     }
   };
@@ -352,8 +358,8 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const handlePurgeListing = async (lst: any) => {
     const confirmMsg =
       lang === 'en'
-        ? `Are you sure you want to delete and purge "${lst.title}" from the marketplace?`
-        : `ഈ തടി ലിസ്റ്റിംഗ് മാർക്കറ്റിൽ നിന്നും നീക്കം ചെയ്യണമെന്ന് ഉറപ്പാണോ?`;
+        ? 'Permanently remove this timber listing?'
+        : 'ഈ തടി ലിസ്റ്റിംഗ് ശാശ്വതമായി നീക്കം ചെയ്യണമെന്ന് ഉറപ്പാണോ?';
     if (!window.confirm(confirmMsg)) return;
 
     setListingActionLoadingId(lst.id);
@@ -370,10 +376,11 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       setListingActionLoadingId(null);
       setListings((prev) => prev.filter((l) => l.id !== lst.id));
       setActiveMarketplaceListings((prev) => prev.filter((l) => l.id !== lst.id));
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
       setMessage(
         lang === 'en'
           ? `Listing "${lst.title}" deleted and purged successfully.`
-          : `ലിസ്റ്റിംഗ് വിജയകരമായി നീക്കം ചെയ്തു.`
+          : `ലിസ്റ്റിംഗ് ശാശ്വതമായി നീക്കം ചെയ്തു.`
       );
     }
   };
@@ -769,10 +776,13 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                         />
                       )}
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="font-serif font-bold text-base text-[#4A3626]">
                             {translateWoodTitle(lst.title, lang)}
                           </h4>
+                          <span className="font-mono text-[10px] text-stone-500 bg-stone-100 px-1.5 py-0.5 rounded border border-stone-200">
+                            {formatTimberListingId(lst.id)}
+                          </span>
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
                             {lang === 'en' ? 'Pending Review' : 'പരിശോധനയിൽ'}
                           </span>
@@ -871,6 +881,9 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                           <h4 className="font-serif font-bold text-base text-[#4A3626]">
                             {translateWoodTitle(lst.title, lang)}
                           </h4>
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-stone-100 text-stone-600 border border-stone-300">
+                            {formatTimberListingId(lst.id)}
+                          </span>
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
                             {lang === 'en' ? 'Live on Marketplace' : 'മാർക്കറ്റ്പ്ലേസിൽ സജീവം'}
                           </span>

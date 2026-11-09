@@ -18,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import { createTicket, SupportTicket, TicketRole } from '../utils/ticketService';
 import { api } from '../lib/api';
 import { formatCleanPhone } from '@timora/shared';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface RaiseTicketModalProps {
   isOpen: boolean;
@@ -92,6 +93,8 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
   // Success state with created ticket details
   const [submittedTicket, setSubmittedTicket] = useState<SupportTicket | null>(null);
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
+
+  useBodyScrollLock(isOpen);
 
   if (!isOpen) return null;
 

@@ -129,3 +129,37 @@ export function formatCleanPhone(phone?: string | null): string {
   }
   return String(phone).replace(/^\+?91\s*/, '').trim();
 }
+
+/**
+ * Formats a timber listing ID into a standardized, readable code:
+ * `TMR-TMB-[4_ALPHANUMERIC_CHARS]` (e.g. `TMR-TMB-7F3A`, `TMR-TMB-0001`)
+ * instead of raw database UUID hashes.
+ */
+export function formatTimberListingId(listingOrId?: { id?: string | number } | string | number | null): string {
+  if (!listingOrId) return 'TMR-TMB-0001';
+
+  let rawId = '';
+  if (typeof listingOrId === 'string' || typeof listingOrId === 'number') {
+    rawId = String(listingOrId).trim();
+  } else if (typeof listingOrId === 'object' && listingOrId.id != null) {
+    rawId = String(listingOrId.id).trim();
+  }
+
+  if (!rawId) return 'TMR-TMB-0001';
+
+  // If already in TMR-TMB-XXXX format
+  if (/^TMR-TMB-[0-9A-Z]{4}$/i.test(rawId)) {
+    return rawId.toUpperCase();
+  }
+
+  // Extract clean alphanumeric characters
+  const clean = rawId.replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
+  if (!clean) return 'TMR-TMB-0001';
+
+  let suffix = clean.slice(-4);
+  if (suffix.length < 4) {
+    suffix = suffix.padStart(4, '0');
+  }
+
+  return `TMR-TMB-${suffix}`;
+}
