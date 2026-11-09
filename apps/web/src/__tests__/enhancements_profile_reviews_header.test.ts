@@ -312,21 +312,20 @@ describe('TIMORA™ Profile Management, Verified Reviews & Responsive Header Tes
       });
     });
 
-    it('formats phone numbers with clean single +91 prefix and no duplication', () => {
+    it('formats phone numbers to strictly 10-digit number with no +91 prefix', () => {
       const formatCleanPhone = (phone?: string): string => {
         if (!phone) return '';
         const digits = phone.replace(/\D/g, '');
         if (digits.length >= 10) {
-          const last10 = digits.slice(-10);
-          return `+91 ${last10}`;
+          return digits.slice(-10);
         }
-        return phone;
+        return phone.replace(/^\+91\s*/, '').trim();
       };
 
-      expect(formatCleanPhone('9847000000')).toBe('+91 9847000000');
-      expect(formatCleanPhone('+919847000000')).toBe('+91 9847000000');
-      expect(formatCleanPhone('+91 9847000000')).toBe('+91 9847000000');
-      expect(formatCleanPhone('+91 +919847000000')).toBe('+91 9847000000');
+      expect(formatCleanPhone('9847000000')).toBe('9847000000');
+      expect(formatCleanPhone('+919847000000')).toBe('9847000000');
+      expect(formatCleanPhone('+91 9847000000')).toBe('9847000000');
+      expect(formatCleanPhone('+91 +919847000000')).toBe('9847000000');
       expect(formatCleanPhone('')).toBe('');
     });
 
@@ -395,11 +394,11 @@ describe('TIMORA™ Profile Management, Verified Reviews & Responsive Header Tes
       });
     });
 
-    it('ensures registered login mobile number in Edit Profile modal displays single +91 country code', () => {
+    it('ensures registered login mobile number in Edit Profile modal displays strictly 10 digits without country code', () => {
       const { formatCleanPhone } = require('@timora/shared');
-      expect(formatCleanPhone('+919847330001')).toBe('+91 9847330001');
-      expect(formatCleanPhone('+91 +919847330001')).toBe('+91 9847330001');
-      expect(formatCleanPhone('9847330001')).toBe('+91 9847330001');
+      expect(formatCleanPhone('+919847330001')).toBe('9847330001');
+      expect(formatCleanPhone('+91 +919847330001')).toBe('9847330001');
+      expect(formatCleanPhone('9847330001')).toBe('9847330001');
     });
   });
 });

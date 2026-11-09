@@ -80,14 +80,14 @@ describe('formatUserProfileId & formatCleanPhone Utility Suite', () => {
   });
 
   describe('formatCleanPhone', () => {
-    it('normalizes standard 10-digit number to +91 XXXXXXXXXX', () => {
-      expect(formatCleanPhone('9847330001')).toBe('+91 9847330001');
+    it('normalizes standard 10-digit number to strictly 10 digits without +91', () => {
+      expect(formatCleanPhone('9847330001')).toBe('9847330001');
     });
 
-    it('removes duplicate country codes (+91 +91...) to single +91 prefix', () => {
-      expect(formatCleanPhone('+91 +919847330001')).toBe('+91 9847330001');
-      expect(formatCleanPhone('+919847330001')).toBe('+91 9847330001');
-      expect(formatCleanPhone('+91 9847330001')).toBe('+91 9847330001');
+    it('removes duplicate country codes (+91 +91...) to strictly 10 digits', () => {
+      expect(formatCleanPhone('+91 +919847330001')).toBe('9847330001');
+      expect(formatCleanPhone('+919847330001')).toBe('9847330001');
+      expect(formatCleanPhone('+91 9847330001')).toBe('9847330001');
     });
 
     it('handles empty or null phone cleanly', () => {

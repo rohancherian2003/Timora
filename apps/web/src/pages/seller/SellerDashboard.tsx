@@ -193,7 +193,46 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     return () => window.removeEventListener('timora_tickets_updated', handleUpdate);
   }, [user]);
 
-  const latestResolvedTicket = tickets.find((t) => t.status === 'resolved' && t.resolutionReply);
+  const [showAdminReply, setShowAdminReply] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(`timora_dismissed_admin_reply_${user?.id || 'seller'}`) !== 'true';
+    } catch {
+      return true;
+    }
+  });
+  const [dismissedTicketIds, setDismissedTicketIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('timora_dismissed_ticket_ids');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleDismissAdminReply = (ticketId?: string) => {
+    setShowAdminReply(false);
+    if (ticketId) {
+      setDismissedTicketIds((prev) => {
+        const next = prev.includes(ticketId) ? prev : [...prev, ticketId];
+        try {
+          localStorage.setItem('timora_dismissed_ticket_ids', JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    }
+    try {
+      localStorage.setItem(`timora_dismissed_admin_reply_${user?.id || 'seller'}`, 'true');
+    } catch {}
+  };
+
+  const latestResolvedTicket = showAdminReply
+    ? tickets.find(
+        (t) =>
+          t.status === 'resolved' &&
+          t.resolutionReply &&
+          !dismissedTicketIds.includes(t.id)
+      ) || null
+    : null;
 
   const unreadTicketsCount = tickets.filter(
     (t) => !t.isRead && (t.status === 'resolved' || Boolean(t.resolutionReply))
@@ -384,6 +423,16 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 </h3>
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => handleDismissAdminReply(latestResolvedTicket.id)}
+              aria-label={lang === 'en' ? 'Dismiss notification' : 'അറിയിപ്പ് ഒഴിവാക്കുക'}
+              className="text-stone-400 hover:text-stone-700 font-bold p-1 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 rounded-lg cursor-pointer"
+              title="Dismiss"
+            >
+              ✕
+            </button>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-white border border-emerald-200 shadow-xs text-xs space-y-1">

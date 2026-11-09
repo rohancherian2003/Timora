@@ -26,6 +26,7 @@ import { useAuth } from '../../context/AuthContext';
 import { LoginAlertModal } from '../../components/LoginAlertModal';
 import { api } from '../../lib/api';
 import { BackButton } from '../../components/BackButton';
+import { formatCleanPhone } from '@timora/shared';
 
 export interface TimberMillReview {
   id: string;
@@ -738,8 +739,8 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 </h4>
                 <p className="text-xs text-stone-500 max-w-sm mx-auto">
                   {lang === 'en'
-                    ? `${quoteModalMill.ownerName} will review your requirement and call you at +91 ${user?.phone || ''} shortly.`
-                    : `${quoteModalMill.ownerName} ഉടൻ തന്നെ താങ്കളുടെ ഫോണിൽ (+91 ${user?.phone || ''}) ബന്ധപ്പെടുന്നതായിരിക്കും.`}
+                    ? `${quoteModalMill.ownerName} will review your requirement and call you at ${formatCleanPhone(user?.phone)} shortly.`
+                    : `${quoteModalMill.ownerName} ഉടൻ തന്നെ താങ്കളുടെ ഫോണിൽ (${formatCleanPhone(user?.phone)}) ബന്ധപ്പെടുന്നതായിരിക്കും.`}
                 </p>
               </div>
             ) : (

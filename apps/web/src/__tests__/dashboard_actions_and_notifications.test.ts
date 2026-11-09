@@ -255,4 +255,54 @@ describe('Dashboard Interactive Action Handlers & Notification Badge Lifecycle',
       expect(enquiries[0]?.status).toBe('completed');
     });
   });
+
+  // ─────────────────────────────────────────────────────────────
+  // 4. ADMIN SOLUTION REPLY DISMISSAL & PHONE SANITIZATION
+  // ─────────────────────────────────────────────────────────────
+  describe('4. Admin Solution Reply Dismissal & Phone Number Sanitization', () => {
+    it('clicking dismiss button on Admin Solution Reply banner immediately hides card and persists dismissal', () => {
+      let showAdminReply = true;
+      let dismissedTicketIds: string[] = [];
+
+      const handleDismissAdminReply = (ticketId: string) => {
+        showAdminReply = false;
+        dismissedTicketIds = [...dismissedTicketIds, ticketId];
+        localStorage.setItem('timora_dismissed_admin_reply_buyer', 'true');
+        localStorage.setItem('timora_dismissed_ticket_ids', JSON.stringify(dismissedTicketIds));
+      };
+
+      const resolvedTicket = {
+        id: 'TKT-2026-7842',
+        status: 'resolved',
+        resolutionReply: 'Admin refund processed.',
+      };
+
+      // Banner is visible initially
+      let isVisible = showAdminReply && !dismissedTicketIds.includes(resolvedTicket.id);
+      expect(isVisible).toBe(true);
+
+      // User clicks close/cross button
+      handleDismissAdminReply(resolvedTicket.id);
+
+      // Card is immediately dismissed
+      isVisible = showAdminReply && !dismissedTicketIds.includes(resolvedTicket.id);
+      expect(isVisible).toBe(false);
+      expect(showAdminReply).toBe(false);
+      expect(dismissedTicketIds).toContain('TKT-2026-7842');
+      expect(localStorage.getItem('timora_dismissed_admin_reply_buyer')).toBe('true');
+    });
+
+    it('sanitizes phone number to strictly 10 digits without +91 prefix in inputs and profile badges', () => {
+      const { formatCleanPhone } = require('@timora/shared');
+
+      // Test various raw formats from database / auth state
+      expect(formatCleanPhone('+91 9847123456')).toBe('9847123456');
+      expect(formatCleanPhone('+919847123456')).toBe('9847123456');
+      expect(formatCleanPhone('+91 +919847123456')).toBe('9847123456');
+      expect(formatCleanPhone('9847123456')).toBe('9847123456');
+      expect(formatCleanPhone('+91 9847-123-456')).toBe('9847123456');
+      expect(formatCleanPhone('')).toBe('');
+      expect(formatCleanPhone(null)).toBe('');
+    });
+  });
 });

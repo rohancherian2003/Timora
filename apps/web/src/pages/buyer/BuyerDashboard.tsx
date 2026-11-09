@@ -68,7 +68,21 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   );
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [dismissedResolvedId, setDismissedResolvedId] = useState<string | null>(null);
+  const [showAdminReply, setShowAdminReply] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(`timora_dismissed_admin_reply_${user?.id || 'buyer'}`) !== 'true';
+    } catch {
+      return true;
+    }
+  });
+  const [dismissedTicketIds, setDismissedTicketIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('timora_dismissed_ticket_ids');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
   const [liveOrders, setLiveOrders] = useState<any[]>(DEMO_BUYER_ORDERS);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
@@ -136,10 +150,31 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     return () => window.removeEventListener('timora_tickets_updated', handleUpdate);
   }, [user]);
 
+  const handleDismissAdminReply = (ticketId?: string) => {
+    setShowAdminReply(false);
+    if (ticketId) {
+      setDismissedTicketIds((prev) => {
+        const next = prev.includes(ticketId) ? prev : [...prev, ticketId];
+        try {
+          localStorage.setItem('timora_dismissed_ticket_ids', JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    }
+    try {
+      localStorage.setItem(`timora_dismissed_admin_reply_${user?.id || 'buyer'}`, 'true');
+    } catch {}
+  };
+
   // Find latest resolved ticket to show as notification popup/banner
-  const latestResolvedTicket = tickets.find(
-    (t) => t.status === 'resolved' && t.resolutionReply && t.id !== dismissedResolvedId
-  );
+  const latestResolvedTicket = showAdminReply
+    ? tickets.find(
+        (t) =>
+          t.status === 'resolved' &&
+          t.resolutionReply &&
+          !dismissedTicketIds.includes(t.id)
+      ) || null
+    : null;
 
   // Unread resolved tickets counter for notification badge
   const unreadTicketsCount = tickets.filter(
@@ -236,9 +271,9 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
             <button
               type="button"
-              onClick={() => setDismissedResolvedId(latestResolvedTicket.id)}
+              onClick={() => handleDismissAdminReply(latestResolvedTicket.id)}
               aria-label={lang === 'en' ? 'Dismiss notification' : 'അറിയിപ്പ് ഒഴിവാക്കുക'}
-              className="text-stone-400 hover:text-stone-700 font-bold p-1 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 rounded-lg"
+              className="text-stone-400 hover:text-stone-700 font-bold p-1 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 rounded-lg cursor-pointer"
               title="Dismiss"
             >
               ✕

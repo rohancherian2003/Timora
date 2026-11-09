@@ -45,7 +45,7 @@ const INITIAL_PENDING_APPLICATIONS: PendingBusiness[] = [
   {
     id: 'app-sel-1',
     name: 'K. R. Madhavan',
-    phone: '+91 9847120001',
+    phone: '9847120001',
     businessName: 'Madhavan Farmstead Teak Plantation',
     district: 'Malappuram (മലപ്പുറം)',
     locality: 'Nilambur Bypass',
@@ -56,7 +56,7 @@ const INITIAL_PENDING_APPLICATIONS: PendingBusiness[] = [
   {
     id: 'app-mil-1',
     name: 'George Varghese',
-    phone: '+91 9847120002',
+    phone: '9847120002',
     businessName: 'Perumbavoor Modern Sawmills & Timber Depot',
     district: 'Ernakulam (എറണാകുളം)',
     locality: 'Kandanthara, Perumbavoor',
@@ -67,7 +67,7 @@ const INITIAL_PENDING_APPLICATIONS: PendingBusiness[] = [
   {
     id: 'app-car-1',
     name: 'Master Binu Achari',
-    phone: '+91 9847330001',
+    phone: '9847330001',
     businessName: 'Binu Traditional Timber Joinery & Carpentry',
     district: 'Alappuzha (ആലപ്പുഴ)',
     locality: 'Kalarcode',
@@ -78,7 +78,7 @@ const INITIAL_PENDING_APPLICATIONS: PendingBusiness[] = [
   {
     id: 'app-tra-1',
     name: 'K. Sukumaran',
-    phone: '+91 9847440001',
+    phone: '9847440001',
     businessName: 'Malabar Timber Heavy Transit Haulage',
     district: 'Kozhikode (കോഴിക്കോട്)',
     locality: 'Feroke Depot',
@@ -502,7 +502,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     <div className="text-xs text-stone-600 flex items-center gap-3 flex-wrap">
                       <span>Owner/Applicant: <b>{app.name}</b></span>
                       <span>•</span>
-                      <span>Phone: <b>{app.phone}</b></span>
+                      <span>Phone: <b>{formatCleanPhone(app.phone)}</b></span>
                       <span>•</span>
                       <span>District: <b>{app.district}</b></span>
                     </div>

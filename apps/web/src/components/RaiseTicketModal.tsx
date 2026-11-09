@@ -17,6 +17,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { createTicket, SupportTicket, TicketRole } from '../utils/ticketService';
 import { api } from '../lib/api';
+import { formatCleanPhone } from '@timora/shared';
 
 interface RaiseTicketModalProps {
   isOpen: boolean;
@@ -67,13 +68,13 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
 
   const [role, setRole] = useState<TicketRole>(getInitialRole());
   const [name, setName] = useState<string>(user?.name || '');
-  const [phone, setPhone] = useState<string>(user?.phone || '');
+  const [phone, setPhone] = useState<string>(formatCleanPhone(user?.phone) || '');
 
   useEffect(() => {
     if (user) {
       setRole(getInitialRole());
       if (user.name) setName(user.name);
-      if (user.phone) setPhone(user.phone);
+      if (user.phone) setPhone(formatCleanPhone(user.phone));
     }
   }, [user]);
 
@@ -243,7 +244,7 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
                   : 'അഡ്മിൻ ഈ പരാതി പരിശോധിച്ച്, ബന്ധപ്പെട്ട തടി വ്യാപാരിയുമായോ മില്ലുമായോ സംസാരിച്ച് 2 ദിവസത്തിനുള്ളിൽ ഇതിനുള്ള പരിഹാരം (Resolution Reply) താങ്കളുടെ ഡാഷ്‌ബോർഡിൽ അറിയിക്കുന്നതായിരിക്കും!'}
               </p>
               <div className="text-[11px] text-[#7A5A3A] pt-1.5 border-t border-[#8E7F6B]/20 flex items-center justify-between font-semibold">
-                <span>Contact: +91 {submittedTicket.phone}</span>
+                <span>Contact: {formatCleanPhone(submittedTicket.phone)}</span>
                 <span>{submittedTicket.createdAt}</span>
               </div>
             </div>
@@ -356,16 +357,24 @@ export function RaiseTicketModal({ isOpen, onClose, lang = 'en' }: RaiseTicketMo
                     type="tel"
                     maxLength={10}
                     placeholder="9847123456"
-                    value={phone}
+                    value={formatCleanPhone(phone)}
+                    readOnly={Boolean(user?.phone)}
+                    disabled={Boolean(user?.phone)}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '');
+                      if (user?.phone) return;
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 10);
                       setPhone(val);
                       if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
                     }}
-                    className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold text-[#4A3626] bg-white focus:outline-none focus:ring-2 ${errors.phone
+                    className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold text-[#4A3626] ${
+                      user?.phone
+                        ? 'bg-stone-100 cursor-not-allowed text-stone-600'
+                        : 'bg-white'
+                    } focus:outline-none focus:ring-2 ${
+                      errors.phone
                         ? 'border-red-500 focus:ring-red-400 bg-red-50/20'
                         : 'border-[#8E7F6B]/30 focus:ring-[#5B6147] focus:border-[#5B6147]'
-                      }`}
+                    }`}
                   />
                 </div>
                 {errors.phone && (

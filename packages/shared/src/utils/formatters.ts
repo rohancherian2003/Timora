@@ -118,15 +118,14 @@ export function formatUserProfileId(
 }
 
 /**
- * Cleanly formats Indian phone numbers with a single '+91 ' prefix.
- * Eliminates duplicate prefixes such as '+91 +919847330001'.
+ * Cleanly formats phone numbers to strictly the 10-digit number.
+ * Strips any leading '+91', country code prefixes, spaces, or non-digit characters.
  */
 export function formatCleanPhone(phone?: string | null): string {
   if (!phone) return '';
   const digits = String(phone).replace(/\D/g, '');
   if (digits.length >= 10) {
-    const last10 = digits.slice(-10);
-    return `+91 ${last10}`;
+    return digits.slice(-10);
   }
-  return String(phone);
+  return String(phone).replace(/^\+?91\s*/, '').trim();
 }
