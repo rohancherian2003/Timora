@@ -237,3 +237,4 @@ export function translateUnit(unit: string, lang: Language = 'en'): string {
   if (u.includes('tonne') || u.includes('ton')) return 'ടൺ';
   return unit;
 }
+
