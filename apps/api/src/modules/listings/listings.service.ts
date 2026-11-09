@@ -16,7 +16,7 @@ export class ListingsService {
     limit?: number;
   }) {
     const page = Math.max(1, filters.page || 1);
-    const limit = Math.min(50, Math.max(1, filters.limit || 20));
+    const limit = Math.min(100, Math.max(1, filters.limit || 8));
     const offset = (page - 1) * limit;
 
     const conditions: string[] = [
@@ -92,9 +92,12 @@ export class ListingsService {
     );
 
     return {
+      listings: dataRes.rows,
       items: dataRes.rows,
       total,
+      totalItems: total,
       page,
+      currentPage: page,
       limit,
       totalPages: Math.ceil(total / limit),
     };
@@ -463,6 +466,43 @@ export class ListingsService {
         [userId, listingId, `Timber listing "${listing.title}" purged by admin`]
       ).catch(() => {});
     }
+
+    return updateRes.rows[0];
+  }
+
+  /**
+   * Mark a timber listing as sold (Seller owner or Super Admin)
+   */
+  async markAsSold(userId: string, userRole: string, listingId: string) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(listingId);
+    if (!isUuid) {
+      throw new AppError(404, 'NOT_FOUND', 'Timber listing not found.');
+    }
+
+    const listingRes = await query(
+      `SELECT id, seller_id, status, title FROM timber_listings WHERE id = $1`,
+      [listingId]
+    );
+
+    const listing = listingRes.rows[0];
+    if (!listing || listing.status === 'deleted') {
+      throw new AppError(404, 'NOT_FOUND', 'Timber listing not found.');
+    }
+
+    const isOwner = listing.seller_id === userId;
+    const isAdmin = userRole === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      throw new AppError(403, 'FORBIDDEN', 'You are not authorized to mark this listing as sold.');
+    }
+
+    const updateRes = await query(
+      `UPDATE timber_listings
+       SET status = 'sold', updated_at = NOW()
+       WHERE id = $1
+       RETURNING id, title, status, quantity, price_per_cft, updated_at`,
+      [listingId]
+    );
 
     return updateRes.rows[0];
   }

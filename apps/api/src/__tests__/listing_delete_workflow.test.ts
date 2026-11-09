@@ -21,6 +21,7 @@ describe('Listing Delete Workflow Suite (Seller & Admin)', () => {
 
   let listingId1: string;
   let listingId2: string;
+  let listingId3: string;
 
   beforeAll(async () => {
     pool = new pg.Pool({ connectionString: TEST_DB_URL });
@@ -32,7 +33,7 @@ describe('Listing Delete Workflow Suite (Seller & Admin)', () => {
       await client.query(`
         ALTER TABLE timber_listings DROP CONSTRAINT IF EXISTS timber_listings_status_check;
         ALTER TABLE timber_listings ADD CONSTRAINT timber_listings_status_check 
-          CHECK (status IN ('draft','pending_review','approved','rejected','hidden','out_of_stock','expired','deleted'));
+          CHECK (status IN ('draft','pending_review','approved','rejected','hidden','out_of_stock','expired','deleted','sold'));
         ALTER TABLE listing_review_history DROP CONSTRAINT IF EXISTS listing_review_history_action_check;
         ALTER TABLE listing_review_history ADD CONSTRAINT listing_review_history_action_check
           CHECK (action IN ('approved','rejected','hidden','unhidden','deleted','purged'));
@@ -115,6 +116,16 @@ describe('Listing Delete Workflow Suite (Seller & Admin)', () => {
         [sellerAId, sp2, tp2, d1]
       );
       listingId2 = list2Res.rows[0].id;
+
+      const list3Res = await client.query(
+        `INSERT INTO timber_listings (
+           seller_id, title, species_id, timber_type_id, district_id,
+           quantity, unit, price_per_cft, status
+         ) VALUES ($1, 'Sold Test Anjili Joists', $2, $3, $4, 45, 'cft', 1200, 'approved')
+         RETURNING id`,
+        [sellerAId, sp1, tp1, d1]
+      );
+      listingId3 = list3Res.rows[0].id;
     } finally {
       client.release();
     }
@@ -123,9 +134,9 @@ describe('Listing Delete Workflow Suite (Seller & Admin)', () => {
   afterAll(async () => {
     const client = await pool.connect();
     try {
-      await client.query(`DELETE FROM listing_images WHERE listing_id IN ($1, $2)`, [listingId1, listingId2]);
-      await client.query(`DELETE FROM listing_review_history WHERE listing_id IN ($1, $2)`, [listingId1, listingId2]);
-      await client.query(`DELETE FROM timber_listings WHERE id IN ($1, $2)`, [listingId1, listingId2]);
+      await client.query(`DELETE FROM listing_images WHERE listing_id IN ($1, $2, $3)`, [listingId1, listingId2, listingId3]);
+      await client.query(`DELETE FROM listing_review_history WHERE listing_id IN ($1, $2, $3)`, [listingId1, listingId2, listingId3]);
+      await client.query(`DELETE FROM timber_listings WHERE id IN ($1, $2, $3)`, [listingId1, listingId2, listingId3]);
       await client.query(`DELETE FROM seller_profiles WHERE user_id IN ($1, $2)`, [sellerAId, sellerBId]);
       await client.query(`DELETE FROM users WHERE id IN ($1, $2, $3)`, [adminId, sellerAId, sellerBId]);
     } finally {
@@ -191,5 +202,67 @@ describe('Listing Delete Workflow Suite (Seller & Admin)', () => {
 
     const checkRes = await pool.query(`SELECT status FROM timber_listings WHERE id = $1`, [listingId2]);
     expect(checkRes.rows[0]?.status).toBe('deleted');
+  });
+
+  describe('Mark As Sold Workflow & Marketplace Pagination', () => {
+    it('rejects unauthenticated requests to PATCH /api/v1/listings/:id/sold with 401', async () => {
+      const res = await request(app).patch(`/api/v1/listings/${listingId3}/sold`);
+      expect(res.status).toBe(401);
+    });
+
+    it('rejects unauthorized seller attempting to mark another seller listing as sold with 403', async () => {
+      const res = await request(app)
+        .patch(`/api/v1/listings/${listingId3}/sold`)
+        .set('Authorization', `Bearer ${sellerBToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error?.message).toMatch(/not authorized/i);
+    });
+
+    it('allows listing owner (Seller A) to mark their listing as sold', async () => {
+      const res = await request(app)
+        .patch(`/api/v1/listings/${listingId3}/sold`)
+        .set('Authorization', `Bearer ${sellerAToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data?.status).toBe('sold');
+
+      const checkRes = await pool.query(`SELECT status FROM timber_listings WHERE id = $1`, [listingId3]);
+      expect(checkRes.rows[0]?.status).toBe('sold');
+    });
+
+    it('excludes sold listing from public search but retains it in seller private listings archive', async () => {
+      // Public search excludes sold item
+      const searchRes = await request(app).get(`/api/v1/listings?search=Sold+Test+Anjili`);
+      expect(searchRes.status).toBe(200);
+      const items = searchRes.body.data?.items || searchRes.body.data?.listings || [];
+      expect(items.some((item: any) => item.id === listingId3)).toBe(false);
+
+      // Seller's own listings still retains sold items
+      const myRes = await request(app)
+        .get(`/api/v1/listings/seller/me`)
+        .set('Authorization', `Bearer ${sellerAToken}`);
+      expect(myRes.status).toBe(200);
+      const myListings = myRes.body.data || [];
+      const found = myListings.find((item: any) => item.id === listingId3);
+      expect(found).toBeDefined();
+      expect(found.status).toBe('sold');
+    });
+
+    it('returns structured pagination response with listings, totalPages, totalItems, and currentPage', async () => {
+      const pageRes = await request(app).get(`/api/v1/listings?page=1&limit=8`);
+      expect(pageRes.status).toBe(200);
+      expect(pageRes.body.success).toBe(true);
+
+      const data = pageRes.body.data;
+      expect(Array.isArray(data.listings)).toBe(true);
+      expect(typeof data.totalPages).toBe('number');
+      expect(typeof data.totalItems).toBe('number');
+      expect(data.currentPage).toBe(1);
+      // Backward compatibility keys
+      expect(Array.isArray(data.items)).toBe(true);
+      expect(typeof data.total).toBe('number');
+    });
   });
 });

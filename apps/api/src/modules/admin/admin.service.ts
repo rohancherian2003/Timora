@@ -569,7 +569,7 @@ export class AdminService {
           title_ml: 'തടി ലിസ്റ്റിംഗ് അംഗീകരിച്ചു',
           body_en: `Your timber listing "${listing.title || 'Timber Listing'}" has been approved and published to the marketplace.`,
           body_ml: `നിങ്ങളുടെ തടി ലിസ്റ്റിംഗ് "${listing.title || 'തടി ലിസ്റ്റിംഗ്'}" അംഗീകരിച്ച് മാർക്കറ്റിൽ പ്രസിദ്ധീകരിച്ചു.`,
-          action_url: `/dashboard/seller`,
+          action_url: `/listing/${listingId}`,
         }).catch(() => {});
       }
 
@@ -619,7 +619,7 @@ export class AdminService {
           title_ml: 'തടി ലിസ്റ്റിംഗ് നിരസിച്ചു',
           body_en: `Your timber listing was rejected. Reason: ${reason}`,
           body_ml: `നിങ്ങളുടെ തടി ലിസ്റ്റിംഗ് നിരസിച്ചു. കാരണം: ${reason}`,
-          action_url: `/dashboard/seller`,
+          action_url: `/listing/${listingId}`,
         }).catch(() => {});
       }
 

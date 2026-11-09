@@ -8,9 +8,13 @@ export class ListingsController {
   async searchListings(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await listingsService.searchListings(req.query as any);
-      const response: ApiSuccessResponse = {
+      const response: ApiSuccessResponse & Record<string, unknown> = {
         success: true,
         data: result,
+        listings: result.listings,
+        totalPages: result.totalPages,
+        totalItems: result.totalItems,
+        currentPage: result.currentPage,
       };
       res.status(200).json(response);
     } catch (err) {
@@ -216,6 +220,24 @@ export class ListingsController {
         success: true,
         data: result,
         message: 'Timber listing removed successfully.',
+      };
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async markAsSold(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+      const listingId = req.params.id as string;
+
+      const result = await listingsService.markAsSold(userId, userRole, listingId);
+      const response: ApiSuccessResponse = {
+        success: true,
+        data: result,
+        message: 'Timber listing marked as sold successfully.',
       };
       res.status(200).json(response);
     } catch (err) {

@@ -62,6 +62,13 @@ listingsRouter.patch(
   listingsController.updateStock.bind(listingsController)
 );
 
+// Seller or Admin mark listing as sold
+listingsRouter.patch(
+  '/:id/sold',
+  authenticate,
+  listingsController.markAsSold.bind(listingsController)
+);
+
 // Submit listing for approval
 listingsRouter.post(
   '/:id/submit',

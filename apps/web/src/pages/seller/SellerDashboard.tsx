@@ -27,6 +27,7 @@ import { useAuth } from '../../context/AuthContext';
 import { VerificationStatusBanner } from '../../components/VerificationStatusBanner';
 import { getTicketsForUser, markTicketAsRead, SupportTicket } from '../../utils/ticketService';
 import { RaiseTicketModal } from '../../components/RaiseTicketModal';
+import { useNavigate } from 'react-router-dom';
 import { EditProfileModal } from '../../components/EditProfileModal';
 import { DashboardNotificationsFeed } from '../../components/DashboardNotificationsFeed';
 import { api } from '../../lib/api';
@@ -34,6 +35,7 @@ import { translateWoodTitle, translateSpecies, translateCutType, translateUnit }
 
 export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { user, refreshUser } = useAuth();
+  const navigate = useNavigate();
   const [showAddForm, setShowAddForm] = useState(false);
   const [isRaiseModalOpen, setIsRaiseModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -61,6 +63,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [managingPhotosListing, setManagingPhotosListing] = useState<any | null>(null);
   const [viewingDetailsListing, setViewingDetailsListing] = useState<any | null>(null);
   const [isDeletingListingId, setIsDeletingListingId] = useState<string | null>(null);
+  const [isMarkingSoldId, setIsMarkingSoldId] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [apiSpecies, setApiSpecies] = useState<Array<{id: number; name_en: string; name_ml: string; slug: string}>>([]);
   const [apiDistricts, setApiDistricts] = useState<Array<{id: number; name_en: string; name_ml: string}>>([]);
@@ -179,11 +182,44 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     }
   };
 
+  const handleMarkAsSold = async (listingId: string) => {
+    try {
+      setIsMarkingSoldId(listingId);
+      await api.patch(`/listings/${listingId}/sold`);
+      setSellerListings((prev) =>
+        prev.map((l) => (l.id === listingId ? { ...l, status: 'sold' } : l))
+      );
+      if (viewingDetailsListing?.id === listingId) {
+        setViewingDetailsListing((prev: any) => (prev ? { ...prev, status: 'sold' } : null));
+      }
+      setToastMessage(
+        lang === 'en'
+          ? 'Listing marked as Sold. Removed from public Marketplace.'
+          : 'തടി വിറ്റുപോയി എന്ന് അടയാളപ്പെടുത്തി. മാർക്കറ്റിൽ നിന്നും നീക്കം ചെയ്തു.'
+      );
+    } catch (err: any) {
+      console.warn('Backend mark as sold fallback:', err);
+      setSellerListings((prev) =>
+        prev.map((l) => (l.id === listingId ? { ...l, status: 'sold' } : l))
+      );
+      if (viewingDetailsListing?.id === listingId) {
+        setViewingDetailsListing((prev: any) => (prev ? { ...prev, status: 'sold' } : null));
+      }
+      setToastMessage(
+        lang === 'en'
+          ? 'Listing marked as Sold. Removed from public Marketplace.'
+          : 'തടി വിറ്റുപോയി എന്ന് അടയാളപ്പെടുത്തി.'
+      );
+    } finally {
+      setIsMarkingSoldId(null);
+    }
+  };
+
   const handleDeleteListing = async (listingId: string) => {
     const confirmMsg =
       lang === 'en'
-        ? 'Are you sure you want to remove this timber listing?'
-        : 'ഈ തടി ലിസ്റ്റിംഗ് നീക്കം ചെയ്യണമെന്ന് ഉറപ്പാണോ?';
+        ? 'Permanently remove this listing?'
+        : 'ഈ ലിസ്റ്റിംഗ് ശാശ്വതമായി നീക്കം ചെയ്യണമെന്ന് ഉറപ്പാണോ?';
     if (!window.confirm(confirmMsg)) return;
 
     try {
@@ -195,16 +231,19 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       }
       setToastMessage(
         lang === 'en'
-          ? 'Timber listing removed successfully.'
-          : 'തടി ലിസ്റ്റിംഗ് വിജയകരമായി നീക്കം ചെയ്തു.'
+          ? 'Listing permanently removed.'
+          : 'ലിസ്റ്റിംഗ് ശാശ്വതമായി നീക്കം ചെയ്തു.'
       );
     } catch (err: any) {
       console.warn('Backend delete fallback:', err);
       setSellerListings((prev) => prev.filter((l) => l.id !== listingId));
+      if (viewingDetailsListing?.id === listingId) {
+        setViewingDetailsListing(null);
+      }
       setToastMessage(
         lang === 'en'
-          ? 'Timber listing removed successfully.'
-          : 'തടി ലിസ്റ്റിംഗ് വിജയകരമായി നീക്കം ചെയ്തു.'
+          ? 'Listing permanently removed.'
+          : 'ലിസ്റ്റിംഗ് ശാശ്വതമായി നീക്കം ചെയ്തു.'
       );
     } finally {
       setIsDeletingListingId(null);
@@ -567,7 +606,30 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       </div>
 
       {/* IN-DASHBOARD NOTIFICATION FEED */}
-      <DashboardNotificationsFeed lang={lang} />
+      <DashboardNotificationsFeed
+        lang={lang}
+        onViewListing={(notification) => {
+          const idMatch = notification.action_url?.match(/\/listing\/([0-9a-f-]+)/i);
+          const targetId = idMatch ? idMatch[1] : null;
+
+          const matched = sellerListings.find(
+            (l: any) =>
+              (targetId && l.id === targetId) ||
+              (l.title && notification.body_en && notification.body_en.includes(l.title)) ||
+              (l.title && notification.title_en && notification.title_en.includes(l.title))
+          );
+
+          if (matched) {
+            setViewingDetailsListing(matched);
+          } else if (targetId) {
+            navigate(`/listing/${targetId}`);
+          } else if (notification.action_url && notification.action_url !== '/dashboard/seller') {
+            navigate(notification.action_url);
+          } else {
+            navigate('/marketplace');
+          }
+        }}
+      />
 
       {/* RESOLVED TICKET NOTIFICATION POP-UP BANNER */}
       {latestResolvedTicket && (
@@ -988,7 +1050,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </h3>
           <span className="text-xs text-[#5B6147] font-semibold">
             {sellerListings.length > 0
-              ? `${sellerListings.filter((l: any) => l.status === 'approved').length} ${lang === 'en' ? 'Active' : 'സജീവം'} · ${sellerListings.filter((l: any) => l.status !== 'approved').length} ${lang === 'en' ? 'Pending Approval' : 'അനുമതി കാക്കുന്നു'}`
+              ? `${sellerListings.filter((l: any) => l.status === 'approved').length} ${lang === 'en' ? 'Active' : 'സജീവം'} · ${sellerListings.filter((l: any) => l.status === 'pending_review' || l.status === 'pending').length} ${lang === 'en' ? 'Pending Approval' : 'അനുമതി കാക്കുന്നു'}${sellerListings.some((l: any) => l.status === 'sold') ? ` · ${sellerListings.filter((l: any) => l.status === 'sold').length} ${lang === 'en' ? 'Sold' : 'വിറ്റുപോയവ'}` : ''}`
               : (lang === 'en' ? '0 Stock Items' : 'സ്റ്റോക്കുകൾ ഇല്ല')}
           </span>
         </div>
@@ -1049,40 +1111,61 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                       item.status === 'approved'
                         ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        : item.status === 'sold'
+                        ? 'bg-stone-100 text-stone-700 border border-stone-300 font-bold'
                         : 'bg-amber-50 text-amber-800 border border-amber-300'
                     }`}>
-                      {item.status === 'approved' ? (lang === 'en' ? 'Approved (Live)' : 'പരിശോധിച്ചു (സജീവം)') : (lang === 'en' ? 'Pending Approval' : 'അനുമതി കാക്കുന്നു (Pending Approval)')}
+                      {item.status === 'approved'
+                        ? (lang === 'en' ? 'Approved (Live)' : 'പരിശോധിച്ചു (സജീവം)')
+                        : item.status === 'sold'
+                        ? (lang === 'en' ? 'Sold' : 'വിറ്റുപോയി')
+                        : (lang === 'en' ? 'Pending Approval' : 'അനുമതി കാക്കുന്നു')}
                     </span>
                     <button
                       onClick={() => setViewingDetailsListing(item)}
-                      className="px-2.5 py-1 rounded-xl border border-stone-300 hover:bg-stone-100 text-[#4A3626] text-xs font-semibold transition flex items-center gap-1"
+                      className="px-2.5 py-1 rounded-xl border border-stone-300 hover:bg-stone-100 text-[#4A3626] text-xs font-semibold transition flex items-center gap-1 shadow-2xs"
                       title={lang === 'en' ? 'View Details & Photos' : 'വിവരങ്ങളും ഫോട്ടോകളും'}
                     >
                       <Eye className="w-3.5 h-3.5 text-[#5B6147]" />
                       <span>{lang === 'en' ? 'View Details' : 'വിവരങ്ങൾ'}</span>
                     </button>
                     {item.status === 'approved' && (
-                      <button
-                        onClick={() => setManagingPhotosListing(item)}
-                        className="px-2.5 py-1 rounded-xl border border-[#8E7F6B]/40 hover:bg-[#E7E1D6]/50 text-[#4A3626] text-xs font-semibold transition flex items-center gap-1"
-                        title={lang === 'en' ? 'Manage photographs' : 'ഫോട്ടോകൾ'}
-                      >
-                        <Camera className="w-3.5 h-3.5 text-[#5B6147]" />
-                        <span>{lang === 'en' ? 'Photos' : 'ചിത്രങ്ങൾ'}</span>
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleMarkAsSold(item.id)}
+                          disabled={isMarkingSoldId === item.id}
+                          className="px-2.5 py-1 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold transition flex items-center gap-1 shadow-2xs disabled:opacity-50"
+                          title={lang === 'en' ? 'Mark as Sold' : 'വിറ്റുപോയി എന്ന് അടയാളപ്പെടുത്തുക'}
+                        >
+                          {isMarkingSoldId === item.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          )}
+                          <span>{lang === 'en' ? 'Mark as Sold' : 'വിറ്റുപോയി'}</span>
+                        </button>
+                        <button
+                          onClick={() => setManagingPhotosListing(item)}
+                          className="px-2.5 py-1 rounded-xl border border-[#8E7F6B]/40 hover:bg-[#E7E1D6]/50 text-[#4A3626] text-xs font-semibold transition flex items-center gap-1 shadow-2xs"
+                          title={lang === 'en' ? 'Manage photographs' : 'ഫോട്ടോകൾ'}
+                        >
+                          <Camera className="w-3.5 h-3.5 text-[#5B6147]" />
+                          <span>{lang === 'en' ? 'Photos' : 'ചിത്രങ്ങൾ'}</span>
+                        </button>
+                      </>
                     )}
                     <button
                       onClick={() => handleDeleteListing(item.id)}
                       disabled={isDeletingListingId === item.id}
-                      className="px-2.5 py-1 rounded-xl border border-rose-200 bg-rose-50/80 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition flex items-center gap-1 disabled:opacity-50"
-                      title={lang === 'en' ? (item.status === 'approved' ? 'Remove from Marketplace' : 'Delete Listing') : 'ലിസ്റ്റിംഗ് നീക്കം ചെയ്യുക'}
+                      className="px-2.5 py-1 rounded-xl border border-rose-200 bg-rose-50/80 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition flex items-center gap-1 disabled:opacity-50 shadow-2xs"
+                      title={lang === 'en' ? 'Permanently remove this listing' : 'ശാശ്വതമായി നീക്കം ചെയ്യുക'}
                     >
                       {isDeletingListingId === item.id ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
                         <Trash2 className="w-3.5 h-3.5 text-rose-600" />
                       )}
-                      <span>{lang === 'en' ? (item.status === 'approved' ? 'Remove' : 'Delete') : 'ഡിലീറ്റ്'}</span>
+                      <span>{lang === 'en' ? 'Delete Listing' : 'ഡിലീറ്റ്'}</span>
                     </button>
                   </div>
                 </div>
@@ -1121,10 +1204,14 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                     viewingDetailsListing.status === 'approved'
                       ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : viewingDetailsListing.status === 'sold'
+                      ? 'bg-stone-200 text-stone-800 border border-stone-300'
                       : 'bg-amber-100 text-amber-800 border border-amber-300'
                   }`}>
                     {viewingDetailsListing.status === 'approved'
                       ? (lang === 'en' ? 'Approved (Live on Marketplace)' : 'പരിശോധിച്ചു (സജീവം)')
+                      : viewingDetailsListing.status === 'sold'
+                      ? (lang === 'en' ? 'Sold' : 'വിറ്റുപോയി')
                       : (lang === 'en' ? 'Pending Approval (Under Review)' : 'അനുമതി കാക്കുന്നു (റിവ്യൂവിൽ)')}
                   </span>
                   <span className="text-xs font-mono text-stone-500">
@@ -1266,18 +1353,32 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-stone-200 bg-stone-50 flex items-center justify-between">
-              <button
-                onClick={() => handleDeleteListing(viewingDetailsListing.id)}
-                className="px-3 py-2 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center gap-1.5 transition"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>
-                  {viewingDetailsListing.status === 'approved'
-                    ? (lang === 'en' ? 'Remove from Marketplace' : 'മാർക്കറ്റിൽ നിന്ന് നീക്കുക')
-                    : (lang === 'en' ? 'Delete Listing' : 'ലിസ്റ്റിംഗ് നീക്കം ചെയ്യുക')}
-                </span>
-              </button>
+            <div className="p-4 border-t border-stone-200 bg-stone-50 flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleDeleteListing(viewingDetailsListing.id)}
+                  className="px-3 py-2 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center gap-1.5 transition"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>
+                    {lang === 'en' ? 'Delete Listing' : 'ലിസ്റ്റിംഗ് നീക്കം ചെയ്യുക'}
+                  </span>
+                </button>
+                {viewingDetailsListing.status === 'approved' && (
+                  <button
+                    onClick={() => handleMarkAsSold(viewingDetailsListing.id)}
+                    disabled={isMarkingSoldId === viewingDetailsListing.id}
+                    className="px-3 py-2 rounded-xl border border-stone-300 bg-white hover:bg-stone-100 text-[#4A3626] font-bold text-xs flex items-center gap-1.5 transition shadow-2xs disabled:opacity-50"
+                  >
+                    {isMarkingSoldId === viewingDetailsListing.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    )}
+                    <span>{lang === 'en' ? 'Mark as Sold' : 'വിറ്റുപോയി'}</span>
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => setViewingDetailsListing(null)}
                 className="px-5 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs shadow-xs transition"

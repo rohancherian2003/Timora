@@ -84,7 +84,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [liveListings, setLiveListings] = useState<TimberListingItem[] | null>(null);
   const [isLoadingLive, setIsLoadingLive] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 9;
+  const ITEMS_PER_PAGE = 8;
   const [validationAlert, setValidationAlert] = useState<{
     type: 'warning' | 'info';
     title: string;
@@ -105,11 +105,12 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         const res = await api.get('/listings', {
           params: {
             search: searchQuery.trim() || undefined,
-            limit: 50,
+            limit: 100,
           },
         });
-        if (isMounted && res.data?.success && Array.isArray(res.data?.data?.items) && res.data.data.items.length > 0) {
-          const mapped = res.data.data.items.map(mapApiListingToItem);
+        const rawList = res.data?.listings || res.data?.data?.listings || res.data?.data?.items;
+        if (isMounted && res.data?.success && Array.isArray(rawList) && rawList.length > 0) {
+          const mapped = rawList.map(mapApiListingToItem);
           setLiveListings(mapped);
         }
       } catch {
@@ -212,7 +213,9 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setCurrentPage(newPage);
     const el = document.getElementById('timber-catalog');
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 

@@ -31,15 +31,24 @@ export interface InDashboardNotification {
 interface DashboardNotificationsFeedProps {
   lang?: 'en' | 'ml';
   maxItems?: number;
+  onViewListing?: (notification: InDashboardNotification) => void;
 }
 
 export function DashboardNotificationsFeed({
   lang = 'en',
   maxItems = 3,
+  onViewListing,
 }: DashboardNotificationsFeedProps) {
   const { user, refreshUser } = useAuth();
   const [notifications, setNotifications] = useState<InDashboardNotification[]>([]);
-  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
+  const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(`timora_dismissed_notifications_${user?.id || 'guest'}`);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
   const navigate = useNavigate();
 
   const fetchNotifications = async () => {
@@ -89,8 +98,32 @@ export function DashboardNotificationsFeed({
   };
 
   const handleDismiss = (id: string) => {
-    setDismissedIds((prev) => [...prev, id]);
+    setDismissedIds((prev) => {
+      const next = prev.includes(id) ? prev : [...prev, id];
+      try {
+        localStorage.setItem(
+          `timora_dismissed_notifications_${user?.id || 'guest'}`,
+          JSON.stringify(next)
+        );
+      } catch {}
+      return next;
+    });
     handleMarkAsRead(id);
+  };
+
+  const handleActionClick = (n: InDashboardNotification) => {
+    handleMarkAsRead(n.id);
+
+    if (onViewListing && (n.category === 'listing' || n.title_en?.includes('Listing'))) {
+      onViewListing(n);
+      return;
+    }
+
+    let targetUrl = n.action_url;
+    if (!targetUrl || targetUrl === '/dashboard/seller' || targetUrl === '/dashboard/mill') {
+      targetUrl = '/marketplace';
+    }
+    navigate(targetUrl);
   };
 
   // Only show unread or latest relevant items that haven't been dismissed in this session
@@ -175,16 +208,14 @@ export function DashboardNotificationsFeed({
             </div>
 
             <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
-              {n.action_url && (
-                <button
-                  type="button"
-                  onClick={() => handleMarkAsRead(n.id, n.action_url)}
-                  className="px-3 py-1.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs transition flex items-center gap-1 shadow-2xs"
-                >
-                  <span>{lang === 'en' ? 'View Details' : 'വിശദാംശങ്ങൾ'}</span>
-                  <ExternalLink className="w-3 h-3" />
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => handleActionClick(n)}
+                className="px-3 py-1.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs transition flex items-center gap-1 shadow-2xs"
+              >
+                <span>{lang === 'en' ? 'View Details' : 'വിശദാംശങ്ങൾ'}</span>
+                <ExternalLink className="w-3 h-3" />
+              </button>
               <button
                 type="button"
                 onClick={() => handleDismiss(n.id)}
