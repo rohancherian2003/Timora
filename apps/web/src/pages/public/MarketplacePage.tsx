@@ -19,11 +19,12 @@ import {
   ShieldCheck,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Sparkles,
   Loader2,
 } from 'lucide-react';
 import { formatINR } from '@timora/shared';
-import { RaiseTicketModal } from '../../components/RaiseTicketModal';
 import { TIMBER_LISTINGS, TimberListingItem, mapApiListingToItem } from '../../utils/timberListings';
 import { api } from '../../lib/api';
 
@@ -80,14 +81,20 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const searchQuery = searchParams.get('q') || '';
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
-  const [isRaiseTicketOpen, setIsRaiseTicketOpen] = useState(false);
   const [liveListings, setLiveListings] = useState<TimberListingItem[] | null>(null);
   const [isLoadingLive, setIsLoadingLive] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 9;
   const [validationAlert, setValidationAlert] = useState<{
     type: 'warning' | 'info';
     title: string;
     message: string;
   } | null>(null);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedSpecies, selectedType, selectedDistrict, searchQuery]);
 
   // Live Listings Fetcher with Graceful Offline Fallback & 300ms Search Debounce
   useEffect(() => {
@@ -193,6 +200,21 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     }
     return true;
   });
+
+  const totalItems = filteredListings.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+  const validCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (validCurrentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
+  const paginatedListings = filteredListings.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    const el = document.getElementById('timber-catalog');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const scrollToCatalog = () => {
     const el = document.getElementById('timber-catalog');
@@ -533,8 +555,9 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredListings.map((item, index) => {
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {paginatedListings.map((item, index) => {
               const isFirewood = item.type.toLowerCase().includes('firewood') || item.title.toLowerCase().includes('firewood');
 
               return (
@@ -642,8 +665,60 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               );
             })}
           </div>
-        )}
-      </section>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 pb-2 border-t border-stone-200">
+              <div className="text-xs text-stone-500 font-medium">
+                {lang === 'en'
+                  ? `Showing ${startIndex + 1} to ${endIndex} of ${totalItems} timber listings`
+                  : `${totalItems} ലിസ്റ്റിംഗുകളിൽ ${startIndex + 1} മുതൽ ${endIndex} വരെ കാണിക്കുന്നു`}
+              </div>
+
+              <div className="flex items-center gap-1.5 flex-wrap justify-center">
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(validCurrentPage - 1)}
+                  disabled={validCurrentPage <= 1}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-stone-300 text-xs font-bold text-[#4A3626] bg-white hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-2xs"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>{lang === 'en' ? 'Previous' : 'മുമ്പത്തെ'}</span>
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                  const isActive = pageNum === validCurrentPage;
+                  return (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`w-8 h-8 rounded-xl text-xs font-bold transition flex items-center justify-center ${
+                        isActive
+                          ? 'bg-[#5B6147] text-white shadow-xs'
+                          : 'bg-white border border-stone-300 text-stone-700 hover:bg-stone-100'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(validCurrentPage + 1)}
+                  disabled={validCurrentPage >= totalPages}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-stone-300 text-xs font-bold text-[#4A3626] bg-white hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-2xs"
+                >
+                  <span>{lang === 'en' ? 'Next' : 'അടുത്തത്'}</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
 
       {/* 4. KERALA TIMBER MILLS SPOTLIGHT */}
       <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -721,31 +796,6 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </div>
         </div>
       </section>
-
-      {/* 5. FLOATING RAISE A TICKET BUTTON */}
-      <div className="fixed right-3 sm:right-6 bottom-20 md:bottom-8 z-40">
-        <button
-          onClick={() => setIsRaiseTicketOpen(true)}
-          className="group relative flex items-center gap-2 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl bg-gradient-to-r from-[#5B6147] to-[#3F452F] text-white font-bold text-xs shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 border border-white/20"
-          title={lang === 'en' ? 'Raise a Support Ticket' : 'പരാതി നൽകുക (Support)'}
-        >
-          <LifeBuoy className="w-4 h-4 text-white group-hover:rotate-45 transition-transform duration-300 flex-shrink-0" />
-          <div className="flex flex-col items-start text-left leading-tight">
-            <span className="text-[9px] text-[#d5cfc4] uppercase font-bold block">
-              {lang === 'en' ? 'Support' : 'സഹായം'}
-            </span>
-            <span className="font-extrabold text-white text-xs">
-              {lang === 'en' ? 'Raise a Ticket' : 'പരാതി നൽകുക (Support)'}
-            </span>
-          </div>
-        </button>
-      </div>
-
-      <RaiseTicketModal
-        isOpen={isRaiseTicketOpen}
-        onClose={() => setIsRaiseTicketOpen(false)}
-        lang={lang}
-      />
     </div>
   );
 }

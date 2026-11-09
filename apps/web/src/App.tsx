@@ -223,6 +223,7 @@ import { SignOutConfirmModal } from './components/SignOutConfirmModal';
 import { SignOutRequiredModal } from './components/SignOutRequiredModal';
 import { PageTransitionLoader } from './components/PageTransitionLoader';
 import { EditProfileModal } from './components/EditProfileModal';
+import { GlobalFloatingActions } from './components/GlobalFloatingActions';
 
 // Universal Strict UI Navigation Guard component inside router
 function NavigationGuard() {
@@ -1278,6 +1279,9 @@ export function App() {
 
           {/* Session Timeout Inactivity Modal */}
           <SessionTimeoutModal lang={lang} />
+
+          {/* Unified Global Floating Actions: Scroll to Top & Support Ticket */}
+          <GlobalFloatingActions lang={lang} />
         </div>
       </Router>
     </AuthProvider>

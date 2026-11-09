@@ -61,6 +61,23 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [apiSpecies, setApiSpecies] = useState<Array<{id: number; name_en: string; name_ml: string; slug: string}>>([]);
   const [apiDistricts, setApiDistricts] = useState<Array<{id: number; name_en: string; name_ml: string}>>([]);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    title?: string;
+    species?: string;
+    type?: string;
+    district?: string;
+    quantity?: string;
+    pricePerCft?: string;
+  }>({});
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => {
+      setToastMessage(null);
+    }, 4500);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageError(null);
@@ -73,8 +90,8 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     if (selectedImages.length + files.length > 8) {
       setImageError(
         lang === 'en'
-          ? 'Maximum 8 photographs allowed per timber listing.'
-          : 'ഒരു ലിസ്റ്റിംഗിൽ പരമാവധി 8 ഫോട്ടോകൾ മാത്രമേ അനുവദിക്കൂ.'
+          ? 'Maximum 8 images allowed per listing.'
+          : 'ഒരു ലിസ്റ്റിംഗിൽ പരമാവധി 8 ചിത്രങ്ങൾ മാത്രമേ അനുവദിക്കൂ.'
       );
       return;
     }
@@ -83,16 +100,16 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       if (!allowedTypes.includes(file.type)) {
         setImageError(
           lang === 'en'
-            ? `"${file.name}" is not supported. Only JPEG, PNG, and WebP are allowed.`
-            : `"${file.name}" സ്വീകാര്യമല്ല. JPEG, PNG, WebP ഫോർമാറ്റുകൾ മാത്രം തിരഞ്ഞെടുക്കുക.`
+            ? 'Unsupported file format. Please upload JPG, PNG, or WebP images.'
+            : 'പിന്തുണയ്ക്കാത്ത ഫയൽ ഫോർമാറ്റ്. ദയവായി JPG, PNG, അല്ലെങ്കിൽ WebP ചിത്രങ്ങൾ അപ്‌ലോഡ് ചെയ്യുക.'
         );
         return;
       }
       if (file.size > maxSizeBytes) {
         setImageError(
           lang === 'en'
-            ? `"${file.name}" exceeds the 10MB file limit.`
-            : `"${file.name}" 10MB ൽ കൂടുതലാണ്.`
+            ? 'File size exceeds 10 MB limit.'
+            : 'ഫയൽ വലുപ്പം 10 MB പരിധി കവിയുന്നു.'
         );
         return;
       }
@@ -111,6 +128,34 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   };
 
   const handleUploadSinglePhoto = async (listingId: string, file: File) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const maxSizeBytes = 10 * 1024 * 1024; // 10MB
+
+    if (!allowedTypes.includes(file.type)) {
+      alert(
+        lang === 'en'
+          ? 'Unsupported file format. Please upload JPG, PNG, or WebP images.'
+          : 'പിന്തുണയ്ക്കാത്ത ഫയൽ ഫോർമാറ്റ്. ദയവായി JPG, PNG, അല്ലെങ്കിൽ WebP ചിത്രങ്ങൾ അപ്‌ലോഡ് ചെയ്യുക.'
+      );
+      return;
+    }
+    if (file.size > maxSizeBytes) {
+      alert(
+        lang === 'en'
+          ? 'File size exceeds 10 MB limit.'
+          : 'ഫയൽ വലുപ്പം 10 MB പരിധി കവിയുന്നു.'
+      );
+      return;
+    }
+    if (Array.isArray(managingPhotosListing?.images) && managingPhotosListing.images.length >= 8) {
+      alert(
+        lang === 'en'
+          ? 'Maximum 8 images allowed per listing.'
+          : 'ഒരു ലിസ്റ്റിംഗിൽ പരമാവധി 8 ചിത്രങ്ങൾ മാത്രമേ അനുവദിക്കൂ.'
+      );
+      return;
+    }
+
     setIsUploadingPhoto(true);
     try {
       const formData = new FormData();
@@ -147,6 +192,26 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   };
 
   const handleReplacePhoto = async (listingId: string, imageId: string, file: File) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const maxSizeBytes = 10 * 1024 * 1024; // 10MB
+
+    if (!allowedTypes.includes(file.type)) {
+      alert(
+        lang === 'en'
+          ? 'Unsupported file format. Please upload JPG, PNG, or WebP images.'
+          : 'പിന്തുണയ്ക്കാത്ത ഫയൽ ഫോർമാറ്റ്. ദയവായി JPG, PNG, അല്ലെങ്കിൽ WebP ചിത്രങ്ങൾ അപ്‌ലോഡ് ചെയ്യുക.'
+      );
+      return;
+    }
+    if (file.size > maxSizeBytes) {
+      alert(
+        lang === 'en'
+          ? 'File size exceeds 10 MB limit.'
+          : 'ഫയൽ വലുപ്പം 10 MB പരിധി കവിയുന്നു.'
+      );
+      return;
+    }
+
     setIsUploadingPhoto(true);
     try {
       const formData = new FormData();
@@ -268,9 +333,36 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmittingListing(true);
     setListingError(null);
     setImageError(null);
+
+    const errors: typeof fieldErrors = {};
+    if (!title.trim()) {
+      errors.title = lang === 'en' ? 'Stock Title is required.' : 'തടിയുടെ പേര് നൽകേണ്ടതാണ്.';
+    }
+    if (!speciesId || Number(speciesId) <= 0) {
+      errors.species = lang === 'en' ? 'Please select a valid timber species.' : 'തടി ഇനം തിരഞ്ഞെടുക്കുക.';
+    }
+    if (!typeId || Number(typeId) <= 0) {
+      errors.type = lang === 'en' ? 'Please select a valid timber type.' : 'തടി രൂപം തിരഞ്ഞെടുക്കുക.';
+    }
+    if (!districtId || Number(districtId) <= 0) {
+      errors.district = lang === 'en' ? 'Please select a Kerala district.' : 'ജില്ല തിരഞ്ഞെടുക്കുക.';
+    }
+    if (!quantity || Number(quantity) <= 0 || isNaN(Number(quantity))) {
+      errors.quantity = lang === 'en' ? 'Quantity must be greater than 0 CFT.' : 'അളവ് 0 ൽ കൂടുതലായിരിക്കണം.';
+    }
+    if (!pricePerCft || Number(pricePerCft) <= 0 || isNaN(Number(pricePerCft))) {
+      errors.pricePerCft = lang === 'en' ? 'Price per CFT must be greater than ₹0.' : 'വില ₹0 ൽ കൂടുതലായിരിക്കണം.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+
+    setIsSubmittingListing(true);
 
     try {
       const res = await api.post('/listings', {
@@ -307,6 +399,11 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
       setSubmitted(true);
       setIsSubmittingListing(false);
+      setToastMessage(
+        lang === 'en'
+          ? 'Timber stock submitted successfully! Sent for Admin Approval.'
+          : 'തടി സ്റ്റോക്ക് വിജയകരമായി സമർപ്പിച്ചു! അഡ്മിൻ അംഗീകാരത്തിനായി അയച്ചു.'
+      );
 
       // Refresh listings
       try {
@@ -333,7 +430,22 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-7 animate-fadeIn">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-7 animate-fadeIn relative">
+      {/* SUCCESS TOAST NOTIFICATION */}
+      {toastMessage && (
+        <div className="fixed top-20 right-4 sm:right-8 z-50 animate-slideDown flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-900 text-white shadow-2xl border border-emerald-700/60 max-w-md">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span className="text-xs sm:text-sm font-semibold">{toastMessage}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="p-1 rounded-lg hover:bg-emerald-800 text-emerald-300 hover:text-white transition ml-auto"
+            title={lang === 'en' ? 'Dismiss' : 'ഒഴിവാക്കുക'}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       {/* VERIFICATION STATUS BANNER */}
       <VerificationStatusBanner
         status={user?.approvalStatus || 'APPROVED'}
@@ -546,27 +658,43 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  {lang === 'en' ? 'Stock Title' : 'തടിയുടെ പേര് / വിവരണം'}
+                  {lang === 'en' ? 'Stock Title' : 'തടിയുടെ പേര് / വിവരണം'} <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   placeholder="e.g. First-Grade Teak Planks 10ft"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border rounded-xl text-sm"
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    if (fieldErrors.title) setFieldErrors((prev) => ({ ...prev, title: undefined }));
+                  }}
+                  className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition ${
+                    fieldErrors.title ? 'border-rose-400 bg-rose-50/20 focus:ring-rose-400' : 'border-stone-300'
+                  }`}
                   required
                 />
+                {fieldErrors.title && (
+                  <p className="text-xs text-rose-600 font-medium mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{fieldErrors.title}</span>
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    {lang === 'en' ? 'Species' : 'തടി ഇനം'}
+                    {lang === 'en' ? 'Species' : 'തടി ഇനം'} <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={speciesId}
-                    onChange={(e) => setSpeciesId(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm bg-white"
+                    onChange={(e) => {
+                      setSpeciesId(Number(e.target.value));
+                      if (fieldErrors.species) setFieldErrors((prev) => ({ ...prev, species: undefined }));
+                    }}
+                    className={`w-full px-3 py-2.5 border rounded-xl text-sm bg-white transition ${
+                      fieldErrors.species ? 'border-rose-400 bg-rose-50/20' : 'border-stone-300'
+                    }`}
                   >
                     {apiSpecies.length > 0 ? (
                       apiSpecies.map(sp => (
@@ -586,32 +714,54 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       </>
                     )}
                   </select>
+                  {fieldErrors.species && (
+                    <p className="text-xs text-rose-600 font-medium mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{fieldErrors.species}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    {lang === 'en' ? 'Timber Type' : 'തടി രൂപം'}
+                    {lang === 'en' ? 'Timber Type' : 'തടി രൂപം'} <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={typeId}
-                    onChange={(e) => setTypeId(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm bg-white"
+                    onChange={(e) => {
+                      setTypeId(Number(e.target.value));
+                      if (fieldErrors.type) setFieldErrors((prev) => ({ ...prev, type: undefined }));
+                    }}
+                    className={`w-full px-3 py-2.5 border rounded-xl text-sm bg-white transition ${
+                      fieldErrors.type ? 'border-rose-400 bg-rose-50/20' : 'border-stone-300'
+                    }`}
                   >
                     <option value={1}>Round Logs (ലോഗ്സ്)</option>
                     <option value={2}>Rough-sawn Planks (പലക)</option>
                     <option value={3}>Squared Beams (തൂൺ)</option>
                     <option value={4}>Firewood (വിറക്)</option>
                   </select>
+                  {fieldErrors.type && (
+                    <p className="text-xs text-rose-600 font-medium mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{fieldErrors.type}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    {lang === 'en' ? 'District' : 'ജില്ല'}
+                    {lang === 'en' ? 'District' : 'ജില്ല'} <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={districtId}
-                    onChange={(e) => setDistrictId(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm bg-white"
+                    onChange={(e) => {
+                      setDistrictId(Number(e.target.value));
+                      if (fieldErrors.district) setFieldErrors((prev) => ({ ...prev, district: undefined }));
+                    }}
+                    className={`w-full px-3 py-2.5 border rounded-xl text-sm bg-white transition ${
+                      fieldErrors.district ? 'border-rose-400 bg-rose-50/20' : 'border-stone-300'
+                    }`}
                   >
                     {apiDistricts.length > 0 ? (
                       apiDistricts.map((d) => (
@@ -638,13 +788,19 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       </>
                     )}
                   </select>
+                  {fieldErrors.district && (
+                    <p className="text-xs text-rose-600 font-medium mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{fieldErrors.district}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    {lang === 'en' ? 'Quantity (CFT)' : 'അളവ് (CFT)'}
+                    {lang === 'en' ? 'Quantity (CFT)' : 'അളവ് (CFT)'} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -652,16 +808,25 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     onChange={(e) => {
                       const val = e.target.value.replace(/^0+(?=\d)/, '');
                       setQuantity(val === '' ? 0 : Number(val));
+                      if (fieldErrors.quantity) setFieldErrors((prev) => ({ ...prev, quantity: undefined }));
                     }}
-                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition ${
+                      fieldErrors.quantity ? 'border-rose-400 bg-rose-50/20' : 'border-stone-300'
+                    }`}
                     min={1}
                     required
                   />
+                  {fieldErrors.quantity && (
+                    <p className="text-xs text-rose-600 font-medium mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{fieldErrors.quantity}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    {lang === 'en' ? 'Price per CFT (₹)' : 'ഒരു CFT യുടെ വില (₹)'}
+                    {lang === 'en' ? 'Price per CFT (₹)' : 'ഒരു CFT യുടെ വില (₹)'} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -669,19 +834,33 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     onChange={(e) => {
                       const val = e.target.value.replace(/^0+(?=\d)/, '');
                       setPricePerCft(val === '' ? 0 : Number(val));
+                      if (fieldErrors.pricePerCft) setFieldErrors((prev) => ({ ...prev, pricePerCft: undefined }));
                     }}
-                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition ${
+                      fieldErrors.pricePerCft ? 'border-rose-400 bg-rose-50/20' : 'border-stone-300'
+                    }`}
                     min={1}
                     required
                   />
+                  {fieldErrors.pricePerCft && (
+                    <p className="text-xs text-rose-600 font-medium mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{fieldErrors.pricePerCft}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
               {/* Timber Photographs Upload Area */}
               <div className="space-y-2 pt-1">
-                <label className="block text-xs font-semibold text-stone-700">
-                  {lang === 'en' ? 'Timber Photographs (Max 8)' : 'തടിയുടെ ഫോട്ടോകൾ (പരമാവധി 8)'}
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-stone-700">
+                    {lang === 'en' ? 'Timber Photographs (Max 8)' : 'തടിയുടെ ഫോട്ടോകൾ (പരമാവധി 8)'}
+                  </label>
+                  <span className="text-[11px] font-mono text-stone-500">
+                    {selectedImages.length}/8
+                  </span>
+                </div>
 
                 {imageError && (
                   <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-900 text-xs flex items-center gap-2">
@@ -710,7 +889,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     </div>
                   ))}
 
-                  {selectedImages.length < 8 && (
+                  {selectedImages.length < 8 ? (
                     <label className="w-20 h-20 rounded-2xl border-2 border-dashed border-[#8E7F6B]/40 hover:border-[#5B6147] flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-[#E7E1D6]/30 transition group">
                       <Camera className="w-6 h-6 text-[#8E7F6B] group-hover:text-[#5B6147] transition" />
                       <span className="text-[10px] font-semibold text-stone-500 mt-1">
@@ -724,6 +903,13 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                         className="hidden"
                       />
                     </label>
+                  ) : (
+                    <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-stone-200 bg-stone-100 flex flex-col items-center justify-center text-stone-400 select-none">
+                      <Camera className="w-5 h-5 text-stone-400" />
+                      <span className="text-[9px] font-semibold mt-1">
+                        {lang === 'en' ? 'Max 8 Reached' : '8 ഫോട്ടോകൾ'}
+                      </span>
+                    </div>
                   )}
                 </div>
                 <p className="text-[11px] text-stone-400">
@@ -767,7 +953,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </h3>
           <span className="text-xs text-[#5B6147] font-semibold">
             {sellerListings.length > 0
-              ? `${sellerListings.filter((l: any) => l.status === 'approved').length} ${lang === 'en' ? 'Active' : 'സജീവം'} · ${sellerListings.filter((l: any) => l.status !== 'approved').length} ${lang === 'en' ? 'Pending Review' : 'പരിശോധനയിൽ'}`
+              ? `${sellerListings.filter((l: any) => l.status === 'approved').length} ${lang === 'en' ? 'Active' : 'സജീവം'} · ${sellerListings.filter((l: any) => l.status !== 'approved').length} ${lang === 'en' ? 'Pending Approval' : 'അനുമതി കാക്കുന്നു'}`
               : (lang === 'en' ? '0 Stock Items' : 'സ്റ്റോക്കുകൾ ഇല്ല')}
           </span>
         </div>
@@ -828,9 +1014,9 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                       item.status === 'approved'
                         ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                        : 'bg-stone-100 text-[#4A3626] border border-stone-300'
+                        : 'bg-amber-50 text-amber-800 border border-amber-300'
                     }`}>
-                      {item.status === 'approved' ? (lang === 'en' ? 'Approved (Live)' : 'പരിശോധിച്ചു (സജീവം)') : (lang === 'en' ? 'Pending Review' : 'പരിശോധനയിൽ')}
+                      {item.status === 'approved' ? (lang === 'en' ? 'Approved (Live)' : 'പരിശോധിച്ചു (സജീവം)') : (lang === 'en' ? 'Pending Approval' : 'അനുമതി കാക്കുന്നു (Pending Approval)')}
                     </span>
                     <button
                       onClick={() => setManagingPhotosListing(item)}
