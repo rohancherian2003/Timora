@@ -204,6 +204,24 @@ export class ListingsController {
       next(err);
     }
   }
+
+  async deleteListing(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+      const listingId = req.params.id as string;
+
+      const result = await listingsService.deleteListing(userId, userRole, listingId);
+      const response: ApiSuccessResponse = {
+        success: true,
+        data: result,
+        message: 'Timber listing removed successfully.',
+      };
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const listingsController = new ListingsController();

@@ -137,7 +137,7 @@ export class ListingsService {
     );
 
     const listing = res.rows[0];
-    if (!listing) {
+    if (!listing || listing.status === 'deleted') {
       throw new AppError(404, 'NOT_FOUND', 'Timber listing not found.');
     }
 
@@ -388,7 +388,7 @@ export class ListingsService {
   }
 
   /**
-   * Retrieve all listings belonging to a seller
+   * Retrieve all listings belonging to a seller (excluding deleted)
    */
   async getSellerListings(sellerId: string) {
     const res = await query(
@@ -406,13 +406,65 @@ export class ListingsService {
        JOIN timber_types t ON t.id = l.timber_type_id
        JOIN kerala_districts d ON d.id = l.district_id
        LEFT JOIN listing_images img ON img.listing_id = l.id
-       WHERE l.seller_id = $1
+       WHERE l.seller_id = $1 AND l.status != 'deleted'
        GROUP BY l.id, s.id, t.id, d.id
        ORDER BY l.created_at DESC`,
       [sellerId]
     );
 
     return res.rows;
+  }
+
+  /**
+   * Delete / remove a timber listing (Seller owner or Super Admin only)
+   */
+  async deleteListing(userId: string, userRole: string, listingId: string) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(listingId);
+    if (!isUuid) {
+      throw new AppError(404, 'NOT_FOUND', 'Timber listing not found.');
+    }
+
+    const listingRes = await query(
+      `SELECT id, seller_id, status, title FROM timber_listings WHERE id = $1`,
+      [listingId]
+    );
+
+    const listing = listingRes.rows[0];
+    if (!listing || listing.status === 'deleted') {
+      throw new AppError(404, 'NOT_FOUND', 'Timber listing not found.');
+    }
+    const isOwner = listing.seller_id === userId;
+    const isAdmin = userRole === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      throw new AppError(403, 'FORBIDDEN', 'You are not authorized to delete this timber listing.');
+    }
+
+    const updateRes = await query(
+      `UPDATE timber_listings
+       SET status = 'deleted', updated_at = NOW()
+       WHERE id = $1
+       RETURNING id, title, status, updated_at`,
+      [listingId]
+    );
+
+    // Record review history event
+    await query(
+      `INSERT INTO listing_review_history (listing_id, reviewed_by, action, reason)
+       VALUES ($1, $2, 'deleted', $3)`,
+      [listingId, userId, isAdmin ? 'Purged by Super Admin' : 'Deleted by Seller']
+    ).catch(() => {});
+
+    // If deleted by admin, record audit log
+    if (isAdmin) {
+      await query(
+        `INSERT INTO admin_audit_logs (actor_id, action, entity_type, entity_id, reason)
+         VALUES ($1, 'DELETE_LISTING', 'timber_listing', $2, $3)`,
+        [userId, listingId, `Timber listing "${listing.title}" purged by admin`]
+      ).catch(() => {});
+    }
+
+    return updateRes.rows[0];
   }
 }
 

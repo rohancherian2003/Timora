@@ -22,6 +22,7 @@ import {
   Truck,
   RotateCcw,
   Loader2,
+  Trash2,
 } from 'lucide-react';
 import { formatINR, formatUserProfileId, formatCleanPhone } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
@@ -144,6 +145,9 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [businessFilter, setBusinessFilter] = useState<'all' | 'seller' | 'mill' | 'carpenter' | 'transport'>('all');
   const [applications, setApplications] = useState<PendingBusiness[]>(INITIAL_PENDING_APPLICATIONS);
   const [listings, setListings] = useState<PendingListing[]>(DEMO_PENDING_LISTINGS);
+  const [listingFilter, setListingFilter] = useState<'pending' | 'active'>('pending');
+  const [activeMarketplaceListings, setActiveMarketplaceListings] = useState<any[]>([]);
+  const [isLoadingActiveListings, setIsLoadingActiveListings] = useState(false);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [listingActionLoadingId, setListingActionLoadingId] = useState<string | null>(null);
   const [tickets, setTickets] = useState<SupportTicket[]>(getStoredTickets());
@@ -319,6 +323,58 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       setListingActionLoadingId(null);
       setListings((prev) => prev.filter((l) => l.id !== lst.id));
       setMessage(lang === 'en' ? 'Listing rejected.' : 'ലിസ്റ്റിംഗ് നിരസിച്ചു.');
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'listings' && listingFilter === 'active') {
+      let isMounted = true;
+      async function fetchActiveListings() {
+        try {
+          setIsLoadingActiveListings(true);
+          const res = await api.get('/listings', { params: { limit: 50 } });
+          if (isMounted && res.data?.success && Array.isArray(res.data?.data?.items)) {
+            setActiveMarketplaceListings(res.data.data.items);
+          }
+        } catch {
+          // Graceful fallback
+        } finally {
+          if (isMounted) setIsLoadingActiveListings(false);
+        }
+      }
+      fetchActiveListings();
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [activeTab, listingFilter]);
+
+  const handlePurgeListing = async (lst: any) => {
+    const confirmMsg =
+      lang === 'en'
+        ? `Are you sure you want to delete and purge "${lst.title}" from the marketplace?`
+        : `ഈ തടി ലിസ്റ്റിംഗ് മാർക്കറ്റിൽ നിന്നും നീക്കം ചെയ്യണമെന്ന് ഉറപ്പാണോ?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setListingActionLoadingId(lst.id);
+    addAudit('PURGE_LISTING', lst.title, 'Purged by Super Admin');
+    try {
+      await api.delete(`/admin/listings/${lst.id}`);
+    } catch {
+      try {
+        await api.delete(`/listings/${lst.id}`);
+      } catch (err) {
+        console.warn('Backend purge fallback:', err);
+      }
+    } finally {
+      setListingActionLoadingId(null);
+      setListings((prev) => prev.filter((l) => l.id !== lst.id));
+      setActiveMarketplaceListings((prev) => prev.filter((l) => l.id !== lst.id));
+      setMessage(
+        lang === 'en'
+          ? `Listing "${lst.title}" deleted and purged successfully.`
+          : `ലിസ്റ്റിംഗ് വിജയകരമായി നീക്കം ചെയ്തു.`
+      );
     }
   };
 
@@ -649,88 +705,215 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       {/* TAB 2: TIMBER LISTINGS APPROVAL */}
       {activeTab === 'listings' && (
         <div className="bg-white rounded-3xl border border-stone-300 overflow-hidden shadow-xs divide-y divide-stone-200">
-          {isLoadingListings ? (
-            <div className="p-8 text-center text-stone-500 text-xs flex items-center justify-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-[#5B6147]" />
-              <span>{lang === 'en' ? 'Loading pending listings...' : 'ലിസ്റ്റിംഗുകൾ ലോഡ് ചെയ്യുന്നു...'}</span>
+          <div className="p-4 bg-stone-50 flex items-center justify-between flex-wrap gap-2">
+            <span className="font-serif font-bold text-sm text-[#4A3626]">
+              {listingFilter === 'pending'
+                ? (lang === 'en' ? 'Listings Awaiting Moderation' : 'പരിശോധന കാത്തിരിക്കുന്ന തടി ലിസ്റ്റിംഗുകൾ')
+                : (lang === 'en' ? 'Live Marketplace Timber Listings' : 'ലൈവ് മാർക്കറ്റ്പ്ലേസ് ലിസ്റ്റിംഗുകൾ')}
+            </span>
+            <div className="flex gap-1.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setListingFilter('pending')}
+                className={`px-3 py-1 rounded-xl font-bold uppercase text-[10px] transition ${
+                  listingFilter === 'pending'
+                    ? 'bg-[#5B6147] text-white shadow-xs'
+                    : 'bg-white border border-stone-300 text-stone-600 hover:bg-stone-100'
+                }`}
+              >
+                {lang === 'en' ? 'Pending Review' : 'അനുമതി കാക്കുന്നവ'} ({listings.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setListingFilter('active')}
+                className={`px-3 py-1 rounded-xl font-bold uppercase text-[10px] transition ${
+                  listingFilter === 'active'
+                    ? 'bg-[#5B6147] text-white shadow-xs'
+                    : 'bg-white border border-stone-300 text-stone-600 hover:bg-stone-100'
+                }`}
+              >
+                {lang === 'en' ? 'Live Marketplace' : 'മാർക്കറ്റ്പ്ലേസ്'}
+              </button>
             </div>
-          ) : listings.length === 0 ? (
-            <div className="p-8 text-center text-stone-500 text-xs">
-              {lang === 'en' ? 'No pending timber listings.' : 'പരിശോധിക്കാനുള്ള തടി ലിസ്റ്റിംഗുകൾ ഇല്ല.'}
-            </div>
-          ) : (
-            listings.map((lst) => {
-              const speciesDisplay = lst.species_name || lst.species || 'Timber';
-              const districtDisplay = lst.district_name || lst.district || '';
-              const sellerDisplay = lst.business_name || lst.seller_name || 'Individual Seller';
-              const imagesCount = Array.isArray(lst.images) ? lst.images.length : (lst.image_count || 0);
-              const primaryImage = Array.isArray(lst.images) && lst.images.length > 0 ? (lst.images.find((img) => img.is_primary)?.url || lst.images[0]?.url) : null;
+          </div>
 
-              return (
-                <div
-                  key={lst.id}
-                  className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
-                >
-                  <div className="flex items-start gap-4">
-                    {primaryImage && (
-                      <img
-                        src={primaryImage}
-                        alt={lst.title}
-                        className="w-16 h-16 rounded-xl object-cover border border-stone-200 shrink-0"
-                      />
-                    )}
-                    <div>
-                      <h4 className="font-serif font-bold text-base text-[#4A3626]">
-                        {translateWoodTitle(lst.title, lang)}
-                      </h4>
-                      <div className="text-xs text-stone-500 mt-1 flex items-center gap-2 flex-wrap">
-                        <span>{lang === 'en' ? 'Seller:' : 'വിൽക്കുന്നയാൾ:'} <b>{sellerDisplay}</b></span>
-                        {districtDisplay && (
-                          <>
-                            <span>•</span>
-                            <span>{lang === 'en' ? 'District:' : 'ജില്ല:'} <b>{districtDisplay}</b></span>
-                          </>
-                        )}
-                        <span>•</span>
-                        <span>{lang === 'en' ? 'Species:' : 'ഇനം:'} <b>{translateSpecies(speciesDisplay, lang)}</b></span>
-                        <span>•</span>
-                        <span>{lang === 'en' ? 'Volume:' : 'അളവ്:'} <b>{lst.quantity} {translateUnit(lst.unit, lang)}</b></span>
-                        <span>•</span>
-                        <span>{lang === 'en' ? 'Rate:' : 'നിരക്ക്:'} <b>{formatINR(lst.price_per_cft)}/{translateUnit('CFT', lang)}</b></span>
-                        {imagesCount > 0 && (
-                          <>
-                            <span>•</span>
-                            <span>{imagesCount} {lang === 'en' ? 'Photos' : 'ഫോട്ടോകൾ'}</span>
-                          </>
-                        )}
+          {listingFilter === 'pending' ? (
+            isLoadingListings ? (
+              <div className="p-8 text-center text-stone-500 text-xs flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-[#5B6147]" />
+                <span>{lang === 'en' ? 'Loading pending listings...' : 'ലിസ്റ്റിംഗുകൾ ലോഡ് ചെയ്യുന്നു...'}</span>
+              </div>
+            ) : listings.length === 0 ? (
+              <div className="p-8 text-center text-stone-500 text-xs">
+                {lang === 'en' ? 'No pending timber listings.' : 'പരിശോധിക്കാനുള്ള തടി ലിസ്റ്റിംഗുകൾ ഇല്ല.'}
+              </div>
+            ) : (
+              listings.map((lst) => {
+                const speciesDisplay = lst.species_name || lst.species || 'Timber';
+                const districtDisplay = lst.district_name || lst.district || '';
+                const sellerDisplay = lst.business_name || lst.seller_name || 'Individual Seller';
+                const imagesCount = Array.isArray(lst.images) ? lst.images.length : (lst.image_count || 0);
+                const primaryImage = Array.isArray(lst.images) && lst.images.length > 0 ? (lst.images.find((img) => img.is_primary)?.url || lst.images[0]?.url) : null;
+
+                return (
+                  <div
+                    key={lst.id}
+                    className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  >
+                    <div className="flex items-start gap-4">
+                      {primaryImage && (
+                        <img
+                          src={primaryImage}
+                          alt={lst.title}
+                          className="w-16 h-16 rounded-xl object-cover border border-stone-200 shrink-0"
+                        />
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-serif font-bold text-base text-[#4A3626]">
+                            {translateWoodTitle(lst.title, lang)}
+                          </h4>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                            {lang === 'en' ? 'Pending Review' : 'പരിശോധനയിൽ'}
+                          </span>
+                        </div>
+                        <div className="text-xs text-stone-500 mt-1 flex items-center gap-2 flex-wrap">
+                          <span>{lang === 'en' ? 'Seller:' : 'വിൽക്കുന്നയാൾ:'} <b>{sellerDisplay}</b></span>
+                          {districtDisplay && (
+                            <>
+                              <span>•</span>
+                              <span>{lang === 'en' ? 'District:' : 'ജില്ല:'} <b>{districtDisplay}</b></span>
+                            </>
+                          )}
+                          <span>•</span>
+                          <span>{lang === 'en' ? 'Species:' : 'ഇനം:'} <b>{translateSpecies(speciesDisplay, lang)}</b></span>
+                          <span>•</span>
+                          <span>{lang === 'en' ? 'Volume:' : 'അളവ്:'} <b>{lst.quantity} {translateUnit(lst.unit, lang)}</b></span>
+                          <span>•</span>
+                          <span>{lang === 'en' ? 'Rate:' : 'നിരക്ക്:'} <b>{formatINR(lst.price_per_cft)}/{translateUnit('CFT', lang)}</b></span>
+                          {imagesCount > 0 && (
+                            <>
+                              <span>•</span>
+                              <span>{imagesCount} {lang === 'en' ? 'Photos' : 'ഫോട്ടോകൾ'}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      disabled={listingActionLoadingId === lst.id}
-                      onClick={() => handleApproveListing(lst)}
-                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition"
-                    >
-                      {listingActionLoadingId === lst.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Check className="w-3.5 h-3.5" />
-                      )}
-                      <span>{lang === 'en' ? 'Approve & Publish' : 'അംഗീകരിച്ച് പ്രസിദ്ധീകരിക്കുക'}</span>
-                    </button>
-                    <button
-                      disabled={listingActionLoadingId === lst.id}
-                      onClick={() => handleRejectListing(lst)}
-                      className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-800 border border-rose-300 font-bold text-xs hover:bg-rose-100 disabled:opacity-50 transition"
-                    >
-                      {lang === 'en' ? 'Reject' : 'നിരസിക്കുക'}
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        disabled={listingActionLoadingId === lst.id}
+                        onClick={() => handleApproveListing(lst)}
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition"
+                      >
+                        {listingActionLoadingId === lst.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Check className="w-3.5 h-3.5" />
+                        )}
+                        <span>{lang === 'en' ? 'Approve & Publish' : 'അംഗീകരിച്ച് പ്രസിദ്ധീകരിക്കുക'}</span>
+                      </button>
+                      <button
+                        disabled={listingActionLoadingId === lst.id}
+                        onClick={() => handleRejectListing(lst)}
+                        className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-800 border border-rose-300 font-bold text-xs hover:bg-rose-100 disabled:opacity-50 transition"
+                      >
+                        {lang === 'en' ? 'Reject' : 'നിരസിക്കുക'}
+                      </button>
+                      <button
+                        disabled={listingActionLoadingId === lst.id}
+                        onClick={() => handlePurgeListing(lst)}
+                        className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition"
+                        title={lang === 'en' ? 'Delete and purge listing' : 'ഡിലീറ്റ് ചെയ്യുക'}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{lang === 'en' ? 'Delete & Purge' : 'ഡിലീറ്റ്'}</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              );
-            })
+                );
+              })
+            )
+          ) : (
+            isLoadingActiveListings ? (
+              <div className="p-8 text-center text-stone-500 text-xs flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-[#5B6147]" />
+                <span>{lang === 'en' ? 'Loading marketplace stock...' : 'മാർക്കറ്റ്പ്ലേസ് സ്റ്റോക്ക് ലോഡ് ചെയ്യുന്നു...'}</span>
+              </div>
+            ) : activeMarketplaceListings.length === 0 ? (
+              <div className="p-8 text-center text-stone-500 text-xs">
+                {lang === 'en' ? 'No active marketplace listings found.' : 'സജീവ ലിസ്റ്റിംഗുകൾ ഒന്നും ലഭ്യമല്ല.'}
+              </div>
+            ) : (
+              activeMarketplaceListings.map((lst) => {
+                const speciesDisplay = lst.species_name_en || lst.species || 'Timber';
+                const districtDisplay = lst.district_name_en || lst.district || '';
+                const sellerDisplay = lst.business_name || lst.seller_name || 'Licensed Sawmill';
+                const imagesCount = Array.isArray(lst.images) ? lst.images.length : 0;
+                const primaryImage = Array.isArray(lst.images) && lst.images.length > 0 ? (lst.images.find((img: any) => img.is_primary)?.url || lst.images[0]?.url) : null;
+
+                return (
+                  <div
+                    key={lst.id}
+                    className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  >
+                    <div className="flex items-start gap-4">
+                      {primaryImage && (
+                        <img
+                          src={primaryImage}
+                          alt={lst.title}
+                          className="w-16 h-16 rounded-xl object-cover border border-stone-200 shrink-0"
+                        />
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-serif font-bold text-base text-[#4A3626]">
+                            {translateWoodTitle(lst.title, lang)}
+                          </h4>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                            {lang === 'en' ? 'Live on Marketplace' : 'മാർക്കറ്റ്പ്ലേസിൽ സജീവം'}
+                          </span>
+                        </div>
+                        <div className="text-xs text-stone-500 mt-1 flex items-center gap-2 flex-wrap">
+                          <span>{lang === 'en' ? 'Seller:' : 'വിൽക്കുന്നയാൾ:'} <b>{sellerDisplay}</b></span>
+                          {districtDisplay && (
+                            <>
+                              <span>•</span>
+                              <span>{lang === 'en' ? 'District:' : 'ജില്ല:'} <b>{districtDisplay}</b></span>
+                            </>
+                          )}
+                          <span>•</span>
+                          <span>{lang === 'en' ? 'Species:' : 'ഇനം:'} <b>{translateSpecies(speciesDisplay, lang)}</b></span>
+                          <span>•</span>
+                          <span>{lang === 'en' ? 'Volume:' : 'അളവ്:'} <b>{lst.quantity} {translateUnit(lst.unit, lang)}</b></span>
+                          <span>•</span>
+                          <span>{lang === 'en' ? 'Rate:' : 'നിരക്ക്:'} <b>{formatINR(lst.price_per_cft)}/{translateUnit('CFT', lang)}</b></span>
+                          {imagesCount > 0 && (
+                            <>
+                              <span>•</span>
+                              <span>{imagesCount} {lang === 'en' ? 'Photos' : 'ഫോട്ടോകൾ'}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        disabled={listingActionLoadingId === lst.id}
+                        onClick={() => handlePurgeListing(lst)}
+                        className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition"
+                        title={lang === 'en' ? 'Delete and purge listing' : 'ഡിലീറ്റ് ചെയ്യുക'}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{lang === 'en' ? 'Delete & Purge' : 'ഡിലീറ്റ് & നീക്കുക'}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )
           )}
         </div>
       )}

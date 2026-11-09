@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { adminController } from './admin.controller.js';
+import { listingsController } from '../listings/listings.controller.js';
 import { authenticate } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/requireRole.js';
 import { validate } from '../../middleware/validate.js';
@@ -31,6 +32,7 @@ adminRouter.patch(
   validate(rejectReasonSchema),
   adminController.rejectListing.bind(adminController)
 );
+adminRouter.delete('/listings/:id', listingsController.deleteListing.bind(listingsController));
 
 // Append-only audit logs
 adminRouter.get('/audit-logs', adminController.getAuditLogs.bind(adminController));

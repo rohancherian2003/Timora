@@ -38,6 +38,13 @@ listingsRouter.get(
   listingsController.getListingById.bind(listingsController)
 );
 
+// Delete timber listing (Seller owner or Admin)
+listingsRouter.delete(
+  '/:id',
+  authenticate,
+  listingsController.deleteListing.bind(listingsController)
+);
+
 // Seller create & stock update
 listingsRouter.post(
   '/',

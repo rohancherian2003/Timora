@@ -80,3 +80,4 @@ export function GlobalFloatingActions({ lang = 'en' }: GlobalFloatingActionsProp
     </>
   );
 }
+

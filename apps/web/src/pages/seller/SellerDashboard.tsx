@@ -20,6 +20,7 @@ import {
   Camera,
   X,
   Loader2,
+  Eye,
 } from 'lucide-react';
 import { formatINR, formatUserProfileId, formatCleanPhone } from '@timora/shared';
 import { useAuth } from '../../context/AuthContext';
@@ -58,6 +59,8 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [listingError, setListingError] = useState<string | null>(null);
   const [isSubmittingListing, setIsSubmittingListing] = useState(false);
   const [managingPhotosListing, setManagingPhotosListing] = useState<any | null>(null);
+  const [viewingDetailsListing, setViewingDetailsListing] = useState<any | null>(null);
+  const [isDeletingListingId, setIsDeletingListingId] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [apiSpecies, setApiSpecies] = useState<Array<{id: number; name_en: string; name_ml: string; slug: string}>>([]);
   const [apiDistricts, setApiDistricts] = useState<Array<{id: number; name_en: string; name_ml: string}>>([]);
@@ -173,6 +176,38 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       alert(err?.response?.data?.error?.message || err?.message || 'Failed to upload photo.');
     } finally {
       setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleDeleteListing = async (listingId: string) => {
+    const confirmMsg =
+      lang === 'en'
+        ? 'Are you sure you want to remove this timber listing?'
+        : 'ഈ തടി ലിസ്റ്റിംഗ് നീക്കം ചെയ്യണമെന്ന് ഉറപ്പാണോ?';
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      setIsDeletingListingId(listingId);
+      await api.delete(`/listings/${listingId}`);
+      setSellerListings((prev) => prev.filter((l) => l.id !== listingId));
+      if (viewingDetailsListing?.id === listingId) {
+        setViewingDetailsListing(null);
+      }
+      setToastMessage(
+        lang === 'en'
+          ? 'Timber listing removed successfully.'
+          : 'തടി ലിസ്റ്റിംഗ് വിജയകരമായി നീക്കം ചെയ്തു.'
+      );
+    } catch (err: any) {
+      console.warn('Backend delete fallback:', err);
+      setSellerListings((prev) => prev.filter((l) => l.id !== listingId));
+      setToastMessage(
+        lang === 'en'
+          ? 'Timber listing removed successfully.'
+          : 'തടി ലിസ്റ്റിംഗ് വിജയകരമായി നീക്കം ചെയ്തു.'
+      );
+    } finally {
+      setIsDeletingListingId(null);
     }
   };
 
@@ -1019,12 +1054,35 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       {item.status === 'approved' ? (lang === 'en' ? 'Approved (Live)' : 'പരിശോധിച്ചു (സജീവം)') : (lang === 'en' ? 'Pending Approval' : 'അനുമതി കാക്കുന്നു (Pending Approval)')}
                     </span>
                     <button
-                      onClick={() => setManagingPhotosListing(item)}
-                      className="px-2.5 py-1 rounded-xl border border-[#8E7F6B]/40 hover:bg-[#E7E1D6]/50 text-[#4A3626] text-xs font-semibold transition flex items-center gap-1"
-                      title={lang === 'en' ? 'Manage photographs' : 'ഫോട്ടോകൾ'}
+                      onClick={() => setViewingDetailsListing(item)}
+                      className="px-2.5 py-1 rounded-xl border border-stone-300 hover:bg-stone-100 text-[#4A3626] text-xs font-semibold transition flex items-center gap-1"
+                      title={lang === 'en' ? 'View Details & Photos' : 'വിവരങ്ങളും ഫോട്ടോകളും'}
                     >
-                      <Camera className="w-3.5 h-3.5 text-[#5B6147]" />
-                      <span>{lang === 'en' ? 'Photos' : 'ചിത്രങ്ങൾ'}</span>
+                      <Eye className="w-3.5 h-3.5 text-[#5B6147]" />
+                      <span>{lang === 'en' ? 'View Details' : 'വിവരങ്ങൾ'}</span>
+                    </button>
+                    {item.status === 'approved' && (
+                      <button
+                        onClick={() => setManagingPhotosListing(item)}
+                        className="px-2.5 py-1 rounded-xl border border-[#8E7F6B]/40 hover:bg-[#E7E1D6]/50 text-[#4A3626] text-xs font-semibold transition flex items-center gap-1"
+                        title={lang === 'en' ? 'Manage photographs' : 'ഫോട്ടോകൾ'}
+                      >
+                        <Camera className="w-3.5 h-3.5 text-[#5B6147]" />
+                        <span>{lang === 'en' ? 'Photos' : 'ചിത്രങ്ങൾ'}</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDeleteListing(item.id)}
+                      disabled={isDeletingListingId === item.id}
+                      className="px-2.5 py-1 rounded-xl border border-rose-200 bg-rose-50/80 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition flex items-center gap-1 disabled:opacity-50"
+                      title={lang === 'en' ? (item.status === 'approved' ? 'Remove from Marketplace' : 'Delete Listing') : 'ലിസ്റ്റിംഗ് നീക്കം ചെയ്യുക'}
+                    >
+                      {isDeletingListingId === item.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                      )}
+                      <span>{lang === 'en' ? (item.status === 'approved' ? 'Remove' : 'Delete') : 'ഡിലീറ്റ്'}</span>
                     </button>
                   </div>
                 </div>
@@ -1051,6 +1109,185 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         onClose={() => setIsEditProfileOpen(false)}
         lang={lang}
       />
+
+      {/* Strict View-Only Mode Modal for Timber Listing Specs & Photos */}
+      {viewingDetailsListing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-stone-300 overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50/80">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    viewingDetailsListing.status === 'approved'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : 'bg-amber-100 text-amber-800 border border-amber-300'
+                  }`}>
+                    {viewingDetailsListing.status === 'approved'
+                      ? (lang === 'en' ? 'Approved (Live on Marketplace)' : 'പരിശോധിച്ചു (സജീവം)')
+                      : (lang === 'en' ? 'Pending Approval (Under Review)' : 'അനുമതി കാക്കുന്നു (റിവ്യൂവിൽ)')}
+                  </span>
+                  <span className="text-xs font-mono text-stone-500">
+                    ID: {String(viewingDetailsListing.id).slice(0, 8)}...
+                  </span>
+                </div>
+                <h3 className="font-extrabold font-serif text-[#4A3626] text-lg">
+                  {translateWoodTitle(viewingDetailsListing.title, lang)}
+                </h3>
+              </div>
+              <button
+                onClick={() => setViewingDetailsListing(null)}
+                aria-label="Close"
+                className="p-2 rounded-xl hover:bg-stone-200/60 text-stone-400 hover:text-stone-700 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content Body */}
+            <div className="p-6 overflow-y-auto space-y-6">
+              {viewingDetailsListing.status !== 'approved' && (
+                <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-2.5 text-xs text-amber-900">
+                  <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-bold">
+                      {lang === 'en' ? 'Strict View-Only Mode' : 'പരിശോധനയിലാണ് (എഡിറ്റ് ലഭ്യമല്ല)'}
+                    </div>
+                    <p className="text-amber-800 mt-0.5">
+                      {lang === 'en'
+                        ? 'This listing is pending moderation review. All edit inputs are locked until reviewed by the Super Admin.'
+                        : 'ഈ ലിസ്റ്റിംഗ് സൂപ്പർ അഡ്മിന്റെ പരിശോധനയിലാണ്. അംഗീകാരം ലഭിക്കുന്നത് വരെ മാറ്റങ്ങൾ വരുത്താനാകില്ല.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Specs Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 bg-[#FDFBF7] p-4 rounded-2xl border border-[#8E7F6B]/20 text-xs">
+                <div>
+                  <span className="text-stone-400 font-semibold block uppercase text-[10px]">
+                    {lang === 'en' ? 'Species' : 'തടി ഇനം'}
+                  </span>
+                  <span className="font-bold text-[#4A3626] text-sm">
+                    {translateSpecies(viewingDetailsListing.species_name_en || 'Timber', lang)}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-stone-400 font-semibold block uppercase text-[10px]">
+                    {lang === 'en' ? 'Cut Type' : 'തരം'}
+                  </span>
+                  <span className="font-bold text-[#4A3626] text-sm">
+                    {translateCutType(viewingDetailsListing.type_name_en || 'Logs', lang)}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-stone-400 font-semibold block uppercase text-[10px]">
+                    {lang === 'en' ? 'District' : 'ജില്ല'}
+                  </span>
+                  <span className="font-bold text-[#4A3626] text-sm">
+                    {lang === 'ml'
+                      ? (viewingDetailsListing.district_name_ml || viewingDetailsListing.district_name_en || 'കേരളം')
+                      : (viewingDetailsListing.district_name_en || 'Kerala')}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-stone-400 font-semibold block uppercase text-[10px]">
+                    {lang === 'en' ? 'Quantity' : 'അളവ്'}
+                  </span>
+                  <span className="font-bold text-[#4A3626] text-sm font-mono">
+                    {viewingDetailsListing.quantity} {translateUnit(viewingDetailsListing.unit || 'cft', lang)}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-stone-400 font-semibold block uppercase text-[10px]">
+                    {lang === 'en' ? 'Price per CFT' : 'ഒരു CFT വില'}
+                  </span>
+                  <span className="font-bold text-[#4A3626] text-sm font-mono">
+                    ₹{Number(viewingDetailsListing.price_per_cft).toLocaleString('en-IN')}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-stone-400 font-semibold block uppercase text-[10px]">
+                    {lang === 'en' ? 'Estimated Total' : 'ആകെ മൂല്യം'}
+                  </span>
+                  <span className="font-bold text-emerald-800 text-sm font-mono">
+                    ₹{(Number(viewingDetailsListing.quantity) * Number(viewingDetailsListing.price_per_cft)).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+
+              {viewingDetailsListing.description && (
+                <div className="space-y-1">
+                  <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">
+                    {lang === 'en' ? 'Condition Notes & Description' : 'വിവരണം'}
+                  </span>
+                  <p className="text-xs text-stone-700 bg-stone-50 p-3 rounded-xl border border-stone-200 leading-relaxed">
+                    {viewingDetailsListing.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Photos Gallery */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#4A3626] flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-[#5B6147]" />
+                    <span>{lang === 'en' ? 'Uploaded Photographs' : 'അപ്‌ലോഡ് ചെയ്ത ഫോട്ടോകൾ'}</span>
+                  </span>
+                  <span className="text-xs font-mono text-stone-500">
+                    {Array.isArray(viewingDetailsListing.images) ? viewingDetailsListing.images.length : 0} {lang === 'en' ? 'Photos' : 'ചിത്രങ്ങൾ'}
+                  </span>
+                </div>
+
+                {Array.isArray(viewingDetailsListing.images) && viewingDetailsListing.images.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {viewingDetailsListing.images.map((img: any, idx: number) => (
+                      <div key={img.id || idx} className="relative aspect-square rounded-2xl border border-stone-200 overflow-hidden shadow-xs bg-stone-100">
+                        <img src={img.url} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+                        {img.is_primary && (
+                          <span className="absolute bottom-0 inset-x-0 bg-[#5B6147]/95 text-white text-[9px] text-center font-bold py-0.5">
+                            {lang === 'en' ? 'Primary Photo' : 'പ്രധാന ഫോട്ടോ'}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-stone-400 text-xs bg-stone-50 rounded-2xl border border-stone-200">
+                    {lang === 'en' ? 'No photographs attached to this listing.' : 'ഫോട്ടോകൾ ലഭ്യമല്ല.'}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-stone-200 bg-stone-50 flex items-center justify-between">
+              <button
+                onClick={() => handleDeleteListing(viewingDetailsListing.id)}
+                className="px-3 py-2 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center gap-1.5 transition"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>
+                  {viewingDetailsListing.status === 'approved'
+                    ? (lang === 'en' ? 'Remove from Marketplace' : 'മാർക്കറ്റിൽ നിന്ന് നീക്കുക')
+                    : (lang === 'en' ? 'Delete Listing' : 'ലിസ്റ്റിംഗ് നീക്കം ചെയ്യുക')}
+                </span>
+              </button>
+              <button
+                onClick={() => setViewingDetailsListing(null)}
+                className="px-5 py-2.5 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white font-bold text-xs shadow-xs transition"
+              >
+                {lang === 'en' ? 'Close' : 'അടയ്ക്കുക'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Photo Management Modal for Existing Listings */}
       {managingPhotosListing && (

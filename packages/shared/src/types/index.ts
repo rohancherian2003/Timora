@@ -37,7 +37,8 @@ export type ListingStatus =
   | 'rejected'
   | 'hidden'
   | 'out_of_stock'
-  | 'expired';
+  | 'expired'
+  | 'deleted';
 
 export type TimberUnit = 'cft' | 'pieces' | 'kg' | 'tonnes';
 export type PricingMode = 'fixed' | 'negotiable';
