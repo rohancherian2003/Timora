@@ -871,7 +871,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 const districtDisplay = lst.district_name || lst.district || '';
                 const sellerDisplay = lst.business_name || lst.seller_name || 'Individual Seller';
                 const imagesCount = Array.isArray(lst.images) ? lst.images.length : (lst.image_count || 0);
-                const primaryImage = Array.isArray(lst.images) && lst.images.length > 0 ? (lst.images.find((img) => img.is_primary)?.url || lst.images[0]?.url) : null;
+                const listingImages = Array.isArray(lst.images) ? lst.images : [];
 
                 return (
                   <div
@@ -879,12 +879,22 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
                   >
                     <div className="flex items-start gap-4">
-                      {primaryImage && (
-                        <img
-                          src={primaryImage}
-                          alt={lst.title}
-                          className="w-16 h-16 rounded-xl object-cover border border-stone-200 shrink-0"
-                        />
+                      {listingImages.length > 0 && (
+                        <div className="flex gap-1 shrink-0">
+                          {listingImages.slice(0, 4).map((img: any, i: number) => (
+                            <img
+                              key={img.id || img.url || i}
+                              src={img.url}
+                              alt={`${lst.title} photo ${i + 1}`}
+                              className="w-14 h-14 rounded-xl object-cover border border-stone-200 shrink-0"
+                            />
+                          ))}
+                          {listingImages.length > 4 && (
+                            <div className="w-14 h-14 rounded-xl bg-stone-200 flex items-center justify-center text-xs font-bold text-stone-600 shrink-0">
+                              +{listingImages.length - 4}
+                            </div>
+                          )}
+                        </div>
                       )}
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
@@ -972,7 +982,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 const districtDisplay = lst.district_name_en || lst.district || '';
                 const sellerDisplay = lst.business_name || lst.seller_name || 'Licensed Sawmill';
                 const imagesCount = Array.isArray(lst.images) ? lst.images.length : 0;
-                const primaryImage = Array.isArray(lst.images) && lst.images.length > 0 ? (lst.images.find((img: any) => img.is_primary)?.url || lst.images[0]?.url) : null;
+                const listingImages = Array.isArray(lst.images) ? lst.images : [];
 
                 return (
                   <div
@@ -980,12 +990,22 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                     className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
                   >
                     <div className="flex items-start gap-4">
-                      {primaryImage && (
-                        <img
-                          src={primaryImage}
-                          alt={lst.title}
-                          className="w-16 h-16 rounded-xl object-cover border border-stone-200 shrink-0"
-                        />
+                      {listingImages.length > 0 && (
+                        <div className="flex gap-1 shrink-0">
+                          {listingImages.slice(0, 4).map((img: any, i: number) => (
+                            <img
+                              key={img.id || img.url || i}
+                              src={img.url}
+                              alt={`${lst.title} photo ${i + 1}`}
+                              className="w-14 h-14 rounded-xl object-cover border border-stone-200 shrink-0"
+                            />
+                          ))}
+                          {listingImages.length > 4 && (
+                            <div className="w-14 h-14 rounded-xl bg-stone-200 flex items-center justify-center text-xs font-bold text-stone-600 shrink-0">
+                              +{listingImages.length - 4}
+                            </div>
+                          )}
+                        </div>
                       )}
                       <div>
                         <div className="flex items-center gap-2">

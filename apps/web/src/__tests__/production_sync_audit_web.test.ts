@@ -62,7 +62,7 @@ describe('Production Sync Audit - Frontend Logic', () => {
 
       const visible = notifications.filter((n) => !parsed.includes(n.id));
       expect(visible).toHaveLength(1);
-      expect(visible[0].id).toBe('notif-3');
+      expect(visible[0]!.id).toBe('notif-3');
     });
 
     it('extracts ticket ID correctly from Support Ticket Resolved title', () => {
@@ -85,7 +85,7 @@ describe('Production Sync Audit - Frontend Logic', () => {
       const unique = incoming.filter((f) => !existingKeys.has(`${f.name}_${f.size}`));
 
       expect(unique).toHaveLength(1);
-      expect(unique[0].name).toBe('teak2.jpg');
+      expect(unique[0]!.name).toBe('teak2.jpg');
     });
 
     it('deduplicates viewingDetailsListing.images by image url', () => {
