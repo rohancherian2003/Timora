@@ -82,22 +82,32 @@ export function SubmitTimberModal({
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     const maxSizeBytes = 10 * 1024 * 1024; // 10MB
 
-    if (selectedImages.length + files.length > 8) {
+    // Deduplicate against existing selectedImages by name and size
+    const existingFileKeys = new Set(selectedImages.map((f) => `${f.name}_${f.size}`));
+    const uniqueFiles = files.filter((f) => !existingFileKeys.has(`${f.name}_${f.size}`));
+    if (uniqueFiles.length === 0) {
+      e.target.value = '';
+      return;
+    }
+
+    if (selectedImages.length + uniqueFiles.length > 8) {
       setImageError(
         lang === 'en'
           ? 'Maximum 8 images allowed per listing.'
           : 'ഒരു ലിസ്റ്റിംഗിൽ പരമാവധി 8 ചിത്രങ്ങൾ മാത്രമേ അനുവദിക്കൂ.'
       );
+      e.target.value = '';
       return;
     }
 
-    for (const file of files) {
+    for (const file of uniqueFiles) {
       if (!allowedTypes.includes(file.type)) {
         setImageError(
           lang === 'en'
             ? 'Unsupported file format. Please upload JPG, PNG, or WebP images.'
             : 'പിന്തുണയ്ക്കാത്ത ഫയൽ ഫോർമാറ്റ്. ദയവായി JPG, PNG, അല്ലെങ്കിൽ WebP ചിത്രങ്ങൾ അപ്‌ലോഡ് ചെയ്യുക.'
         );
+        e.target.value = '';
         return;
       }
       if (file.size > maxSizeBytes) {
@@ -106,13 +116,15 @@ export function SubmitTimberModal({
             ? 'File size exceeds 10 MB limit.'
             : 'ഫയൽ വലുപ്പം 10 MB പരിധി കവിയുന്നു.'
         );
+        e.target.value = '';
         return;
       }
     }
 
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    setSelectedImages((prev) => [...prev, ...files]);
+    const newPreviews = uniqueFiles.map((file) => URL.createObjectURL(file));
+    setSelectedImages((prev) => [...prev, ...uniqueFiles]);
     setImagePreviews((prev) => [...prev, ...newPreviews]);
+    e.target.value = '';
   };
 
   const handleRemoveImage = (index: number) => {
@@ -142,7 +154,6 @@ export function SubmitTimberModal({
         for (const file of selectedImages) {
           const formData = new FormData();
           formData.append('photo', file);
-          formData.append('image', file);
           try {
             await api.patch(`/listings/${listingId}/photos`, formData, {
               headers: { 'Content-Type': 'multipart/form-data' },
@@ -165,8 +176,10 @@ export function SubmitTimberModal({
       setImagePreviews([]);
       setSubmitted(true);
 
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
       queryClient.invalidateQueries({ queryKey: ['seller-inventory'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
+      window.dispatchEvent(new CustomEvent('timora_listings_updated'));
 
       const successToast =
         lang === 'en'

@@ -292,10 +292,21 @@ export class ListingsController {
         files.push(...(req as any).files);
       }
 
+      // Strictly deduplicate files to avoid duplicate image attachments
+      const seenFileKeys = new Set<string>();
+      const uniqueFiles: Express.Multer.File[] = [];
+      for (const file of files) {
+        const key = `${file.originalname}_${file.size}`;
+        if (!seenFileKeys.has(key)) {
+          seenFileKeys.add(key);
+          uniqueFiles.push(file);
+        }
+      }
+
       const results = [];
 
-      if (files.length > 0) {
-        for (const file of files) {
+      if (uniqueFiles.length > 0) {
+        for (const file of uniqueFiles) {
           const uploaded = await uploadListingImage(
             file.buffer,
             file.originalname,
@@ -307,11 +318,14 @@ export class ListingsController {
           results.push(saved);
         }
       } else if (req.body?.imageUrl || req.body?.imageUrls || req.body?.photos) {
-        const urls: string[] = Array.isArray(req.body.imageUrls)
+        const rawUrls: string[] = Array.isArray(req.body.imageUrls)
           ? req.body.imageUrls
           : Array.isArray(req.body.photos)
           ? req.body.photos
           : [req.body.imageUrl];
+        const urls: string[] = Array.from(
+          new Set(rawUrls.filter((u): u is string => typeof u === 'string' && u.trim().length > 0))
+        );
         for (const url of urls) {
           if (url && typeof url === 'string') {
             const saved = await listingsService.addListingImage(sellerId, listingId, {

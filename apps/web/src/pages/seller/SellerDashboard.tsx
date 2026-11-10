@@ -180,7 +180,6 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       setIsUploadingPhoto(true);
       const formData = new FormData();
       formData.append('photo', file);
-      formData.append('image', file);
       return await api
         .patch(`/listings/${listingId}/photos`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -193,7 +192,9 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     },
     onSuccess: async (_, { listingId }) => {
       queryClient.invalidateQueries({ queryKey: ['seller-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
+      window.dispatchEvent(new CustomEvent('timora_listings_updated'));
       const listRes = await api.get('/listings/seller/me').catch(() => null);
       if (listRes?.data?.success && Array.isArray(listRes.data?.data)) {
         setLocalSellerListings(listRes.data.data);
@@ -343,15 +344,22 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setShowAdminReply(false);
     if (ticketId) {
       setDismissedTicketIds((prev) => {
-        const next = prev.includes(ticketId) ? prev : [...prev, ticketId];
+        const next = Array.from(new Set([...prev, ticketId]));
         try {
           localStorage.setItem('timora_dismissed_ticket_ids', JSON.stringify(next));
+          localStorage.setItem('timora_dismissed_notification_ids', JSON.stringify(next));
+          if (user?.id) {
+            localStorage.setItem(`timora_dismissed_notifications_${user.id}`, JSON.stringify(next));
+          }
         } catch {}
         return next;
       });
+      api.patch(`/support/notifications/${ticketId}/dismiss`).catch(() => {});
+      api.patch(`/support/tickets/${ticketId}/read`).catch(() => {});
     }
     try {
       localStorage.setItem(`timora_dismissed_admin_reply_${user?.id || 'seller'}`, 'true');
+      localStorage.setItem('timora_dismissed_admin_reply', 'true');
     } catch {}
   };
 
@@ -928,24 +936,36 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   </span>
                 </div>
 
-                {Array.isArray(viewingDetailsListing.images) && viewingDetailsListing.images.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {viewingDetailsListing.images.map((img: any, idx: number) => (
-                      <div key={img.id || idx} className="relative aspect-square rounded-2xl border border-stone-200 overflow-hidden shadow-xs bg-stone-100">
-                        <img src={img.url} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
-                        {img.is_primary && (
-                          <span className="absolute bottom-0 inset-x-0 bg-[#5B6147]/95 text-white text-[9px] text-center font-bold py-0.5">
-                            {lang === 'en' ? 'Primary Photo' : 'പ്രധാന ഫോട്ടോ'}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-6 text-center text-stone-400 text-xs bg-stone-50 rounded-2xl border border-stone-200">
-                    {lang === 'en' ? 'No photographs attached to this listing.' : 'ഫോട്ടോകൾ ലഭ്യമല്ല.'}
-                  </div>
-                )}
+                {(() => {
+                  const uniqueImages: any[] = Array.isArray(viewingDetailsListing.images)
+                    ? Array.from(
+                        new Map(
+                          viewingDetailsListing.images
+                            .filter((img: any) => img && (img.url || img.id))
+                            .map((img: any) => [img.url || img.id, img])
+                        ).values()
+                      )
+                    : [];
+
+                  return uniqueImages.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {uniqueImages.map((img: any, idx: number) => (
+                        <div key={img.id || img.url || idx} className="relative aspect-square rounded-2xl border border-stone-200 overflow-hidden shadow-xs bg-stone-100">
+                          <img src={img.url} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+                          {img.is_primary && (
+                            <span className="absolute bottom-0 inset-x-0 bg-[#5B6147]/95 text-white text-[9px] text-center font-bold py-0.5">
+                              {lang === 'en' ? 'Primary Photo' : 'പ്രധാന ഫോട്ടോ'}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center text-stone-400 text-xs bg-stone-50 rounded-2xl border border-stone-200">
+                      {lang === 'en' ? 'No photographs attached to this listing.' : 'ഫോട്ടോകൾ ലഭ്യമല്ല.'}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -1010,9 +1030,19 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
             <div className="space-y-4">
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {Array.isArray(managingPhotosListing.images) &&
-                  managingPhotosListing.images.map((img: any) => (
-                    <div key={img.id} className="relative aspect-square rounded-2xl border border-stone-200 overflow-hidden shadow-xs group">
+                {(() => {
+                  const uniqueImages: any[] = Array.isArray(managingPhotosListing.images)
+                    ? Array.from(
+                        new Map(
+                          managingPhotosListing.images
+                            .filter((img: any) => img && (img.url || img.id))
+                            .map((img: any) => [img.url || img.id, img])
+                        ).values()
+                      )
+                    : [];
+
+                  return uniqueImages.map((img: any) => (
+                    <div key={img.id || img.url} className="relative aspect-square rounded-2xl border border-stone-200 overflow-hidden shadow-xs group">
                       <img src={img.url} alt="Timber photograph" className="w-full h-full object-cover" />
                       <div className="absolute top-1 right-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
                         <label
@@ -1046,7 +1076,8 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                         </span>
                       )}
                     </div>
-                  ))}
+                  ));
+                })()}
 
                 {(!Array.isArray(managingPhotosListing.images) || managingPhotosListing.images.length < 8) && (
                   <label className="aspect-square rounded-2xl border-2 border-dashed border-[#8E7F6B]/40 hover:border-[#5B6147] flex flex-col items-center justify-center cursor-pointer bg-white hover:bg-[#E7E1D6]/30 transition group">

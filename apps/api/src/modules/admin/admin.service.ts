@@ -540,28 +540,68 @@ export class AdminService {
    * Get pending listings awaiting review
    */
   async getPendingListings() {
-    const res = await query(
-      `SELECT l.*,
-              s.name_en as species_name, t.name_en as type_name, d.name_en as district_name,
-              up.name as seller_name, u.phone as seller_phone, sp.business_name,
-              COALESCE(
-                json_agg(
-                  json_build_object('id', img.id, 'url', img.url, 'is_primary', img.is_primary)
-                ) FILTER (WHERE img.id IS NOT NULL), '[]'
-              ) as images
-       FROM timber_listings l
-       JOIN timber_species s ON s.id = l.species_id
-       JOIN timber_types t ON t.id = l.timber_type_id
-       JOIN kerala_districts d ON d.id = l.district_id
-       JOIN users u ON u.id = l.seller_id
-       LEFT JOIN user_profiles up ON up.user_id = u.id
-       LEFT JOIN seller_profiles sp ON sp.user_id = u.id
-       LEFT JOIN listing_images img ON img.listing_id = l.id
-       WHERE l.status = 'pending_review'
-       GROUP BY l.id, s.id, t.id, d.id, up.name, u.phone, sp.business_name
-       ORDER BY l.created_at ASC`
-    );
-    return res.rows;
+    let res;
+    try {
+      res = await query(
+        `SELECT l.*,
+                COALESCE(l.approval_status, l.status) as approval_status,
+                s.name_en as species_name, t.name_en as type_name, d.name_en as district_name,
+                up.name as seller_name, u.phone as seller_phone, sp.business_name,
+                COALESCE(
+                  json_agg(
+                    json_build_object('id', img.id, 'url', img.url, 'is_primary', img.is_primary)
+                  ) FILTER (WHERE img.id IS NOT NULL), '[]'
+                ) as images
+         FROM timber_listings l
+         LEFT JOIN timber_species s ON s.id = l.species_id
+         LEFT JOIN timber_types t ON t.id = l.timber_type_id
+         LEFT JOIN kerala_districts d ON d.id = l.district_id
+         LEFT JOIN users u ON u.id = l.seller_id
+         LEFT JOIN user_profiles up ON up.user_id = u.id
+         LEFT JOIN seller_profiles sp ON sp.user_id = u.id
+         LEFT JOIN listing_images img ON img.listing_id = l.id
+         WHERE l.status IN ('pending_review', 'pending')
+            OR (l.approval_status IS NOT NULL AND l.approval_status IN ('pending', 'pending_review', 'PENDING_APPROVAL'))
+         GROUP BY l.id, s.id, t.id, d.id, up.name, u.phone, sp.business_name
+         ORDER BY l.created_at ASC`
+      );
+    } catch {
+      // Fallback if approval_status column does not exist
+      res = await query(
+        `SELECT l.*,
+                s.name_en as species_name, t.name_en as type_name, d.name_en as district_name,
+                up.name as seller_name, u.phone as seller_phone, sp.business_name,
+                COALESCE(
+                  json_agg(
+                    json_build_object('id', img.id, 'url', img.url, 'is_primary', img.is_primary)
+                  ) FILTER (WHERE img.id IS NOT NULL), '[]'
+                ) as images
+         FROM timber_listings l
+         LEFT JOIN timber_species s ON s.id = l.species_id
+         LEFT JOIN timber_types t ON t.id = l.timber_type_id
+         LEFT JOIN kerala_districts d ON d.id = l.district_id
+         LEFT JOIN users u ON u.id = l.seller_id
+         LEFT JOIN user_profiles up ON up.user_id = u.id
+         LEFT JOIN seller_profiles sp ON sp.user_id = u.id
+         LEFT JOIN listing_images img ON img.listing_id = l.id
+         WHERE l.status IN ('pending_review', 'pending')
+         GROUP BY l.id, s.id, t.id, d.id, up.name, u.phone, sp.business_name
+         ORDER BY l.created_at ASC`
+      );
+    }
+
+    return res.rows.map((row) => {
+      if (Array.isArray(row.images)) {
+        const seen = new Set<string>();
+        row.images = row.images.filter((img: any) => {
+          const key = img?.url || img?.id;
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      }
+      return row;
+    });
   }
 
   /**
@@ -576,12 +616,21 @@ export class AdminService {
       const listing = listingRes.rows[0];
       if (!listing) throw new AppError(404, 'NOT_FOUND', 'Listing not found.');
 
-      await client.query(
-        `UPDATE timber_listings
-         SET status = 'approved', approved_by = $1, approved_at = NOW(), rejection_reason = NULL, updated_at = NOW()
-         WHERE id = $2`,
-        [adminId, listingId]
-      );
+      try {
+        await client.query(
+          `UPDATE timber_listings
+           SET status = 'approved', approval_status = 'approved', approved_by = $1, approved_at = NOW(), rejection_reason = NULL, updated_at = NOW()
+           WHERE id = $2`,
+          [adminId, listingId]
+        );
+      } catch {
+        await client.query(
+          `UPDATE timber_listings
+           SET status = 'approved', approved_by = $1, approved_at = NOW(), rejection_reason = NULL, updated_at = NOW()
+           WHERE id = $2`,
+          [adminId, listingId]
+        );
+      }
 
       // Save approved version snapshot
       await client.query(
@@ -635,12 +684,21 @@ export class AdminService {
       if (listingRes.rows.length === 0) throw new AppError(404, 'NOT_FOUND', 'Listing not found.');
       const listing = listingRes.rows[0];
 
-      await client.query(
-        `UPDATE timber_listings
-         SET status = 'rejected', rejection_reason = $1, updated_at = NOW()
-         WHERE id = $2`,
-        [reason, listingId]
-      );
+      try {
+        await client.query(
+          `UPDATE timber_listings
+           SET status = 'rejected', approval_status = 'rejected', rejection_reason = $1, updated_at = NOW()
+           WHERE id = $2`,
+          [reason, listingId]
+        );
+      } catch {
+        await client.query(
+          `UPDATE timber_listings
+           SET status = 'rejected', rejection_reason = $1, updated_at = NOW()
+           WHERE id = $2`,
+          [reason, listingId]
+        );
+      }
 
       await client.query(
         `INSERT INTO listing_review_history (listing_id, reviewed_by, action, reason)

@@ -147,11 +147,18 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     }
   });
 
-  const [listings, setListings] = useState<PendingListing[]>(DEMO_PENDING_LISTINGS);
+  const [resolvedListingIds, setResolvedListingIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('timora_resolved_admin_listings');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [listingFilter, setListingFilter] = useState<'pending' | 'active'>('pending');
   const [activeMarketplaceListings, setActiveMarketplaceListings] = useState<any[]>([]);
   const [isLoadingActiveListings, setIsLoadingActiveListings] = useState(false);
-  const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [listingActionLoadingId, setListingActionLoadingId] = useState<string | null>(null);
   const [tickets, setTickets] = useState<SupportTicket[]>(getStoredTickets());
   const openTicketsCount = tickets.filter((t) => t.status === 'open').length;
@@ -207,6 +214,54 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       return [];
     },
   });
+
+  // 2. TanStack Query for Pending Timber Listings (Real-Time Admin Queue)
+  const { data: serverPendingListings, isLoading: isLoadingPendingListings } = useQuery({
+    queryKey: ['admin-pending-listings'],
+    queryFn: async () => {
+      const res = await api.get('/admin/listings/pending');
+      if (res.data?.success && Array.isArray(res.data?.data)) {
+        return res.data.data.map((l: any) => ({
+          id: l.id,
+          title: l.title,
+          seller_name: l.business_name || l.seller_name || 'Individual Seller',
+          species: l.species_name || l.species || 'Timber',
+          species_name: l.species_name || l.species || 'Timber',
+          district: l.district_name || l.district || 'Kerala',
+          district_name: l.district_name || l.district || 'Kerala',
+          quantity: Number(l.quantity) || 0,
+          unit: l.unit || 'CFT',
+          price_per_cft: Number(l.price_per_cft) || 0,
+          image_count: Array.isArray(l.images) ? l.images.length : (l.image_count || 0),
+          images: l.images || [],
+          submitted_at: l.created_at ? new Date(l.created_at).toISOString().slice(0, 16).replace('T', ' ') : 'Just now',
+        })) as PendingListing[];
+      }
+      return [];
+    },
+    refetchInterval: 10000,
+  });
+
+  useEffect(() => {
+    const handleListingsUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
+    };
+    window.addEventListener('timora_listings_updated', handleListingsUpdate);
+    return () => window.removeEventListener('timora_listings_updated', handleListingsUpdate);
+  }, [queryClient]);
+
+  const rawPendingListings: PendingListing[] = (serverPendingListings && serverPendingListings.length > 0)
+    ? [
+        ...serverPendingListings,
+        ...DEMO_PENDING_LISTINGS.filter(
+          (demo) => !serverPendingListings.some((s: any) => s.id === demo.id)
+        ),
+      ]
+    : DEMO_PENDING_LISTINGS;
+
+  const listings: PendingListing[] = rawPendingListings.filter(
+    (l) => !resolvedListingIds.includes(l.id)
+  );
 
   const applications: PendingBusiness[] = (serverApps && serverApps.length > 0)
     ? serverApps.filter((a) => !resolvedAppIds.includes(a.id))
@@ -265,11 +320,17 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     try {
       await api.patch(`/admin/listings/${lst.id}/approve`);
     } catch (err: any) {
-      console.warn('Backend approval failed, applied locally:', err);
+      console.warn('Backend approval fallback:', err);
     } finally {
       setListingActionLoadingId(null);
-      setListings((prev) => prev.filter((l) => l.id !== lst.id));
+      setResolvedListingIds((prev) => {
+        const next = [...prev, lst.id];
+        try { localStorage.setItem('timora_resolved_admin_listings', JSON.stringify(next)); } catch {}
+        return next;
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
+      window.dispatchEvent(new CustomEvent('timora_listings_updated'));
       setMessage(lang === 'en' ? 'Listing approved and live on marketplace.' : 'ലിസ്റ്റിംഗ് അംഗീകരിച്ചു — മാർക്കറ്റ്‌പ്ലേസിൽ ദൃശ്യമാകും.');
     }
   };
@@ -281,11 +342,17 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         reason: 'Listing details or photographs do not meet community standards.',
       });
     } catch (err: any) {
-      console.warn('Backend rejection failed, applied locally:', err);
+      console.warn('Backend rejection fallback:', err);
     } finally {
       setListingActionLoadingId(null);
-      setListings((prev) => prev.filter((l) => l.id !== lst.id));
+      setResolvedListingIds((prev) => {
+        const next = [...prev, lst.id];
+        try { localStorage.setItem('timora_resolved_admin_listings', JSON.stringify(next)); } catch {}
+        return next;
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
+      window.dispatchEvent(new CustomEvent('timora_listings_updated'));
       setMessage(lang === 'en' ? 'Listing rejected.' : 'ലിസ്റ്റിംഗ് നിരസിച്ചു.');
     }
   };
@@ -331,9 +398,15 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       }
     } finally {
       setListingActionLoadingId(null);
-      setListings((prev) => prev.filter((l) => l.id !== lst.id));
+      setResolvedListingIds((prev) => {
+        const next = [...prev, lst.id];
+        try { localStorage.setItem('timora_resolved_admin_listings', JSON.stringify(next)); } catch {}
+        return next;
+      });
       setActiveMarketplaceListings((prev) => prev.filter((l) => l.id !== lst.id));
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
+      window.dispatchEvent(new CustomEvent('timora_listings_updated'));
       setMessage(
         lang === 'en'
           ? `Listing "${lst.title}" deleted and purged successfully.`
@@ -783,7 +856,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </div>
 
           {listingFilter === 'pending' ? (
-            isLoadingListings ? (
+            isLoadingPendingListings ? (
               <div className="p-8 text-center text-stone-500 text-xs flex items-center justify-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-[#5B6147]" />
                 <span>{lang === 'en' ? 'Loading pending listings...' : 'ലിസ്റ്റിംഗുകൾ ലോഡ് ചെയ്യുന്നു...'}</span>

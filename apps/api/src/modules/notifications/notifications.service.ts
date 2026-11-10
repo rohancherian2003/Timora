@@ -43,11 +43,19 @@ export class NotificationsService {
    * Fetch in-dashboard notifications for the authenticated user only
    */
   async getNotifications(userId: string, limit = 30) {
-    const res = await query(
-      `SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2`,
-      [userId, limit]
-    );
-    return res.rows;
+    try {
+      const res = await query(
+        `SELECT * FROM notifications WHERE user_id = $1 AND (is_dismissed IS NOT TRUE) ORDER BY created_at DESC LIMIT $2`,
+        [userId, limit]
+      );
+      return res.rows;
+    } catch {
+      const res = await query(
+        `SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2`,
+        [userId, limit]
+      );
+      return res.rows;
+    }
   }
 
   /**
@@ -59,6 +67,24 @@ export class NotificationsService {
       [notificationId, userId]
     );
     return { id: notificationId };
+  }
+
+  /**
+   * Permanently dismiss a notification for the authenticated user only
+   */
+  async dismiss(notificationId: string, userId: string) {
+    try {
+      await query(
+        `UPDATE notifications SET is_read = true, is_dismissed = true WHERE id = $1 AND user_id = $2`,
+        [notificationId, userId]
+      );
+    } catch {
+      await query(
+        `UPDATE notifications SET is_read = true WHERE id = $1 AND user_id = $2`,
+        [notificationId, userId]
+      );
+    }
+    return { id: notificationId, is_dismissed: true };
   }
 
   /**

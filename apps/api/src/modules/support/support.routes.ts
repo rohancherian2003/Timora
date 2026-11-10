@@ -34,14 +34,22 @@ supportRouter.patch('/notifications/preferences', async (req, res, next) => {
   }
 });
 
-// List user notifications
+// List user notifications (excluding dismissed notifications)
 supportRouter.get('/notifications', async (req, res, next) => {
   try {
     const userId = req.user!.id;
-    const result = await query(
-      `SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 30`,
-      [userId]
-    );
+    let result;
+    try {
+      result = await query(
+        `SELECT * FROM notifications WHERE user_id = $1 AND (is_dismissed IS NOT TRUE) ORDER BY created_at DESC LIMIT 30`,
+        [userId]
+      );
+    } catch {
+      result = await query(
+        `SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 30`,
+        [userId]
+      );
+    }
     const response: ApiSuccessResponse = { success: true, data: result.rows };
     res.status(200).json(response);
   } catch (err) {
@@ -64,6 +72,36 @@ supportRouter.patch('/notifications/:id/read', async (req, res, next) => {
     next(err);
   }
 });
+
+// Permanently dismiss notification across sessions
+const dismissNotificationHandler = async (req: any, res: any, next: any) => {
+  try {
+    const userId = req.user!.id;
+    const notificationId = req.params.id;
+    try {
+      await query(
+        `UPDATE notifications SET is_read = true, is_dismissed = true WHERE id = $1 AND user_id = $2`,
+        [notificationId, userId]
+      );
+    } catch {
+      await query(
+        `UPDATE notifications SET is_read = true WHERE id = $1 AND user_id = $2`,
+        [notificationId, userId]
+      );
+    }
+    const response: ApiSuccessResponse = {
+      success: true,
+      data: { id: notificationId, is_dismissed: true },
+      message: 'Notification dismissed permanently.',
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+supportRouter.patch('/notifications/:id/dismiss', dismissNotificationHandler);
+supportRouter.post('/notifications/:id/dismiss', dismissNotificationHandler);
 
 // Create support ticket with concurrency-safe yearly numbering (TKT-YYYY-NNNN)
 supportRouter.post('/tickets', async (req, res, next) => {

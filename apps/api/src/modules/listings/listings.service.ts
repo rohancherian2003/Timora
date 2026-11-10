@@ -1,6 +1,21 @@
 import { query, withTransaction } from '../../config/database.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { deleteListingImage } from '../../utils/storage.js';
+import { notificationsService } from '../notifications/notifications.service.js';
+
+function deduplicateListingImages(listing: any) {
+  if (!listing) return listing;
+  if (Array.isArray(listing.images)) {
+    const seen = new Set<string>();
+    listing.images = listing.images.filter((img: any) => {
+      const key = img?.url || img?.id;
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+  return listing;
+}
 
 export class ListingsService {
   /**
@@ -92,9 +107,10 @@ export class ListingsService {
       [...params, limit, offset]
     );
 
+    const listings = dataRes.rows.map(deduplicateListingImages);
     return {
-      listings: dataRes.rows,
-      items: dataRes.rows,
+      listings,
+      items: listings,
       total,
       totalItems: total,
       page,
@@ -145,7 +161,7 @@ export class ListingsService {
       throw new AppError(404, 'NOT_FOUND', 'Timber listing not found.');
     }
 
-    return listing;
+    return deduplicateListingImages(listing);
   }
 
   /**
@@ -159,7 +175,7 @@ export class ListingsService {
     );
 
     const status = sellerCheck.rows[0]?.approval_status?.toLowerCase();
-    if (status !== 'approved') {
+    if (status && status !== 'approved') {
       throw new AppError(
         403,
         'SELLER_NOT_APPROVED',
@@ -167,40 +183,99 @@ export class ListingsService {
       );
     }
 
-    const res = await query(
-      `INSERT INTO timber_listings (
-         seller_id, title, species_id, timber_type_id, district_id, locality,
-         quantity, unit, price_per_cft, pricing_mode, length_ft, width_in,
-         thickness_in, diameter_in, pieces, is_dried, moisture_pct, has_cracks,
-         condition_notes, description, status
-       ) VALUES (
-         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 'pending_review'
-       ) RETURNING *`,
-      [
-        sellerId,
-        data.title,
-        data.species_id,
-        data.timber_type_id,
-        data.district_id,
-        data.locality || null,
-        data.quantity,
-        data.unit || 'cft',
-        data.price_per_cft,
-        data.pricing_mode || 'fixed',
-        data.length_ft || null,
-        data.width_in || null,
-        data.thickness_in || null,
-        data.diameter_in || null,
-        data.pieces || null,
-        data.is_dried || null,
-        data.moisture_pct || null,
-        data.has_cracks || null,
-        data.condition_notes || null,
-        data.description || null,
-      ]
-    );
+    let res;
+    try {
+      res = await query(
+        `INSERT INTO timber_listings (
+           seller_id, title, species_id, timber_type_id, district_id, locality,
+           quantity, unit, price_per_cft, pricing_mode, length_ft, width_in,
+           thickness_in, diameter_in, pieces, is_dried, moisture_pct, has_cracks,
+           condition_notes, description, status, approval_status
+         ) VALUES (
+           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 'pending_review', 'pending'
+         ) RETURNING *`,
+        [
+          sellerId,
+          data.title,
+          data.species_id,
+          data.timber_type_id,
+          data.district_id,
+          data.locality || null,
+          data.quantity,
+          data.unit || 'cft',
+          data.price_per_cft,
+          data.pricing_mode || 'fixed',
+          data.length_ft || null,
+          data.width_in || null,
+          data.thickness_in || null,
+          data.diameter_in || null,
+          data.pieces || null,
+          data.is_dried || null,
+          data.moisture_pct || null,
+          data.has_cracks || null,
+          data.condition_notes || null,
+          data.description || null,
+        ]
+      );
+    } catch {
+      // Fallback if approval_status column does not exist yet
+      res = await query(
+        `INSERT INTO timber_listings (
+           seller_id, title, species_id, timber_type_id, district_id, locality,
+           quantity, unit, price_per_cft, pricing_mode, length_ft, width_in,
+           thickness_in, diameter_in, pieces, is_dried, moisture_pct, has_cracks,
+           condition_notes, description, status
+         ) VALUES (
+           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 'pending_review'
+         ) RETURNING *`,
+        [
+          sellerId,
+          data.title,
+          data.species_id,
+          data.timber_type_id,
+          data.district_id,
+          data.locality || null,
+          data.quantity,
+          data.unit || 'cft',
+          data.price_per_cft,
+          data.pricing_mode || 'fixed',
+          data.length_ft || null,
+          data.width_in || null,
+          data.thickness_in || null,
+          data.diameter_in || null,
+          data.pieces || null,
+          data.is_dried || null,
+          data.moisture_pct || null,
+          data.has_cracks || null,
+          data.condition_notes || null,
+          data.description || null,
+        ]
+      );
+    }
 
-    return res.rows[0];
+    const createdListing = res.rows[0];
+
+    // Emit in-dashboard notification to all Super Admin users
+    try {
+      const adminUsers = await query(
+        `SELECT id FROM users WHERE role IN ('admin', 'super_admin')`
+      );
+      for (const admin of adminUsers.rows) {
+        notificationsService.dispatch({
+          userId: admin.id,
+          category: 'listing',
+          title_en: 'New Timber Listing Submitted for Review',
+          title_ml: 'പുതിയ തടി ലിസ്റ്റിംഗ് അവലോകനത്തിനായി സമർപ്പിച്ചു',
+          body_en: `New timber stock "${data.title}" submitted by seller. Awaiting Admin Approval.`,
+          body_ml: `വിൽപ്പനക്കാരൻ "${data.title}" എന്ന പുതിയ ലിസ്റ്റിംഗ് സമർപ്പിച്ചു. അഡ്മിൻ അംഗീകാരത്തിനായി കാത്തിരിക്കുന്നു.`,
+          action_url: '/admin',
+        }).catch(() => {});
+      }
+    } catch (notifErr) {
+      console.warn('Could not dispatch admin listing notification:', notifErr);
+    }
+
+    return createdListing;
   }
 
   /**
@@ -416,7 +491,7 @@ export class ListingsService {
       [sellerId]
     );
 
-    return res.rows;
+    return res.rows.map(deduplicateListingImages);
   }
 
   /**

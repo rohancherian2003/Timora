@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export interface InDashboardNotification {
   id: string;
@@ -41,14 +42,28 @@ export function DashboardNotificationsFeed({
 }: DashboardNotificationsFeedProps) {
   const { user, refreshUser } = useAuth();
   const [notifications, setNotifications] = useState<InDashboardNotification[]>([]);
-  const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
+  const [ticketSolutionModalItem, setTicketSolutionModalItem] = useState<InDashboardNotification | null>(null);
+
+  useBodyScrollLock(Boolean(ticketSolutionModalItem));
+
+  const getStoredDismissedIds = (): string[] => {
     try {
-      const raw = localStorage.getItem(`timora_dismissed_notifications_${user?.id || 'guest'}`);
-      return raw ? JSON.parse(raw) : [];
+      const globalRaw = localStorage.getItem('timora_dismissed_notification_ids');
+      const userRaw = user?.id ? localStorage.getItem(`timora_dismissed_notifications_${user.id}`) : null;
+      const parsedGlobal: string[] = globalRaw ? JSON.parse(globalRaw) : [];
+      const parsedUser: string[] = userRaw ? JSON.parse(userRaw) : [];
+      return Array.from(new Set([...parsedGlobal, ...parsedUser]));
     } catch {
       return [];
     }
-  });
+  };
+
+  const [dismissedIds, setDismissedIds] = useState<string[]>(getStoredDismissedIds);
+
+  useEffect(() => {
+    setDismissedIds(getStoredDismissedIds());
+  }, [user?.id]);
+
   const navigate = useNavigate();
 
   const fetchNotifications = async () => {
@@ -85,7 +100,11 @@ export function DashboardNotificationsFeed({
   const handleMarkAsRead = async (id: string, actionUrl?: string) => {
     try {
       await api.patch(`/support/notifications/${id}/read`);
-    } catch {}
+    } catch {
+      try {
+        await api.patch(`/notifications/${id}/read`);
+      } catch {}
+    }
 
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
@@ -97,22 +116,51 @@ export function DashboardNotificationsFeed({
     }
   };
 
-  const handleDismiss = (id: string) => {
+  const handleDismiss = async (id: string) => {
     setDismissedIds((prev) => {
-      const next = prev.includes(id) ? prev : [...prev, id];
+      const next = Array.from(new Set([...prev, id]));
       try {
-        localStorage.setItem(
-          `timora_dismissed_notifications_${user?.id || 'guest'}`,
-          JSON.stringify(next)
-        );
+        localStorage.setItem('timora_dismissed_notification_ids', JSON.stringify(next));
+        if (user?.id) {
+          localStorage.setItem(`timora_dismissed_notifications_${user.id}`, JSON.stringify(next));
+        }
       } catch {}
       return next;
     });
-    handleMarkAsRead(id);
+
+    try {
+      await api.patch(`/support/notifications/${id}/dismiss`);
+    } catch {
+      try {
+        await api.patch(`/notifications/${id}/dismiss`);
+      } catch {
+        try {
+          await api.patch(`/support/notifications/${id}/read`);
+        } catch {}
+      }
+    }
+
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+    );
+    window.dispatchEvent(new CustomEvent('timora_notifications_updated'));
   };
 
   const handleActionClick = (n: InDashboardNotification) => {
     handleMarkAsRead(n.id);
+
+    // If this is a Support Ticket Resolution notification, open the read-only solution details modal
+    const isSupportTicket =
+      n.category === 'support' ||
+      n.category === 'ticket' ||
+      n.title_en?.toLowerCase().includes('ticket') ||
+      n.title_ml?.includes('സഹായ') ||
+      n.title_ml?.includes('പരാതി');
+
+    if (isSupportTicket) {
+      setTicketSolutionModalItem(n);
+      return;
+    }
 
     if (onViewListing && (n.category === 'listing' || n.title_en?.includes('Listing'))) {
       onViewListing(n);
@@ -228,6 +276,88 @@ export function DashboardNotificationsFeed({
           </div>
         );
       })}
+
+      {/* READ-ONLY TICKET SOLUTION MODAL */}
+      {ticketSolutionModalItem && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+        >
+          <div className="bg-[#F8F5EE] border border-stone-300 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5 animate-scaleUp">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-800 flex items-center justify-center font-bold flex-shrink-0">
+                  <ShieldCheck className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] uppercase tracking-wider border border-emerald-200">
+                      {lang === 'en' ? 'RESOLVED' : 'പരിഹരിച്ചു'}
+                    </span>
+                    <span className="font-mono text-xs font-bold text-stone-600">
+                      {ticketSolutionModalItem.title_en?.match(/TKT-[\w-]+/i)?.[0] || 'Support Desk'}
+                    </span>
+                  </div>
+                  <h3 className="font-extrabold font-serif text-[#4A3626] text-lg mt-0.5">
+                    {lang === 'ml' && ticketSolutionModalItem.title_ml
+                      ? ticketSolutionModalItem.title_ml
+                      : ticketSolutionModalItem.title_en}
+                  </h3>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setTicketSolutionModalItem(null)}
+                className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 transition"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Timora Admin Solution Body */}
+            <div className="p-4 rounded-2xl bg-white border border-emerald-200 shadow-2xs space-y-2">
+              <div className="flex items-center justify-between text-stone-500 text-xs font-semibold">
+                <span className="text-[#5B6147] font-bold">
+                  {lang === 'en' ? 'Admin Cell Solution Reply:' : 'ടിമോറ അഡ്മിൻ നൽകിയ മറുപടി:'}
+                </span>
+                <span className="text-[11px] font-mono text-stone-400">
+                  {formatDate(ticketSolutionModalItem.created_at)}
+                </span>
+              </div>
+              <p className="text-stone-900 text-sm font-medium leading-relaxed">
+                "{lang === 'ml' && ticketSolutionModalItem.body_ml
+                  ? ticketSolutionModalItem.body_ml
+                  : (ticketSolutionModalItem.body_en || ticketSolutionModalItem.body_ml)}"
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleDismiss(ticketSolutionModalItem.id);
+                  setTicketSolutionModalItem(null);
+                }}
+                className="px-4 py-2 rounded-xl border border-stone-300 text-stone-600 hover:bg-stone-100 text-xs font-bold transition"
+              >
+                {lang === 'en' ? 'Dismiss Banner' : 'അറിയിപ്പ് ഒഴിവാക്കുക'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTicketSolutionModalItem(null)}
+                className="px-5 py-2 rounded-xl bg-[#5B6147] hover:bg-[#3F452F] text-white text-xs font-bold transition shadow-xs"
+              >
+                {lang === 'en' ? 'Understood & Close' : 'മനസ്സിലായി / അടയ്ക്കുക'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

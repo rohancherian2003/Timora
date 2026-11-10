@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Factory,
   Plus,
@@ -80,6 +81,7 @@ const INITIAL_MILL_BATCHES: SawnBatch[] = [
 ];
 
 export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
+  const queryClient = useQueryClient();
   const { user, refreshUser } = useAuth();
   const [batches, setBatches] = useState<SawnBatch[]>(INITIAL_MILL_BATCHES);
   const [showAddBatch, setShowAddBatch] = useState(false);
@@ -210,6 +212,9 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
       // Graceful offline fallback
     } finally {
       setIsSubmittingBatch(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      window.dispatchEvent(new CustomEvent('timora_listings_updated'));
     }
     setBatches([newBatch, ...batches]);
     setTitle('');
