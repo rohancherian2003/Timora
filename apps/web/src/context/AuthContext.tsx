@@ -305,7 +305,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: apiUser.role,
           sellerSubtype: apiUser.seller_subtype || undefined,
           district: apiUser.district || undefined,
-          approvalStatus: apiUser.approval_status,
+          approvalStatus: apiUser.approval_status
+            ? (apiUser.approval_status as string).toUpperCase()
+            : apiUser.approval_status,
           businessName: apiUser.business_name || apiUser.seller_business,
         };
 
@@ -492,8 +494,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lastRefreshTimeRef.current = 0; // bypass deduplication on explicit event
       refreshUser();
     };
+    const handleStorageUpdate = (e: StorageEvent) => {
+      if (e.key === 'timora_last_approval_sync' || e.key === 'timora_profile_updated') {
+        lastRefreshTimeRef.current = 0;
+        refreshUser();
+      }
+    };
     window.addEventListener('timora_profile_updated', handleProfileUpdate);
-    return () => window.removeEventListener('timora_profile_updated', handleProfileUpdate);
+    window.addEventListener('storage', handleStorageUpdate);
+    return () => {
+      window.removeEventListener('timora_profile_updated', handleProfileUpdate);
+      window.removeEventListener('storage', handleStorageUpdate);
+    };
   }, [refreshUser]);
 
   return (

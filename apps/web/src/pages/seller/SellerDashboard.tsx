@@ -69,7 +69,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     return () => clearTimeout(timer);
   }, [toastMessage]);
 
-  // 1. Fetch Seller Inventory via TanStack Query
+  // 1. Fetch Seller Inventory via TanStack Query (Real-Time Auto-Refetch)
   const { data: serverListings, isLoading: isLoadingInventory } = useQuery({
     queryKey: ['seller-inventory', user?.id],
     queryFn: async () => {
@@ -80,7 +80,29 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       return [];
     },
     enabled: Boolean(user?.id),
+    staleTime: 0,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
+
+  useEffect(() => {
+    const handleSync = () => {
+      queryClient.invalidateQueries({ queryKey: ['seller-inventory'] });
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'timora_last_listing_sync') {
+        queryClient.invalidateQueries({ queryKey: ['seller-inventory'] });
+      }
+    };
+    window.addEventListener('timora_listings_updated', handleSync);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('timora_listings_updated', handleSync);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [queryClient]);
 
   const sellerListings = serverListings ?? localSellerListings;
   const [searchQuery, setSearchQuery] = useState('');
@@ -113,6 +135,12 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       }
       queryClient.invalidateQueries({ queryKey: ['seller-inventory'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['public-marketplace-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
+      try {
+        localStorage.setItem('timora_last_listing_sync', String(Date.now()));
+      } catch {}
+      window.dispatchEvent(new CustomEvent('timora_listings_updated'));
       setToastMessage(
         lang === 'en'
           ? 'Listing marked as Sold.'
@@ -127,6 +155,14 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       if (viewingDetailsListing?.id === listingId) {
         setViewingDetailsListing((prev: any) => (prev ? { ...prev, status: 'sold' } : null));
       }
+      queryClient.invalidateQueries({ queryKey: ['seller-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['public-marketplace-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
+      try {
+        localStorage.setItem('timora_last_listing_sync', String(Date.now()));
+      } catch {}
+      window.dispatchEvent(new CustomEvent('timora_listings_updated'));
       setToastMessage(
         lang === 'en'
           ? 'Listing marked as Sold.'
@@ -151,6 +187,12 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       }
       queryClient.invalidateQueries({ queryKey: ['seller-inventory'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['public-marketplace-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
+      try {
+        localStorage.setItem('timora_last_listing_sync', String(Date.now()));
+      } catch {}
+      window.dispatchEvent(new CustomEvent('timora_listings_updated'));
       setToastMessage(
         lang === 'en'
           ? 'Listing permanently removed.'
@@ -163,6 +205,14 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       if (viewingDetailsListing?.id === listingId) {
         setViewingDetailsListing(null);
       }
+      queryClient.invalidateQueries({ queryKey: ['seller-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['public-marketplace-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
+      try {
+        localStorage.setItem('timora_last_listing_sync', String(Date.now()));
+      } catch {}
+      window.dispatchEvent(new CustomEvent('timora_listings_updated'));
       setToastMessage(
         lang === 'en'
           ? 'Listing permanently removed.'
@@ -194,6 +244,10 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       queryClient.invalidateQueries({ queryKey: ['seller-inventory'] });
       queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['public-marketplace-listings'] });
+      try {
+        localStorage.setItem('timora_last_listing_sync', String(Date.now()));
+      } catch {}
       window.dispatchEvent(new CustomEvent('timora_listings_updated'));
       const listRes = await api.get('/listings/seller/me').catch(() => null);
       if (listRes?.data?.success && Array.isArray(listRes.data?.data)) {
@@ -462,7 +516,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
           <button
             onClick={() => {
-              if (user?.approvalStatus !== 'APPROVED') {
+              if (user?.approvalStatus?.toUpperCase() !== 'APPROVED') {
                 alert(
                   lang === 'en'
                     ? 'Listing creation is restricted while your business verification is pending admin review.'
@@ -473,11 +527,11 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               setShowAddForm(!showAddForm);
             }}
             className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold shadow-md transition ${
-              user?.approvalStatus === 'APPROVED'
+              user?.approvalStatus?.toUpperCase() === 'APPROVED'
                 ? 'bg-[#5B6147] hover:bg-[#3F452F] text-white'
                 : 'bg-stone-300 text-stone-600 cursor-not-allowed opacity-90'
             }`}
-            title={user?.approvalStatus !== 'APPROVED' ? (lang === 'en' ? 'Approval Required' : 'അംഗീകാരം ആവശ്യമാണ്') : undefined}
+            title={user?.approvalStatus?.toUpperCase() !== 'APPROVED' ? (lang === 'en' ? 'Approval Required' : 'അംഗീകാരം ആവശ്യമാണ്') : undefined}
           >
             <Plus className="w-4 h-4" />
             <span>{lang === 'en' ? 'Post Timber Logs' : 'തടി ലോഗുകൾ ചേർക്കുക'}</span>

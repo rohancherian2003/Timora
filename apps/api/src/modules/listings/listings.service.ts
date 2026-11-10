@@ -37,7 +37,7 @@ export class ListingsService {
 
     const conditions: string[] = [
       "l.status IN ('approved', 'sold')",
-      "(sp.approval_status = 'approved' OR sp.approval_status = 'APPROVED')",
+      "(l.status = 'approved' OR sp.user_id IS NULL OR sp.approval_status = 'approved' OR sp.approval_status = 'APPROVED')",
     ];
     const params: unknown[] = [];
     let paramIndex = 1;

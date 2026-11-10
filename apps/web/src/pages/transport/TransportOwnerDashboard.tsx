@@ -104,6 +104,20 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
 
   useEffect(() => {
     if (refreshUser) refreshUser();
+    const handleSync = () => {
+      if (refreshUser) refreshUser();
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'timora_last_approval_sync') {
+        if (refreshUser) refreshUser();
+      }
+    };
+    window.addEventListener('timora_profile_updated', handleSync);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('timora_profile_updated', handleSync);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [refreshUser]);
 
   // Form states
@@ -290,7 +304,7 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
           <button
             type="button"
             onClick={() => {
-              if (user?.approvalStatus !== 'APPROVED') {
+              if (user?.approvalStatus?.toUpperCase() !== 'APPROVED') {
                 alert(
                   lang === 'en'
                     ? 'Fleet expansion is restricted while transport registration is pending admin review.'
@@ -301,11 +315,11 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
               setShowAddVehicle(!showAddVehicle);
             }}
             className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold shadow-md transition ${
-              user?.approvalStatus === 'APPROVED'
+              user?.approvalStatus?.toUpperCase() === 'APPROVED'
                 ? 'bg-[#5B6147] hover:bg-[#3F452F] text-white'
                 : 'bg-stone-300 text-stone-600 cursor-not-allowed opacity-90'
             }`}
-            title={user?.approvalStatus !== 'APPROVED' ? (lang === 'en' ? 'Approval Required' : 'അംഗീകാരം ആവശ്യമാണ്') : undefined}
+            title={user?.approvalStatus?.toUpperCase() !== 'APPROVED' ? (lang === 'en' ? 'Approval Required' : 'അംഗീകാരം ആവശ്യമാണ്') : undefined}
           >
             <Plus className="w-4 h-4" />
             <span>{lang === 'en' ? 'Add Lorry to Fleet' : 'വാഹനം ചേർക്കുക'}</span>

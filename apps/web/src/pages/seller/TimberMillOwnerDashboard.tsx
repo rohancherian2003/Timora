@@ -173,6 +173,20 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
 
   useEffect(() => {
     if (refreshUser) refreshUser();
+    const handleSync = () => {
+      if (refreshUser) refreshUser();
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'timora_last_approval_sync') {
+        if (refreshUser) refreshUser();
+      }
+    };
+    window.addEventListener('timora_profile_updated', handleSync);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('timora_profile_updated', handleSync);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [refreshUser]);
 
   // Form fields
@@ -300,7 +314,7 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
           <button
             type="button"
             onClick={() => {
-              if (user?.approvalStatus !== 'APPROVED') {
+              if (user?.approvalStatus?.toUpperCase() !== 'APPROVED') {
                 alert(
                   lang === 'en'
                     ? 'Batch posting is restricted while sawmill verification is pending admin review.'
@@ -311,11 +325,11 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
               setShowAddBatch(!showAddBatch);
             }}
             className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold shadow-md transition ${
-              user?.approvalStatus === 'APPROVED'
+              user?.approvalStatus?.toUpperCase() === 'APPROVED'
                 ? 'bg-[#5B6147] hover:bg-[#3F452F] text-white'
                 : 'bg-stone-300 text-stone-600 cursor-not-allowed opacity-90'
             }`}
-            title={user?.approvalStatus !== 'APPROVED' ? (lang === 'en' ? 'Approval Required' : 'അംഗീകാരം ആവശ്യമാണ്') : undefined}
+            title={user?.approvalStatus?.toUpperCase() !== 'APPROVED' ? (lang === 'en' ? 'Approval Required' : 'അംഗീകാരം ആവശ്യമാണ്') : undefined}
           >
             <Plus className="w-4 h-4" />
             <span>{lang === 'en' ? 'Post Sawn Timber Batch' : 'പുതിയ തടി ബാച്ച് ചേർക്കുക'}</span>
@@ -525,8 +539,11 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
                 <input
                   type="number"
                   value={quantityCft}
-                  onChange={(e) => setQuantityCft(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 border rounded-xl text-xs sm:text-sm font-semibold"
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/^0+(?=\d)/, '');
+                    setQuantityCft(val === '' ? 0 : Number(val));
+                  }}
+                  className="w-full px-3.5 py-2.5 border rounded-xl text-xs sm:text-sm font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   min={1}
                   required
                 />
@@ -541,8 +558,11 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
                 <input
                   type="number"
                   value={ratePerCft}
-                  onChange={(e) => setRatePerCft(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 border rounded-xl text-xs sm:text-sm font-semibold"
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/^0+(?=\d)/, '');
+                    setRatePerCft(val === '' ? 0 : Number(val));
+                  }}
+                  className="w-full px-3.5 py-2.5 border rounded-xl text-xs sm:text-sm font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   min={1}
                   required
                 />

@@ -179,6 +179,10 @@ export function SubmitTimberModal({
       queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
       queryClient.invalidateQueries({ queryKey: ['seller-inventory'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['public-marketplace-listings'] });
+      try {
+        localStorage.setItem('timora_last_listing_sync', String(Date.now()));
+      } catch {}
       window.dispatchEvent(new CustomEvent('timora_listings_updated'));
 
       const successToast =

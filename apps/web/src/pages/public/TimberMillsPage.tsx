@@ -140,14 +140,14 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [quoteSubmitted, setQuoteSubmitted] = useState<boolean>(false);
   const [isSubmittingQuote, setIsSubmittingQuote] = useState<boolean>(false);
 
-  useBodyScrollLock(Boolean(quoteModalMill || loginAlertMill));
-
   // Review Modal State
   const [reviewModalMill, setReviewModalMill] = useState<TimberMill | null>(null);
   const [reviewStars, setReviewStars] = useState<number>(5);
   const [reviewText, setReviewText] = useState<string>('');
   const [reviewSubmitted, setReviewSubmitted] = useState<boolean>(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState<boolean>(false);
+
+  useBodyScrollLock(Boolean(quoteModalMill || loginAlertMill || reviewModalMill));
 
   // Filter logic
   const filteredMills = mills.filter((mill) => {
@@ -791,8 +791,11 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                       type="number"
                       min={10}
                       value={quoteCft}
-                      onChange={(e) => setQuoteCft(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 border border-stone-300/80 rounded-xl bg-[#E7E1D6]/50 text-stone-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#5B6147]"
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/^0+(?=\d)/, '');
+                        setQuoteCft(val === '' ? 0 : Number(val));
+                      }}
+                      className="w-full px-3.5 py-2.5 border border-stone-300/80 rounded-xl bg-[#E7E1D6]/50 text-stone-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#5B6147] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       required
                     />
                   </div>
@@ -862,7 +865,7 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       {/* 6. WRITE A REVIEW MODAL */}
       {reviewModalMill && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl border border-stone-300/80 shadow-2xl max-w-md w-full p-6 space-y-4">
+          <div className="bg-white rounded-3xl border border-stone-300/80 shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-stone-100 pb-3">
               <h3 className="font-extrabold font-serif text-[#4A3626] text-base">
                 {lang === 'en' ? 'Review & Rate Mill' : 'മില്ലിന് റിവ്യൂ നൽകുക'}

@@ -28,6 +28,7 @@ import {
 import { formatINR, formatTimberListingId } from '@timora/shared';
 import { TIMBER_LISTINGS, TimberListingItem, mapApiListingToItem } from '../../utils/timberListings';
 import { api } from '../../lib/api';
+import { queryClient } from '../../lib/queryClient';
 import { ValidatedSearchInput } from '../../components/ValidatedSearchInput';
 
 const SPECIES_PILLS = [
@@ -96,7 +97,7 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setCurrentPage(1);
   }, [selectedSpecies, selectedType, selectedDistrict, searchQuery]);
 
-  // TanStack Query for live marketplace listings with automatic revalidation
+  // TanStack Query for live marketplace listings with automatic real-time revalidation
   const { data: queryListings, isLoading: isQueryLoading } = useQuery({
     queryKey: ['listings', searchQuery],
     queryFn: async () => {
@@ -112,7 +113,30 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       }
       return null;
     },
+    staleTime: 0,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
+
+  useEffect(() => {
+    const handleSync = () => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['public-marketplace-listings'] });
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'timora_last_listing_sync') {
+        handleSync();
+      }
+    };
+    window.addEventListener('timora_listings_updated', handleSync);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('timora_listings_updated', handleSync);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
 
   // Update query params helper
   const updateFilter = (key: string, value: string) => {

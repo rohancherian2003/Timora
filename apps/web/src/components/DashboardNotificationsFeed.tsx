@@ -78,7 +78,7 @@ export function DashboardNotificationsFeed({
         const hasUnreadVerification = items.some(
           (n) => !n.is_read && n.category === 'verification'
         );
-        if (hasUnreadVerification && refreshUser && user?.approvalStatus !== 'APPROVED') {
+        if (hasUnreadVerification && refreshUser && user?.approvalStatus?.toUpperCase() !== 'APPROVED') {
           refreshUser();
         }
       }
@@ -89,12 +89,30 @@ export function DashboardNotificationsFeed({
 
   useEffect(() => {
     fetchNotifications();
-    // Only poll when the tab is actively visible to eliminate background pings
+    const handleUpdate = () => {
+      fetchNotifications();
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'timora_last_ticket_sync' || e.key === 'timora_dismissed_notification_ids') {
+        setDismissedIds(getStoredDismissedIds());
+        fetchNotifications();
+      }
+    };
+    window.addEventListener('timora_notifications_updated', handleUpdate);
+    window.addEventListener('timora_tickets_updated', handleUpdate);
+    window.addEventListener('storage', handleStorage);
+
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
       fetchNotifications();
-    }, 45000);
-    return () => clearInterval(interval);
+    }, 15000);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('timora_notifications_updated', handleUpdate);
+      window.removeEventListener('timora_tickets_updated', handleUpdate);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [user?.id]);
 
   const handleMarkAsRead = async (id: string, actionUrl?: string) => {
@@ -284,7 +302,7 @@ export function DashboardNotificationsFeed({
           aria-modal="true"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
         >
-          <div className="bg-[#F8F5EE] border border-stone-300 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5 animate-scaleUp">
+          <div className="bg-[#F8F5EE] border border-stone-300 rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 sm:p-7 shadow-2xl space-y-5 animate-scaleUp">
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">

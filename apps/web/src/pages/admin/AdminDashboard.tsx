@@ -193,7 +193,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     return () => window.removeEventListener('timora_tickets_updated', handleUpdate);
   }, []);
 
-  // 1. TanStack Query for Pending Business Applications
+  // 1. TanStack Query for Pending Business Applications (Real-Time Auto-Refetch)
   const { data: serverApps, isLoading: isLoadingApps } = useQuery({
     queryKey: ['admin-approvals'],
     queryFn: async () => {
@@ -213,9 +213,14 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       }
       return [];
     },
+    staleTime: 0,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
-  // 2. TanStack Query for Pending Timber Listings (Real-Time Admin Queue)
+  // 2. TanStack Query for Pending Timber Listings (Real-Time Admin Queue Auto-Refetch)
   const { data: serverPendingListings, isLoading: isLoadingPendingListings } = useQuery({
     queryKey: ['admin-pending-listings'],
     queryFn: async () => {
@@ -239,15 +244,34 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       }
       return [];
     },
-    refetchInterval: 10000,
+    staleTime: 0,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   useEffect(() => {
     const handleListingsUpdate = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-approvals'] });
+    };
+    const handleStorageUpdate = (e: StorageEvent) => {
+      if (
+        e.key === 'timora_last_listing_sync' ||
+        e.key === 'timora_last_approval_sync' ||
+        e.key === 'timora_listings_updated'
+      ) {
+        queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-approvals'] });
+      }
     };
     window.addEventListener('timora_listings_updated', handleListingsUpdate);
-    return () => window.removeEventListener('timora_listings_updated', handleListingsUpdate);
+    window.addEventListener('storage', handleStorageUpdate);
+    return () => {
+      window.removeEventListener('timora_listings_updated', handleListingsUpdate);
+      window.removeEventListener('storage', handleStorageUpdate);
+    };
   }, [queryClient]);
 
   const rawPendingListings: PendingListing[] = (serverPendingListings && serverPendingListings.length > 0)
@@ -287,6 +311,9 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       });
       queryClient.invalidateQueries({ queryKey: ['admin-approvals'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      try {
+        localStorage.setItem('timora_last_approval_sync', String(Date.now()));
+      } catch {}
       window.dispatchEvent(new CustomEvent('timora_profile_updated'));
       setMessage(
         lang === 'en'
@@ -330,6 +357,11 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       });
       queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['public-marketplace-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['seller-inventory'] });
+      try {
+        localStorage.setItem('timora_last_listing_sync', String(Date.now()));
+      } catch {}
       window.dispatchEvent(new CustomEvent('timora_listings_updated'));
       setMessage(lang === 'en' ? 'Listing approved and live on marketplace.' : 'ലിസ്റ്റിംഗ് അംഗീകരിച്ചു — മാർക്കറ്റ്‌പ്ലേസിൽ ദൃശ്യമാകും.');
     }
@@ -352,6 +384,11 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       });
       queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['public-marketplace-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['seller-inventory'] });
+      try {
+        localStorage.setItem('timora_last_listing_sync', String(Date.now()));
+      } catch {}
       window.dispatchEvent(new CustomEvent('timora_listings_updated'));
       setMessage(lang === 'en' ? 'Listing rejected.' : 'ലിസ്റ്റിംഗ് നിരസിച്ചു.');
     }
@@ -406,6 +443,11 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       setActiveMarketplaceListings((prev) => prev.filter((l) => l.id !== lst.id));
       queryClient.invalidateQueries({ queryKey: ['admin-pending-listings'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['public-marketplace-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['seller-inventory'] });
+      try {
+        localStorage.setItem('timora_last_listing_sync', String(Date.now()));
+      } catch {}
       window.dispatchEvent(new CustomEvent('timora_listings_updated'));
       setMessage(
         lang === 'en'
@@ -458,6 +500,9 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
     queryClient.invalidateQueries({ queryKey: ['admin-approvals'] });
     queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+    try {
+      localStorage.setItem('timora_last_approval_sync', String(Date.now()));
+    } catch {}
     window.dispatchEvent(new CustomEvent('timora_profile_updated'));
 
     setIsSubmittingActionModal(false);
@@ -484,6 +529,9 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setTickets(getStoredTickets());
     queryClient.invalidateQueries({ queryKey: ['user-tickets'] });
     queryClient.invalidateQueries({ queryKey: ['admin-tickets'] });
+    try {
+      localStorage.setItem('timora_last_ticket_sync', String(Date.now()));
+    } catch {}
     window.dispatchEvent(new CustomEvent('timora_tickets_updated'));
 
     setMessage(
