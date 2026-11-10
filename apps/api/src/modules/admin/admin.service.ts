@@ -539,14 +539,21 @@ export class AdminService {
   /**
    * Get pending listings awaiting review
    */
-  async getPendingListings() {
+  async getPendingListings(statusFilter?: string) {
     let res;
+    const filter = (statusFilter || 'pending').toLowerCase();
+    const isApprovedFilter = filter === 'approved';
+
     try {
       res = await query(
         `SELECT l.*,
                 COALESCE(l.approval_status, l.status) as approval_status,
-                s.name_en as species_name, t.name_en as type_name, d.name_en as district_name,
-                up.name as seller_name, u.phone as seller_phone, sp.business_name,
+                s.name_en as species_name, s.name_ml as species_name_ml,
+                t.name_en as type_name, t.name_ml as type_name_ml,
+                d.name_en as district_name, d.name_ml as district_name_ml,
+                COALESCE(up.name, u.phone, 'Individual Seller') as seller_name,
+                u.phone as seller_phone,
+                COALESCE(sp.business_name, up.name, 'Individual Seller') as business_name,
                 COALESCE(
                   json_agg(
                     json_build_object('id', img.id, 'url', img.url, 'is_primary', img.is_primary)
@@ -560,17 +567,27 @@ export class AdminService {
          LEFT JOIN user_profiles up ON up.user_id = u.id
          LEFT JOIN seller_profiles sp ON sp.user_id = u.id
          LEFT JOIN listing_images img ON img.listing_id = l.id
-         WHERE l.status IN ('pending_review', 'pending')
-            OR (l.approval_status IS NOT NULL AND l.approval_status IN ('pending', 'pending_review', 'PENDING_APPROVAL'))
+         WHERE ${
+           isApprovedFilter
+             ? "l.status = 'approved'"
+             : `(
+                 l.status IN ('pending', 'pending_review', 'draft')
+                 OR (l.approval_status IS NOT NULL AND l.approval_status IN ('pending', 'pending_review', 'PENDING_APPROVAL'))
+                 OR l.status ILIKE '%pending%'
+                 OR (l.status NOT IN ('approved', 'sold', 'deleted', 'rejected'))
+               )`
+         }
          GROUP BY l.id, s.id, t.id, d.id, up.name, u.phone, sp.business_name
-         ORDER BY l.created_at ASC`
+         ORDER BY l.created_at DESC`
       );
     } catch {
       // Fallback if approval_status column does not exist
       res = await query(
         `SELECT l.*,
                 s.name_en as species_name, t.name_en as type_name, d.name_en as district_name,
-                up.name as seller_name, u.phone as seller_phone, sp.business_name,
+                COALESCE(up.name, u.phone, 'Individual Seller') as seller_name,
+                u.phone as seller_phone,
+                COALESCE(sp.business_name, up.name, 'Individual Seller') as business_name,
                 COALESCE(
                   json_agg(
                     json_build_object('id', img.id, 'url', img.url, 'is_primary', img.is_primary)
@@ -584,9 +601,13 @@ export class AdminService {
          LEFT JOIN user_profiles up ON up.user_id = u.id
          LEFT JOIN seller_profiles sp ON sp.user_id = u.id
          LEFT JOIN listing_images img ON img.listing_id = l.id
-         WHERE l.status IN ('pending_review', 'pending')
+         WHERE ${
+           isApprovedFilter
+             ? "l.status = 'approved'"
+             : "l.status IN ('pending_review', 'pending', 'draft') OR l.status NOT IN ('approved', 'sold', 'deleted', 'rejected')"
+         }
          GROUP BY l.id, s.id, t.id, d.id, up.name, u.phone, sp.business_name
-         ORDER BY l.created_at ASC`
+         ORDER BY l.created_at DESC`
       );
     }
 

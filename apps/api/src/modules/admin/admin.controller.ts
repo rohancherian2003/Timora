@@ -83,10 +83,16 @@ export class AdminController {
     }
   }
 
-  async getPendingListings(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getPendingListings(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const data = await adminService.getPendingListings();
-      const response: ApiSuccessResponse = { success: true, data };
+      const status = (req.query?.status as string) || 'pending';
+      const data = await adminService.getPendingListings(status);
+      const response: ApiSuccessResponse & Record<string, unknown> = {
+        success: true,
+        data,
+        listings: data,
+        total: data.length,
+      };
       res.status(200).json(response);
     } catch (err) {
       next(err);

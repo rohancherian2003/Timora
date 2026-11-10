@@ -224,9 +224,15 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { data: serverPendingListings, isLoading: isLoadingPendingListings } = useQuery({
     queryKey: ['admin-pending-listings'],
     queryFn: async () => {
-      const res = await api.get('/admin/listings/pending');
-      if (res.data?.success && Array.isArray(res.data?.data)) {
-        return res.data.data.map((l: any) => ({
+      let res;
+      try {
+        res = await api.get('/admin/listings', { params: { status: 'pending' } });
+      } catch {
+        res = await api.get('/admin/listings/pending');
+      }
+      const rawList = res.data?.data?.listings || res.data?.data || res.data?.listings || [];
+      if (Array.isArray(rawList)) {
+        return rawList.map((l: any) => ({
           id: l.id,
           title: l.title,
           seller_name: l.business_name || l.seller_name || 'Individual Seller',

@@ -31,6 +31,7 @@ adminRouter.patch(
 
 // Listing reviews
 adminRouter.get('/listings/pending', adminController.getPendingListings.bind(adminController));
+adminRouter.get('/listings', adminController.getPendingListings.bind(adminController));
 adminRouter.patch('/listings/:id/approve', adminController.approveListing.bind(adminController));
 adminRouter.patch(
   '/listings/:id/reject',

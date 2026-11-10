@@ -102,7 +102,7 @@ export class ListingsService {
        LEFT JOIN listing_images img ON img.listing_id = l.id
        WHERE ${whereClause}
        GROUP BY l.id, s.id, t.id, d.id, sp.business_name, sp.approval_status, up.name
-       ORDER BY l.created_at DESC
+       ORDER BY COALESCE(l.approved_at, l.created_at) DESC, l.created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
       [...params, limit, offset]
     );
