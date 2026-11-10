@@ -370,56 +370,67 @@ export function TimberMillOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }
       )}
 
       {/* MILL OPERATIONAL METRICS */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
-          <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
-            {lang === 'en' ? 'Daily Sawing Capacity' : 'പ്രതിദിന ശേഷി'}
-          </span>
-          <div className="text-xl sm:text-2xl font-black font-serif text-[#4A3626]">
-            350 <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'CFT/day' : 'സി.എഫ്.ടി/ദിവസം'}</span>
-          </div>
-          <p className="text-[10px] text-stone-500">
-            {lang === 'en' ? '2 Heavy Band Saws Active' : '2 ഹെവി ബാന്റ് സോ സജീവം'}
-          </p>
-        </div>
+      {(() => {
+        const availableStockCft = batches
+          .filter((b) => b.status === 'available')
+          .reduce((sum, b) => sum + (Number(b.quantityCft) || 0), 0);
+        const inSawingBatches = batches.filter((b) => b.status === 'in_sawing');
+        const inSawingCft = inSawingBatches.reduce((sum, b) => sum + (Number(b.quantityCft) || 0), 0);
+        const isApproved = user?.approvalStatus?.toUpperCase() === 'APPROVED';
 
-        <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
-          <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
-            {lang === 'en' ? 'Available Sawn Stock' : 'സ്റ്റോക്ക് തടികൾ'}
-          </span>
-          <div className="text-xl sm:text-2xl font-black font-serif text-[#4A3626]">
-            395 <span className="text-xs font-normal text-stone-500">{translateUnit('CFT', lang)}</span>
-          </div>
-          <p className="text-[10px] text-emerald-700 font-semibold">
-            {lang === 'en' ? 'Ready for Dispatch' : 'അയക്കാൻ തയ്യാറായവ'}
-          </p>
-        </div>
+        return (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
+              <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
+                {lang === 'en' ? 'Daily Sawing Capacity' : 'പ്രതിദിന ശേഷി'}
+              </span>
+              <div className="text-xl sm:text-2xl font-black font-serif text-[#4A3626]">
+                {batches.length > 0 ? 350 : 0} <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'CFT/day' : 'സി.എഫ്.ടി/ദിവസം'}</span>
+              </div>
+              <p className="text-[10px] text-stone-500">
+                {batches.length > 0 ? (lang === 'en' ? '2 Heavy Band Saws Active' : '2 ഹെവി ബാന്റ് സോ സജീവം') : (lang === 'en' ? 'No active saws' : 'ബാന്റ് സോ സജീവമല്ല')}
+              </p>
+            </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
-          <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
-            {lang === 'en' ? 'Active Sawing Orders' : 'സജീവ ജോലികൾ'}
-          </span>
-          <div className="text-xl sm:text-2xl font-black font-serif text-[#4A3626]">
-            4 <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Orders' : 'ഓർഡറുകൾ'}</span>
-          </div>
-          <p className="text-[10px] text-amber-700 font-semibold">
-            {lang === 'en' ? '120 CFT in processing' : '120 സി.എഫ്.ടി പ്രോസസ്സിംഗിൽ'}
-          </p>
-        </div>
+            <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
+              <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
+                {lang === 'en' ? 'Available Sawn Stock' : 'സ്റ്റോക്ക് തടികൾ'}
+              </span>
+              <div className="text-xl sm:text-2xl font-black font-serif text-[#4A3626]">
+                {availableStockCft} <span className="text-xs font-normal text-stone-500">{translateUnit('CFT', lang)}</span>
+              </div>
+              <p className="text-[10px] text-emerald-700 font-semibold">
+                {availableStockCft > 0 ? (lang === 'en' ? 'Ready for Dispatch' : 'അയക്കാൻ തയ്യാറായവ') : (lang === 'en' ? 'Out of stock' : 'സ്റ്റോക്ക് തീർന്നു')}
+              </p>
+            </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
-          <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
-            {lang === 'en' ? 'Form IV Clearance' : 'ഫോറസ്റ്റ് പാസ്സ്'}
-          </span>
-          <div className="text-xl sm:text-2xl font-black font-serif text-emerald-700 flex items-center gap-1">
-            <ShieldCheck className="w-5 h-5 text-emerald-600" />
-            <span>{lang === 'en' ? 'Active' : 'സജീവം'}</span>
+            <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
+              <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
+                {lang === 'en' ? 'Active Sawing Orders' : 'സജീവ ജോലികൾ'}
+              </span>
+              <div className="text-xl sm:text-2xl font-black font-serif text-[#4A3626]">
+                {inSawingBatches.length} <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Orders' : 'ഓർഡറുകൾ'}</span>
+              </div>
+              <p className="text-[10px] text-amber-700 font-semibold">
+                {inSawingCft > 0 ? (lang === 'en' ? `${inSawingCft} CFT in processing` : `${inSawingCft} സി.എഫ്.ടി പ്രോസസ്സിംഗിൽ`) : (lang === 'en' ? '0 CFT in processing' : 'പ്രോസസ്സിംഗിൽ ഇല്ല')}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
+              <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
+                {lang === 'en' ? 'Form IV Clearance' : 'ഫോറസ്റ്റ് പാസ്സ്'}
+              </span>
+              <div className={`text-xl sm:text-2xl font-black font-serif flex items-center gap-1 ${isApproved ? 'text-emerald-700' : 'text-amber-700'}`}>
+                <ShieldCheck className={`w-5 h-5 ${isApproved ? 'text-emerald-600' : 'text-amber-600'}`} />
+                <span>{isApproved ? (lang === 'en' ? 'Active' : 'സജീവം') : (lang === 'en' ? 'Pending' : 'പരിശോധനയിൽ')}</span>
+              </div>
+              <p className="text-[10px] text-stone-500">
+                {isApproved ? (lang === 'en' ? 'Transit Permits Enabled' : 'ട്രാൻസിറ്റ് പെർമിറ്റുകൾ ലഭ്യമാണ്') : (lang === 'en' ? 'Under Regulatory Review' : 'നിയന്ത്രണ പരിശോധനയിൽ')}
+              </p>
+            </div>
           </div>
-          <p className="text-[10px] text-stone-500">
-            {lang === 'en' ? 'Transit Permits Enabled' : 'ട്രാൻസിറ്റ് പെർമിറ്റുകൾ ലഭ്യമാണ്'}
-          </p>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* ADD BATCH FORM */}
       {showAddBatch && (

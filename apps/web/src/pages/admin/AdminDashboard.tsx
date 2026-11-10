@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import {
   ShieldCheck,
   UserCheck,
@@ -132,20 +133,19 @@ const DEMO_PENDING_LISTINGS: PendingListing[] = [
   },
 ];
 
-interface AuditEntry {
-  id: string;
-  action: string;
-  target: string;
-  actor: string;
-  timestamp: string;
-  note?: string;
-}
-
 export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'business' | 'listings' | 'tickets' | 'audit'>('business');
+  const [activeTab, setActiveTab] = useState<'business' | 'listings' | 'tickets'>('business');
   const [businessFilter, setBusinessFilter] = useState<'all' | 'seller' | 'mill' | 'carpenter' | 'transport'>('all');
-  const [applications, setApplications] = useState<PendingBusiness[]>(INITIAL_PENDING_APPLICATIONS);
+  const [resolvedAppIds, setResolvedAppIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('timora_resolved_admin_apps');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [listings, setListings] = useState<PendingListing[]>(DEMO_PENDING_LISTINGS);
   const [listingFilter, setListingFilter] = useState<'pending' | 'active'>('pending');
   const [activeMarketplaceListings, setActiveMarketplaceListings] = useState<any[]>([]);
@@ -153,26 +153,10 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [listingActionLoadingId, setListingActionLoadingId] = useState<string | null>(null);
   const [tickets, setTickets] = useState<SupportTicket[]>(getStoredTickets());
+  const openTicketsCount = tickets.filter((t) => t.status === 'open').length;
   const [ticketFilter, setTicketFilter] = useState<'all' | 'open' | 'resolved'>('all');
   const [message, setMessage] = useState<string | null>(null);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-
-  const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([
-    {
-      id: 'aud-1',
-      action: 'APPROVE_SELLER',
-      target: 'Nilambur Wood Mart (seller_profile)',
-      actor: 'Chief Moderator (Admin)',
-      timestamp: '2026-10-27 10:15',
-    },
-    {
-      id: 'aud-2',
-      action: 'APPROVE_LISTING',
-      target: 'First-Grade Nilambur Teak Planks',
-      actor: 'Chief Moderator (Admin)',
-      timestamp: '2026-10-27 10:20',
-    },
-  ]);
 
   // Modals for Actions
   const [actionModal, setActionModal] = useState<{
@@ -189,7 +173,6 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
   // Per-action loading state for approving applications
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
-  const [isLoadingApps, setIsLoadingApps] = useState(true);
 
   useBodyScrollLock(Boolean(actionModal || replyTicket || isEditProfileOpen));
 
@@ -201,108 +184,82 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     return () => window.removeEventListener('timora_tickets_updated', handleUpdate);
   }, []);
 
-  useEffect(() => {
-    let isMounted = true;
-    async function fetchPendingApps() {
-      try {
-        setIsLoadingApps(true);
-        const res = await api.get('/admin/sellers/pending');
-        if (isMounted && res.data?.success && Array.isArray(res.data?.data) && res.data.data.length > 0) {
-          const liveApps: PendingBusiness[] = res.data.data.map((s: any) => ({
-            id: s.id,
-            name: s.name,
-            phone: s.phone,
-            businessName: s.business_name || `${s.name} Enterprise`,
-            district: s.district_name || 'Kerala',
-            locality: s.locality,
-            role: s.seller_subtype === 'mill_owner' ? 'mill' : (s.role || 'seller'),
-            details: `Registered ${new Date(s.created_at).toLocaleDateString()}`,
-            registeredAt: new Date(s.created_at).toISOString().slice(0, 16).replace('T', ' '),
-          }));
-          setApplications((prev) => {
-            const liveIds = new Set(liveApps.map((a) => a.id));
-            const retained = prev.filter((a) => !liveIds.has(a.id));
-            return [...liveApps, ...retained];
-          });
-        }
-      } catch {
-        // Fall back gracefully to INITIAL_PENDING_APPLICATIONS
-      } finally {
-        if (isMounted) setIsLoadingApps(false);
+  // 1. TanStack Query for Pending Business Applications
+  const { data: serverApps, isLoading: isLoadingApps } = useQuery({
+    queryKey: ['admin-approvals'],
+    queryFn: async () => {
+      const res = await api.get('/admin/sellers/pending');
+      if (res.data?.success && Array.isArray(res.data?.data)) {
+        return res.data.data.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          phone: s.phone,
+          businessName: s.business_name || `${s.name} Enterprise`,
+          district: s.district_name || 'Kerala',
+          locality: s.locality,
+          role: s.seller_subtype === 'mill_owner' ? 'mill' : (s.role || 'seller'),
+          details: `Registered ${new Date(s.created_at).toLocaleDateString()}`,
+          registeredAt: new Date(s.created_at).toISOString().slice(0, 16).replace('T', ' '),
+        })) as PendingBusiness[];
       }
-    }
-    fetchPendingApps();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+      return [];
+    },
+  });
 
-  useEffect(() => {
-    let isMounted = true;
-    async function fetchPendingListings() {
-      try {
-        setIsLoadingListings(true);
-        const res = await api.get('/admin/listings/pending');
-        if (isMounted && res.data?.success && Array.isArray(res.data?.data)) {
-          if (res.data.data.length > 0) {
-            setListings(res.data.data);
-          } else {
-            setListings([]);
-          }
-        }
-      } catch {
-        // Fall back gracefully to DEMO_PENDING_LISTINGS
-      } finally {
-        if (isMounted) setIsLoadingListings(false);
-      }
-    }
-    fetchPendingListings();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const applications: PendingBusiness[] = (serverApps && serverApps.length > 0)
+    ? serverApps.filter((a) => !resolvedAppIds.includes(a.id))
+    : INITIAL_PENDING_APPLICATIONS.filter((a) => !resolvedAppIds.includes(a.id));
 
-  const openTicketsCount = tickets.filter((t) => t.status === 'open').length;
-
-  const addAudit = (action: string, target: string, note?: string) => {
-    const entry: AuditEntry = {
-      id: `aud-${Date.now()}`,
-      action,
-      target,
-      actor: user?.name || 'Chief Moderator (Admin)',
-      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 16),
-      note,
-    };
-    setAuditLogs([entry, ...auditLogs]);
-  };
-
-  const handleApproveApp = async (app: PendingBusiness) => {
-    setActionLoadingId(app.id);
-    addAudit(`APPROVE_${app.role.toUpperCase()}`, `${app.businessName} (${app.name})`);
-    
-    // Attempt backend sync
-    try {
-      await api.patch(`/admin/sellers/${app.id}/approve`, {
-        note: `Approved by ${user?.name || 'Admin'}`,
+  const approveAppMutation = useMutation({
+    mutationFn: async ({ app, note }: { app: PendingBusiness; note?: string }) => {
+      setActionLoadingId(app.id);
+      return await api.patch(`/admin/approvals/${app.id}`, {
+        status: 'approved',
+        note: note || `Approved by ${user?.name || 'Admin'}`,
+      }).catch(() =>
+        api.patch(`/admin/sellers/${app.id}/approve`, {
+          note: note || `Approved by ${user?.name || 'Admin'}`,
+        })
+      );
+    },
+    onSuccess: (_, { app }) => {
+      setResolvedAppIds((prev) => {
+        const next = [...prev, app.id];
+        try { localStorage.setItem('timora_resolved_admin_apps', JSON.stringify(next)); } catch {}
+        return next;
       });
-    } catch {
-      // Graceful local approval
-    } finally {
+      queryClient.invalidateQueries({ queryKey: ['admin-approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      window.dispatchEvent(new CustomEvent('timora_profile_updated'));
+      setMessage(
+        lang === 'en'
+          ? `${app.businessName} has been approved and activated.`
+          : `${app.businessName} അംഗീകരിക്കുകയും സജീവമാക്കുകയും ചെയ്തു.`
+      );
+    },
+    onError: (_, { app }) => {
+      setResolvedAppIds((prev) => {
+        const next = [...prev, app.id];
+        try { localStorage.setItem('timora_resolved_admin_apps', JSON.stringify(next)); } catch {}
+        return next;
+      });
+      setMessage(
+        lang === 'en'
+          ? `${app.businessName} has been approved and activated.`
+          : `${app.businessName} അംഗീകരിക്കുകയും സജീവമാക്കുകയും ചെയ്തു.`
+      );
+    },
+    onSettled: () => {
       setActionLoadingId(null);
-    }
+    },
+  });
 
-    setApplications((prev) => prev.filter((a) => a.id !== app.id));
-
-    setMessage(
-      lang === 'en'
-        ? `${app.businessName} has been approved and activated.`
-        : `${app.businessName} അംഗീകരിക്കുകയും സജീവമാക്കുകയും ചെയ്തു.`
-    );
+  const handleApproveApp = (app: PendingBusiness) => {
+    approveAppMutation.mutate({ app });
   };
 
   const handleApproveListing = async (lst: PendingListing) => {
     setListingActionLoadingId(lst.id);
-    addAudit('APPROVE_LISTING', lst.title);
     try {
       await api.patch(`/admin/listings/${lst.id}/approve`);
     } catch (err: any) {
@@ -317,7 +274,6 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
   const handleRejectListing = async (lst: PendingListing) => {
     setListingActionLoadingId(lst.id);
-    addAudit('REJECT_LISTING', lst.title, 'Rejected by Moderator');
     try {
       await api.post(`/admin/listings/${lst.id}/reject`, {
         reason: 'Listing details or photographs do not meet community standards.',
@@ -363,7 +319,6 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     if (!window.confirm(confirmMsg)) return;
 
     setListingActionLoadingId(lst.id);
-    addAudit('PURGE_LISTING', lst.title, 'Purged by Super Admin');
     try {
       await api.delete(`/admin/listings/${lst.id}`);
     } catch {
@@ -392,52 +347,78 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     setIsSubmittingActionModal(true);
     const { type, app } = actionModal;
 
-    if (type === 'action_required') {
-      addAudit(`REQUEST_INFO_${app.role.toUpperCase()}`, `${app.businessName}`, actionInput.trim());
-      try {
-        await api.patch(`/admin/sellers/${app.id}/reject`, { reason: actionInput.trim() });
-      } catch {}
-      setMessage(
-        lang === 'en'
-          ? `Requested additional documents from ${app.name}.`
-          : `${app.name} എന്ന വ്യാപാരിയോട് കൂടുതൽ രേഖകൾ ആവശ്യപ്പെട്ടു.`
-      );
-    } else {
-      addAudit(`REJECT_${app.role.toUpperCase()}`, `${app.businessName}`, actionInput.trim());
-      try {
-        await api.patch(`/admin/sellers/${app.id}/reject`, { reason: actionInput.trim() });
-      } catch {}
-      setMessage(
-        lang === 'en'
-          ? `Application rejected with recorded reason.`
-          : `കാരണം രേഖപ്പെടുത്തി അപേക്ഷ നിരസിച്ചു.`
-      );
-    }
+    try {
+      if (type === 'action_required') {
+        await api.patch(`/admin/approvals/${app.id}`, {
+          status: 'action_required',
+          note: actionInput.trim(),
+        }).catch(() =>
+          api.patch(`/admin/sellers/${app.id}/reject`, { reason: actionInput.trim() })
+        );
+        setMessage(
+          lang === 'en'
+            ? `Requested additional documents from ${app.name}.`
+            : `${app.name} എന്ന വ്യാപാരിയോട് കൂടുതൽ രേഖകൾ ആവശ്യപ്പെട്ടു.`
+        );
+      } else {
+        await api.patch(`/admin/approvals/${app.id}`, {
+          status: 'rejected',
+          reason: actionInput.trim(),
+        }).catch(() =>
+          api.patch(`/admin/sellers/${app.id}/reject`, { reason: actionInput.trim() })
+        );
+        setMessage(
+          lang === 'en'
+            ? `Application rejected with recorded reason.`
+            : `കാരണം രേഖപ്പെടുത്തി അപേക്ഷ നിരസിച്ചു.`
+        );
+      }
+    } catch {}
 
-    setApplications((prev) => prev.filter((a) => a.id !== app.id));
+    setResolvedAppIds((prev) => {
+      const next = [...prev, app.id];
+      try { localStorage.setItem('timora_resolved_admin_apps', JSON.stringify(next)); } catch {}
+      return next;
+    });
+
+    queryClient.invalidateQueries({ queryKey: ['admin-approvals'] });
+    queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+    window.dispatchEvent(new CustomEvent('timora_profile_updated'));
+
     setIsSubmittingActionModal(false);
     setActionModal(null);
     setActionInput('');
   };
 
-  const handleResolveTicket = (e: React.FormEvent) => {
+  const handleResolveTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyTicket || !replyText.trim()) return;
 
     setIsResolvingTicket(true);
-    setTimeout(() => {
-      resolveTicket(replyTicket.id, replyText.trim());
-      setTickets(getStoredTickets());
-      addAudit('RESOLVE_TICKET', `Ticket #${replyTicket.id}`, replyText.trim());
-      setMessage(
-        lang === 'en'
-          ? `Ticket ${replyTicket.id} resolved and solution reply sent to user dashboard!`
-          : `ടിക്കറ്റ് ${replyTicket.id} പരിഹരിച്ച് ഉപഭോക്താവിന്റെ ഡാഷ്‌ബോർഡിലേക്ക് അയച്ചു!`
+    try {
+      await api.post(`/support/tickets/${replyTicket.id}/resolve`, {
+        resolution: replyText.trim(),
+      }).catch(() =>
+        api.patch(`/support/tickets/${replyTicket.id}/resolve`, {
+          resolution: replyText.trim(),
+        })
       );
-      setIsResolvingTicket(false);
-      setReplyTicket(null);
-      setReplyText('');
-    }, 400);
+    } catch {}
+
+    resolveTicket(replyTicket.id, replyText.trim());
+    setTickets(getStoredTickets());
+    queryClient.invalidateQueries({ queryKey: ['user-tickets'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-tickets'] });
+    window.dispatchEvent(new CustomEvent('timora_tickets_updated'));
+
+    setMessage(
+      lang === 'en'
+        ? `Ticket ${replyTicket.id} resolved and solution reply sent to user dashboard!`
+        : `ടിക്കറ്റ് ${replyTicket.id} പരിഹരിച്ച് ഉപഭോക്താവിന്റെ ഡാഷ്‌ബോർഡിലേക്ക് അയച്ചു!`
+    );
+    setIsResolvingTicket(false);
+    setReplyTicket(null);
+    setReplyText('');
   };
 
   const filteredApps = applications.filter((app) => {
@@ -467,8 +448,8 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
           </h1>
           <p className="text-xs sm:text-sm text-[#7A5A3A] mt-1 font-medium">
             {lang === 'en'
-              ? 'Multi-role verification, timber compliance, dispute resolution, and audit logging'
-              : 'വ്യാപാരികളുടെ പരിശോധന, തടി ചട്ടങ്ങൾ, പരാതി പരിഹാരം, ഓഡിറ്റ് ലോഗുകൾ'}
+              ? 'Multi-role verification, timber compliance, and dispute resolution'
+              : 'വ്യാപാരികളുടെ പരിശോധന, തടി ചട്ടങ്ങൾ, പരാതി പരിഹാരം'}
           </p>
         </div>
 
@@ -562,19 +543,6 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
               {openTicketsCount}
             </span>
           )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('audit')}
-          className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap flex-shrink-0 w-auto border ${
-            activeTab === 'audit'
-              ? 'border-[#5B6147] bg-[#5B6147] text-white shadow-xs'
-              : 'border-transparent text-stone-600 hover:bg-[#E7E1D6]/60 hover:text-stone-900'
-          }`}
-        >
-          <FileText className="w-4 h-4" />
-          <span>{lang === 'en' ? 'Audit Trail' : 'ഓഡിറ്റ് ലോഗ്'}</span>
         </button>
       </div>
 
@@ -996,43 +964,6 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 )}
               </div>
             ))}
-        </div>
-      )}
-
-      {/* TAB 4: AUDIT TRAIL */}
-      {activeTab === 'audit' && (
-        <div className="bg-white rounded-3xl border border-stone-300 p-6 shadow-xs space-y-3 font-mono text-xs">
-          <div className="flex items-center justify-between pb-2 border-b border-stone-200">
-            <span className="font-serif font-bold text-sm text-[#4A3626]">
-              {lang === 'en' ? 'Append-Only Regulatory Audit Logs' : 'ഓഡിറ്റ് ലോഗുകൾ'}
-            </span>
-            <span className="text-[11px] text-stone-500">
-              {lang === 'en' ? 'Immutable Records' : 'മാറ്റമില്ലാത്ത രേഖകൾ'}
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            {auditLogs.map((log) => (
-              <div
-                key={log.id}
-                className="p-3 bg-[#E7E1D6]/40 border border-stone-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-              >
-                <div>
-                  <span className="font-bold text-[#5B6147]">[{log.action}]</span>{' '}
-                  <span className="text-[#4A3626] font-semibold">{log.target}</span>
-                  {log.note && (
-                    <div className="text-[11px] text-stone-500 mt-0.5 italic">
-                      {lang === 'en' ? 'Note:' : 'കുറിപ്പ്:'} "{log.note}"
-                    </div>
-                  )}
-                </div>
-                <div className="text-[10px] text-stone-400 sm:text-right">
-                  <div>{lang === 'en' ? 'Actor:' : 'ഉദ്യോഗസ്ഥൻ:'} {log.actor}</div>
-                  <div>{log.timestamp}</div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       )}
 

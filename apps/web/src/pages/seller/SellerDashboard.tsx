@@ -540,49 +540,61 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       )}
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="bg-white p-5 rounded-3xl border border-stone-300/80 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
-              {lang === 'en' ? 'Live Active Stock' : 'ലഭ്യമായ സ്റ്റോക്ക്'}
-            </span>
-            <div className="text-2xl font-black text-[#4A3626] font-serif mt-1">
-              125 <span className="text-sm font-sans font-semibold text-[#5B6147]">{translateUnit('cft', lang)}</span>
-            </div>
-          </div>
-          <div className="w-10 h-10 rounded-2xl bg-stone-100 text-[#5B6147] flex items-center justify-center border border-stone-300/60">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
-        </div>
+      {(() => {
+        const liveStockCft = sellerListings
+          .filter((l: any) => l.status === 'approved')
+          .reduce((sum: number, l: any) => sum + (Number(l.quantity) || 0), 0);
+        const pendingReviewCount = sellerListings.filter(
+          (l: any) => l.status === 'pending_review' || l.status === 'pending'
+        ).length;
+        const openEnquiriesCount = tickets.filter((t) => t.status === 'open').length;
 
-        <div className="bg-white p-5 rounded-3xl border border-stone-300/80 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
-              {lang === 'en' ? 'Awaiting Admin Review' : 'റിവ്യൂവിലുള്ളവ'}
-            </span>
-            <div className="text-2xl font-black text-[#5B6147] font-serif mt-1">
-              2 <span className="text-sm font-sans font-semibold text-stone-500">{lang === 'en' ? 'Listings' : 'ലിസ്റ്റിംഗുകൾ'}</span>
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="bg-white p-5 rounded-3xl border border-stone-300/80 shadow-xs flex items-center justify-between">
+              <div>
+                <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
+                  {lang === 'en' ? 'Live Active Stock' : 'ലഭ്യമായ സ്റ്റോക്ക്'}
+                </span>
+                <div className="text-2xl font-black text-[#4A3626] font-serif mt-1">
+                  {liveStockCft} <span className="text-sm font-sans font-semibold text-[#5B6147]">{translateUnit('cft', lang)}</span>
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-2xl bg-stone-100 text-[#5B6147] flex items-center justify-center border border-stone-300/60">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
             </div>
-          </div>
-          <div className="w-10 h-10 rounded-2xl bg-[#E7E1D6] text-[#5B6147] flex items-center justify-center border border-stone-300/60">
-            <Clock className="w-5 h-5" />
-          </div>
-        </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-stone-300/80 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
-              {lang === 'en' ? 'Active Enquiries' : 'സജീവ അന്വേഷണങ്ങൾ'}
-            </span>
-            <div className="text-2xl font-black text-[#4A3626] font-serif mt-1">
-              5 <span className="text-sm font-sans font-semibold text-stone-500">{lang === 'en' ? 'Open' : 'നിലവിലുണ്ട്'}</span>
+            <div className="bg-white p-5 rounded-3xl border border-stone-300/80 shadow-xs flex items-center justify-between">
+              <div>
+                <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
+                  {lang === 'en' ? 'Awaiting Admin Review' : 'റിവ്യൂവിലുള്ളവ'}
+                </span>
+                <div className="text-2xl font-black text-[#5B6147] font-serif mt-1">
+                  {pendingReviewCount} <span className="text-sm font-sans font-semibold text-stone-500">{lang === 'en' ? 'Listings' : 'ലിസ്റ്റിംഗുകൾ'}</span>
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-2xl bg-[#E7E1D6] text-[#5B6147] flex items-center justify-center border border-stone-300/60">
+                <Clock className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-3xl border border-stone-300/80 shadow-xs flex items-center justify-between">
+              <div>
+                <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
+                  {lang === 'en' ? 'Active Enquiries' : 'സജീവ അന്വേഷണങ്ങൾ'}
+                </span>
+                <div className="text-2xl font-black text-[#4A3626] font-serif mt-1">
+                  {openEnquiriesCount} <span className="text-sm font-sans font-semibold text-stone-500">{lang === 'en' ? 'Open' : 'നിലവിലുണ്ട്'}</span>
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/60">
+                <ArrowUpRight className="w-5 h-5" />
+              </div>
             </div>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/60">
-            <ArrowUpRight className="w-5 h-5" />
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Submit Timber Modal */}
       <SubmitTimberModal

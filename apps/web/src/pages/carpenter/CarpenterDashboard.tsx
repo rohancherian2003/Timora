@@ -292,54 +292,73 @@ export function CarpenterDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       )}
 
       {/* METRICS */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
-          <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
-            {lang === 'en' ? 'Active Client Inquiries' : 'സജീവ അന്വേഷണങ്ങൾ'}
-          </span>
-          <div className="text-2xl font-black font-serif text-[#4A3626]">
-            {enquiries.length} <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Active' : 'സജീവം'}</span>
-          </div>
-          <p className="text-[10px] text-emerald-700 font-semibold">{lang === 'en' ? '1 New this week' : 'ഈ ആഴ്ചയിൽ 1 പുതിയത്'}</p>
-        </div>
+      {(() => {
+        const activeEnquiriesCount = enquiries.filter((e) => e.status !== 'completed').length;
+        const completedWorksCount = enquiries.filter((e) => e.status === 'completed').length;
+        const distinctDistricts = Array.from(new Set([user?.district, ...enquiries.map((e) => e.location)].filter(Boolean)));
+        const serviceDistrictsCount = distinctDistricts.length > 0 ? distinctDistricts.length : (user?.district ? 1 : 0);
+        const isListed = user?.approvalStatus?.toUpperCase() === 'APPROVED';
 
-        <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
-          <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
-            {lang === 'en' ? 'Service Districts' : 'സേവന മേഖലകൾ'}
-          </span>
-          <div className="text-2xl font-black font-serif text-[#4A3626]">
-            4 <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Districts' : 'ജില്ലകൾ'}</span>
-          </div>
-          <p className="text-[10px] text-stone-500">
-            {lang === 'en' ? 'Alappuzha, Kottayam, Pathanamthitta, Ernakulam' : 'ആലപ്പുഴ, കോട്ടയം, പത്തനംതിട്ട, എറണാകുളം'}
-          </p>
-        </div>
+        return (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
+              <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
+                {lang === 'en' ? 'Active Client Inquiries' : 'സജീവ അന്വേഷണങ്ങൾ'}
+              </span>
+              <div className="text-2xl font-black font-serif text-[#4A3626]">
+                {activeEnquiriesCount}{' '}
+                <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Active' : 'സജീവം'}</span>
+              </div>
+              <p className="text-[10px] text-emerald-700 font-semibold">
+                {activeEnquiriesCount > 0
+                  ? (lang === 'en' ? `${activeEnquiriesCount} Active currently` : `${activeEnquiriesCount} സജീവ അന്വേഷണങ്ങൾ`)
+                  : (lang === 'en' ? 'No new inquiries' : 'പുതിയ അന്വേഷണങ്ങൾ ഇല്ല')}
+              </p>
+            </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
-          <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
-            {lang === 'en' ? 'Completed Works' : 'പൂർത്തിയാക്കിയവ'}
-          </span>
-          <div className="text-2xl font-black font-serif text-[#4A3626]">
-            84 <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Projects' : 'പ്രോജക്ടുകൾ'}</span>
-          </div>
-          <p className="text-[10px] text-stone-500">
-            {lang === 'en' ? 'Verified by Timber Owners' : 'തടി ഉടമകൾ സാക്ഷ്യപ്പെടുത്തിയത്'}
-          </p>
-        </div>
+            <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
+              <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
+                {lang === 'en' ? 'Service Districts' : 'സേവന മേഖലകൾ'}
+              </span>
+              <div className="text-2xl font-black font-serif text-[#4A3626]">
+                {serviceDistrictsCount}{' '}
+                <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Districts' : 'ജില്ലകൾ'}</span>
+              </div>
+              <p className="text-[10px] text-stone-500 truncate" title={distinctDistricts.join(', ') || user?.district}>
+                {distinctDistricts.length > 0 ? distinctDistricts.join(', ') : (user?.district || (lang === 'en' ? 'Kerala' : 'കേരളം'))}
+              </p>
+            </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
-          <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
-            {lang === 'en' ? 'Directory Status' : 'ഡയറക്ടറി സ്റ്റാറ്റസ്'}
-          </span>
-          <div className="text-2xl font-black font-serif text-emerald-700 flex items-center gap-1">
-            <ShieldCheck className="w-5 h-5 text-emerald-600" />
-            <span>{lang === 'en' ? 'Listed' : 'ലിസ്റ്റ് ചെയ്തു'}</span>
+            <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
+              <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
+                {lang === 'en' ? 'Completed Works' : 'പൂർത്തിയാക്കിയവ'}
+              </span>
+              <div className="text-2xl font-black font-serif text-[#4A3626]">
+                {completedWorksCount}{' '}
+                <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'Projects' : 'പ്രോജക്ടുകൾ'}</span>
+              </div>
+              <p className="text-[10px] text-stone-500">
+                {lang === 'en' ? 'Verified by Timber Owners' : 'തടി ഉടമകൾ സാക്ഷ്യപ്പെടുത്തിയത്'}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white border border-[#8E7F6B]/30 shadow-xs space-y-1">
+              <span className="text-[11px] font-bold text-[#8E7F6B] uppercase tracking-wider block">
+                {lang === 'en' ? 'Directory Status' : 'ഡയറക്ടറി സ്റ്റാറ്റസ്'}
+              </span>
+              <div className={`text-2xl font-black font-serif flex items-center gap-1 ${isListed ? 'text-emerald-700' : 'text-amber-700'}`}>
+                <ShieldCheck className={`w-5 h-5 ${isListed ? 'text-emerald-600' : 'text-amber-600'}`} />
+                <span>{isListed ? (lang === 'en' ? 'Listed' : 'ലിസ്റ്റ് ചെയ്തു') : (lang === 'en' ? 'Under Review' : 'പരിശോധനയിൽ')}</span>
+              </div>
+              <p className="text-[10px] text-stone-500">
+                {isListed
+                  ? (lang === 'en' ? 'Public Profile Active' : 'പ്രൊഫൈൽ സജീവം')
+                  : (lang === 'en' ? 'Verification Pending' : 'അംഗീകാരം കാക്കുന്നു')}
+              </p>
+            </div>
           </div>
-          <p className="text-[10px] text-stone-500">
-            {lang === 'en' ? 'Public Profile Active' : 'പ്രൊഫൈൽ സജീവം'}
-          </p>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* SPECIALIZATIONS & SKILLS */}
       <div className="p-6 bg-white rounded-3xl border border-stone-300 shadow-xs space-y-4">

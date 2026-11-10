@@ -11,8 +11,13 @@ export const adminRouter = Router();
 // Protect all admin endpoints
 adminRouter.use(authenticate, requireRole('admin'));
 
-// Seller approvals
+// Business Approvals (Multi-role: Seller, Mill, Carpenter, Transport)
 adminRouter.get('/sellers/pending', adminController.getPendingSellers.bind(adminController));
+adminRouter.get('/approvals/pending', adminController.getPendingSellers.bind(adminController));
+adminRouter.patch(
+  '/approvals/:userId',
+  adminController.updateApprovalStatus.bind(adminController)
+);
 adminRouter.patch(
   '/sellers/:id/approve',
   validate(approvalNoteSchema),
@@ -33,6 +38,3 @@ adminRouter.patch(
   adminController.rejectListing.bind(adminController)
 );
 adminRouter.delete('/listings/:id', listingsController.deleteListing.bind(listingsController));
-
-// Append-only audit logs
-adminRouter.get('/audit-logs', adminController.getAuditLogs.bind(adminController));

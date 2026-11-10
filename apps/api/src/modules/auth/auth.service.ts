@@ -301,9 +301,17 @@ export class AuthService {
       else if (raw === 'suspended' || raw === 'SUSPENDED') approvalStatus = 'SUSPENDED';
       else approvalStatus = 'PENDING_APPROVAL';
     } else if (user.role === 'carpenter') {
-      approvalStatus = user.carpenter_approval_status || 'PENDING_APPROVAL';
+      const raw = user.carpenter_approval_status;
+      if (raw === 'approved' || raw === 'APPROVED') approvalStatus = 'APPROVED';
+      else if (raw === 'rejected' || raw === 'REJECTED') approvalStatus = 'REJECTED';
+      else if (raw === 'suspended' || raw === 'SUSPENDED') approvalStatus = 'SUSPENDED';
+      else approvalStatus = 'PENDING_APPROVAL';
     } else if (user.role === 'transport') {
-      approvalStatus = user.transport_approval_status || 'PENDING_APPROVAL';
+      const raw = user.transport_approval_status;
+      if (raw === 'approved' || raw === 'APPROVED') approvalStatus = 'APPROVED';
+      else if (raw === 'rejected' || raw === 'REJECTED') approvalStatus = 'REJECTED';
+      else if (raw === 'suspended' || raw === 'SUSPENDED') approvalStatus = 'SUSPENDED';
+      else approvalStatus = 'PENDING_APPROVAL';
     }
 
     const accessToken = jwt.sign(
@@ -373,13 +381,23 @@ export class AuthService {
       throw new AppError(403, 'ACCOUNT_DEACTIVATED', 'Your account has been deactivated.');
     }
 
-    const approvalStatus =
-      user.role === 'buyer'
-        ? 'APPROVED'
-        : user.seller_approval_status ||
-          user.carpenter_approval_status ||
-          user.transport_approval_status ||
-          'PENDING_APPROVAL';
+    let approvalStatus = 'APPROVED';
+    if (user.role === 'buyer') {
+      approvalStatus = 'APPROVED';
+    } else {
+      const raw =
+        user.role === 'seller'
+          ? (user.seller_subtype === 'mill_owner'
+              ? user.mill_approval_status || user.seller_approval_status
+              : user.seller_approval_status)
+          : user.role === 'carpenter'
+          ? user.carpenter_approval_status
+          : user.transport_approval_status;
+      if (raw === 'approved' || raw === 'APPROVED') approvalStatus = 'APPROVED';
+      else if (raw === 'rejected' || raw === 'REJECTED') approvalStatus = 'REJECTED';
+      else if (raw === 'suspended' || raw === 'SUSPENDED') approvalStatus = 'SUSPENDED';
+      else approvalStatus = 'PENDING_APPROVAL';
+    }
 
     const accessToken = jwt.sign(
       { id: user.id, phone: user.phone, role: user.role },
@@ -733,10 +751,18 @@ export class AuthService {
         ? (user.mill_approval_note || user.seller_approval_note || undefined)
         : (user.seller_approval_note || undefined);
     } else if (user.role === 'carpenter') {
-      approvalStatus = user.carpenter_approval_status || 'PENDING_APPROVAL';
+      const raw = user.carpenter_approval_status;
+      if (raw === 'approved' || raw === 'APPROVED') approvalStatus = 'APPROVED';
+      else if (raw === 'rejected' || raw === 'REJECTED') approvalStatus = 'REJECTED';
+      else if (raw === 'suspended' || raw === 'SUSPENDED') approvalStatus = 'SUSPENDED';
+      else approvalStatus = 'PENDING_APPROVAL';
       approvalNote = user.carpenter_approval_note || undefined;
     } else if (user.role === 'transport') {
-      approvalStatus = user.transport_approval_status || 'PENDING_APPROVAL';
+      const raw = user.transport_approval_status;
+      if (raw === 'approved' || raw === 'APPROVED') approvalStatus = 'APPROVED';
+      else if (raw === 'rejected' || raw === 'REJECTED') approvalStatus = 'REJECTED';
+      else if (raw === 'suspended' || raw === 'SUSPENDED') approvalStatus = 'SUSPENDED';
+      else approvalStatus = 'PENDING_APPROVAL';
       approvalNote = user.transport_approval_note || undefined;
     }
 

@@ -176,24 +176,47 @@ export class AdminService {
    */
   async approveSeller(adminId: string, sellerId: string, note?: string) {
     return await withTransaction(async (client) => {
-      // 1. Look up user to check role, or check if ID is a timber mill ID
+      // 1. Look up user to check role, or check if ID is a timber mill ID or demo ID
       let resolvedUserId = sellerId;
-      let userRes = await client.query(
-        `SELECT id, role FROM users WHERE id = $1`,
-        [resolvedUserId]
-      );
-      if (userRes.rows.length === 0) {
-        // Check if ID was a timber mill ID
-        const millRes = await client.query(
-          `SELECT owner_id FROM timber_mills WHERE id = $1`,
-          [sellerId]
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sellerId);
+      let userRes = { rows: [] as any[] };
+
+      if (isUuid) {
+        userRes = await client.query(
+          `SELECT id, role FROM users WHERE id = $1`,
+          [resolvedUserId]
         );
-        if (millRes.rows.length > 0) {
-          resolvedUserId = millRes.rows[0].owner_id;
-          userRes = await client.query(
-            `SELECT id, role FROM users WHERE id = $1`,
-            [resolvedUserId]
+        if (userRes.rows.length === 0) {
+          const millRes = await client.query(
+            `SELECT owner_id FROM timber_mills WHERE id = $1`,
+            [sellerId]
           );
+          if (millRes.rows.length > 0) {
+            resolvedUserId = millRes.rows[0].owner_id;
+            userRes = await client.query(
+              `SELECT id, role FROM users WHERE id = $1`,
+              [resolvedUserId]
+            );
+          }
+        }
+      }
+
+      // If not found by direct UUID, resolve by demo mapping or phone
+      if (userRes.rows.length === 0) {
+        const demoPhoneMap: Record<string, string> = {
+          'app-sel-1': '+919847120001',
+          'app-mil-1': '+919847120002',
+          'app-car-1': '+919847330001',
+          'app-tra-1': '+919847440001',
+        };
+        const targetPhone = demoPhoneMap[sellerId] || sellerId;
+        const cleanDigits = targetPhone.replace(/\D/g, '').slice(-10);
+        userRes = await client.query(
+          `SELECT id, role FROM users WHERE phone = $1 OR phone LIKE $2`,
+          [targetPhone, `%${cleanDigits}`]
+        );
+        if (userRes.rows.length > 0) {
+          resolvedUserId = userRes.rows[0].id;
         }
       }
 
@@ -334,24 +357,47 @@ export class AdminService {
    */
   async rejectSeller(adminId: string, sellerId: string, reason: string) {
     return await withTransaction(async (client) => {
-      // 1. Look up user to check role, or check if ID is a timber mill ID
+      // 1. Look up user to check role, or check if ID is a timber mill ID or demo ID
       let resolvedUserId = sellerId;
-      let userRes = await client.query(
-        `SELECT id, role FROM users WHERE id = $1`,
-        [resolvedUserId]
-      );
-      if (userRes.rows.length === 0) {
-        // Check if ID was a timber mill ID
-        const millRes = await client.query(
-          `SELECT owner_id FROM timber_mills WHERE id = $1`,
-          [sellerId]
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sellerId);
+      let userRes = { rows: [] as any[] };
+
+      if (isUuid) {
+        userRes = await client.query(
+          `SELECT id, role FROM users WHERE id = $1`,
+          [resolvedUserId]
         );
-        if (millRes.rows.length > 0) {
-          resolvedUserId = millRes.rows[0].owner_id;
-          userRes = await client.query(
-            `SELECT id, role FROM users WHERE id = $1`,
-            [resolvedUserId]
+        if (userRes.rows.length === 0) {
+          const millRes = await client.query(
+            `SELECT owner_id FROM timber_mills WHERE id = $1`,
+            [sellerId]
           );
+          if (millRes.rows.length > 0) {
+            resolvedUserId = millRes.rows[0].owner_id;
+            userRes = await client.query(
+              `SELECT id, role FROM users WHERE id = $1`,
+              [resolvedUserId]
+            );
+          }
+        }
+      }
+
+      // If not found by direct UUID, resolve by demo mapping or phone
+      if (userRes.rows.length === 0) {
+        const demoPhoneMap: Record<string, string> = {
+          'app-sel-1': '+919847120001',
+          'app-mil-1': '+919847120002',
+          'app-car-1': '+919847330001',
+          'app-tra-1': '+919847440001',
+        };
+        const targetPhone = demoPhoneMap[sellerId] || sellerId;
+        const cleanDigits = targetPhone.replace(/\D/g, '').slice(-10);
+        userRes = await client.query(
+          `SELECT id, role FROM users WHERE phone = $1 OR phone LIKE $2`,
+          [targetPhone, `%${cleanDigits}`]
+        );
+        if (userRes.rows.length > 0) {
+          resolvedUserId = userRes.rows[0].id;
         }
       }
 
@@ -625,22 +671,6 @@ export class AdminService {
 
       return { success: true, message: 'Listing rejected with recorded reason.' };
     });
-  }
-
-  /**
-   * Read append-only audit logs
-   */
-  async getAuditLogs(limit = 50) {
-    const res = await query(
-      `SELECT a.*, u.phone as actor_phone, up.name as actor_name
-       FROM admin_audit_logs a
-       JOIN users u ON u.id = a.actor_id
-       LEFT JOIN user_profiles up ON up.user_id = u.id
-       ORDER BY a.created_at DESC
-       LIMIT $1`,
-      [limit]
-    );
-    return res.rows;
   }
 }
 

@@ -27,6 +27,7 @@ import { LoginAlertModal } from '../../components/LoginAlertModal';
 import { api } from '../../lib/api';
 import { BackButton } from '../../components/BackButton';
 import { formatCleanPhone } from '@timora/shared';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 export interface TimberMillReview {
   id: string;
@@ -137,6 +138,8 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [quoteNote, setQuoteNote] = useState<string>('');
   const [quoteSubmitted, setQuoteSubmitted] = useState<boolean>(false);
   const [isSubmittingQuote, setIsSubmittingQuote] = useState<boolean>(false);
+
+  useBodyScrollLock(Boolean(quoteModalMill || loginAlertMill));
 
   // Review Modal State
   const [reviewModalMill, setReviewModalMill] = useState<TimberMill | null>(null);
@@ -709,7 +712,7 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       {/* 4. REQUEST SAWING / TIMBER QUOTE MODAL (FOR AUTHENTICATED BUYERS) */}
       {quoteModalMill && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl border border-stone-300/80 shadow-2xl max-w-lg w-full p-6 space-y-4">
+          <div className="bg-white rounded-3xl border border-stone-300/80 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-stone-100 pb-3">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#5B6147]">

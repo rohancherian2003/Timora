@@ -462,9 +462,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         let nextUser: UserProfile | null = null;
         setUser((prev) => {
           if (!prev) return null;
+          const rawStatus = backendUser.approvalStatus || prev.approvalStatus;
+          const normalizedStatus = rawStatus ? rawStatus.toUpperCase() : rawStatus;
           nextUser = {
             ...prev,
-            approvalStatus: backendUser.approvalStatus || prev.approvalStatus,
+            approvalStatus: normalizedStatus,
             approvalNote: backendUser.approvalNote !== undefined ? backendUser.approvalNote : prev.approvalNote,
             name: backendUser.name || prev.name,
             businessName: backendUser.businessName || prev.businessName,
@@ -484,6 +486,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     return null;
   }, []);
+
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      lastRefreshTimeRef.current = 0; // bypass deduplication on explicit event
+      refreshUser();
+    };
+    window.addEventListener('timora_profile_updated', handleProfileUpdate);
+    return () => window.removeEventListener('timora_profile_updated', handleProfileUpdate);
+  }, [refreshUser]);
 
   return (
     <AuthContext.Provider

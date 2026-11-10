@@ -396,10 +396,13 @@ export function TransportOwnerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' })
             {lang === 'en' ? 'Active Transit Trips' : 'സജീവ ഓട്ടങ്ങൾ'}
           </span>
           <div className="text-2xl font-black font-serif text-amber-700">
-            1 <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'On Trip' : 'യാത്രയിൽ'}</span>
+            {bookings.filter((b) => b.status === 'confirmed').length}{' '}
+            <span className="text-xs font-normal text-stone-500">{lang === 'en' ? 'On Trip' : 'യാത്രയിൽ'}</span>
           </div>
           <p className="text-[10px] text-stone-500">
-            {lang === 'en' ? 'Nilambur → Perumbavoor' : 'നിലമ്പൂർ → പെരുമ്പാവൂർ'}
+            {bookings.some((b) => b.status === 'confirmed')
+              ? (lang === 'en' ? 'Real-time GPS monitored' : 'ജി.പി.എസ് നിരീക്ഷണത്തിൽ')
+              : (lang === 'en' ? 'No active transit trips' : 'സജീവ യാത്രകൾ ഇല്ല')}
           </p>
         </div>
 
