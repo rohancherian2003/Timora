@@ -5,6 +5,10 @@ import './index.css';
 
 // Auto-recover from deployment chunk mismatches (Vite preload errors & dynamic module fetch failures)
 if (typeof window !== 'undefined') {
+  if ('scrollRestoration' in window.history) {
+    window.history.scrollRestoration = 'manual';
+  }
+
   const triggerAutoReload = (reason: string) => {
     console.warn(`[Timora] ${reason}: auto-reloading to fetch fresh application build...`);
     const lastPreloadReload = sessionStorage.getItem('timora_last_preload_reload');

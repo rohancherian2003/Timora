@@ -226,6 +226,7 @@ import { SignOutRequiredModal } from './components/SignOutRequiredModal';
 import { PageTransitionLoader } from './components/PageTransitionLoader';
 import { EditProfileModal } from './components/EditProfileModal';
 import { GlobalFloatingActions } from './components/GlobalFloatingActions';
+import { ScrollToTop } from './components/ScrollToTop';
 
 // Universal Strict UI Navigation Guard component inside router
 function NavigationGuard() {
@@ -1080,13 +1081,17 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
       <Router>
+        {/* Global Scroll Position Reset on Route Transitions & Page Refreshes */}
+        <ScrollToTop />
+
         {/* Universal Strict UI-Only Navigation Guard */}
         <NavigationGuard />
 
         {/* Sleek Route Transition Progress Bar */}
         <PageTransitionLoader />
         <div
-          className="w-full max-w-full overflow-x-hidden min-h-screen flex flex-col font-sans pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-0 bg-stone-50/50 text-stone-900"
+          id="main-app-container"
+          className="w-full max-w-full min-h-screen flex flex-col font-sans pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-0 bg-stone-50/50 text-stone-900"
           lang={lang}
         >
           {/* Offline Banner for Network Recovery */}
@@ -1099,7 +1104,7 @@ export function App() {
           />
 
           {/* Main Content Area */}
-          <main className="w-full max-w-full overflow-x-hidden flex-grow">
+          <main className="w-full max-w-full flex-grow">
             <ChunkErrorBoundary lang={lang}>
               <React.Suspense fallback={<PageTransitionLoader />}>
                 <Routes>
@@ -1190,7 +1195,7 @@ export function App() {
         </main>
 
           {/* Footer */}
-          <footer className="w-full max-w-full overflow-x-hidden bg-stone-900 text-stone-400 py-12 border-t border-stone-800">
+          <footer className="w-full max-w-full bg-stone-900 text-stone-400 py-12 border-t border-stone-800">
             <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
               <div className="space-y-3">
                 <BrandLogo size="md" variant="dark" lang={lang} />

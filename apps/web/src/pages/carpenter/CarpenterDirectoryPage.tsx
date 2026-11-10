@@ -17,6 +17,7 @@ import { LoginAlertModal } from '../../components/LoginAlertModal';
 import { BackButton } from '../../components/BackButton';
 import { SubmitReviewModal } from '../../components/SubmitReviewModal';
 import { api } from '../../lib/api';
+import { ValidatedSearchInput } from '../../components/ValidatedSearchInput';
 
 export interface CarpenterReview {
   id: string;
@@ -101,9 +102,19 @@ export function CarpenterDirectoryPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) 
     isOpen: false,
   });
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   const filtered = carpenters.filter((c) => {
     if (selectedDistrict !== 'all' && !c.district.toLowerCase().includes(selectedDistrict.toLowerCase())) {
       return false;
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchName = (c.name || '').toLowerCase().includes(q);
+      const matchDist = (c.district || '').toLowerCase().includes(q);
+      const matchLoc = (c.locality || '').toLowerCase().includes(q);
+      const matchSpecs = (c.specializations || []).some((s: string) => s.toLowerCase().includes(q));
+      if (!matchName && !matchDist && !matchLoc && !matchSpecs) return false;
     }
     return true;
   });
@@ -166,29 +177,41 @@ export function CarpenterDirectoryPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) 
         </div>
       </div>
 
-      {/* Filter by district */}
-      <div className="bg-white p-4 rounded-2xl border border-stone-300/80 shadow-xs flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-[#5B6147]" />
-          <span className="text-xs font-bold text-stone-700">
-            {lang === 'en' ? 'Filter by District:' : 'ജില്ല തിരിച്ച്:'}
-          </span>
-          <select
-            value={selectedDistrict}
-            onChange={(e) => setSelectedDistrict(e.target.value)}
-            className="px-3 py-1.5 border border-stone-300/80 rounded-xl text-stone-800 font-semibold text-xs bg-[#E7E1D6]/50 focus:ring-2 focus:ring-[#5B6147] focus:outline-none"
-          >
-            <option value="all">{lang === 'en' ? 'All Districts' : 'എല്ലാ ജില്ലകളും'}</option>
-            <option value="kottayam">Kottayam (കോട്ടയം)</option>
-            <option value="thrissur">Thrissur (തൃശ്ശൂർ)</option>
-            <option value="ernakulam">Ernakulam (എറണാകുളം)</option>
-            <option value="kozhikode">Kozhikode (കോഴിക്കോട്)</option>
-          </select>
+      {/* Filter & Search Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-stone-300/80 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="w-full sm:max-w-xs">
+          <ValidatedSearchInput
+            value={searchQuery}
+            onSearch={setSearchQuery}
+            placeholder={lang === 'en' ? 'Search carpenters or specialties...' : 'ആശാരിയുടെ പേര്, ജോലി തിരയുക...'}
+            lang={lang}
+            size="sm"
+          />
         </div>
 
-        <span className="text-xs font-semibold text-stone-500">
-          {filtered.length} {lang === 'en' ? 'Carpenters Listed' : 'ആശാരിമാർ ലഭ്യമാണ്'}
-        </span>
+        <div className="flex items-center justify-between sm:justify-end gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-[#5B6147]" />
+            <span className="text-xs font-bold text-stone-700">
+              {lang === 'en' ? 'District:' : 'ജില്ല:'}
+            </span>
+            <select
+              value={selectedDistrict}
+              onChange={(e) => setSelectedDistrict(e.target.value)}
+              className="px-3 py-1.5 border border-stone-300/80 rounded-xl text-stone-800 font-semibold text-xs bg-[#E7E1D6]/50 focus:ring-2 focus:ring-[#5B6147] focus:outline-none"
+            >
+              <option value="all">{lang === 'en' ? 'All Districts' : 'എല്ലാ ജില്ലകളും'}</option>
+              <option value="kottayam">Kottayam (കോട്ടയം)</option>
+              <option value="thrissur">Thrissur (തൃശ്ശൂർ)</option>
+              <option value="ernakulam">Ernakulam (എറണാകുളം)</option>
+              <option value="kozhikode">Kozhikode (കോഴിക്കോട്)</option>
+            </select>
+          </div>
+
+          <span className="text-xs font-semibold text-stone-500">
+            {filtered.length} {lang === 'en' ? 'Carpenters Listed' : 'ആശാരിമാർ ലഭ്യമാണ്'}
+          </span>
+        </div>
       </div>
 
       {/* Carpenter Cards Grid */}

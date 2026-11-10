@@ -28,6 +28,7 @@ import { api } from '../../lib/api';
 import { BackButton } from '../../components/BackButton';
 import { formatCleanPhone } from '@timora/shared';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { ValidatedSearchInput } from '../../components/ValidatedSearchInput';
 
 export interface TimberMillReview {
   id: string;
@@ -314,19 +315,18 @@ export function TimberMillsPage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       {/* 2. FILTER & SEARCH CONTROLS */}
       <div className="bg-white p-4 sm:p-5 rounded-3xl border border-stone-300/80 shadow-xs space-y-4">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          {/* Search bar */}
-          <div className="relative flex-grow max-w-md">
-            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
-            <input
-              type="text"
+          {/* Search bar with 3-char minimum and 350ms debouncing */}
+          <div className="flex-grow max-w-md">
+            <ValidatedSearchInput
+              value={searchQuery}
+              onSearch={(query) => setSearchQuery(query)}
               placeholder={
                 lang === 'en'
                   ? 'Search mill name, locality, owner, or species...'
                   : 'മില്ലിന്റെ പേര്, സ്ഥലം, തടി ഇനം തിരയുക...'
               }
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl border border-stone-300/80 text-xs sm:text-sm font-semibold bg-[#E7E1D6]/50 focus:ring-2 focus:ring-[#5B6147] focus:outline-none"
+              lang={lang}
+              size="md"
             />
           </div>
 

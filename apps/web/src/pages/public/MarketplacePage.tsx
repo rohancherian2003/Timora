@@ -28,6 +28,7 @@ import {
 import { formatINR, formatTimberListingId } from '@timora/shared';
 import { TIMBER_LISTINGS, TimberListingItem, mapApiListingToItem } from '../../utils/timberListings';
 import { api } from '../../lib/api';
+import { ValidatedSearchInput } from '../../components/ValidatedSearchInput';
 
 const SPECIES_PILLS = [
   { key: 'all', label: 'All Species', ml: 'എല്ലാ ഇനങ്ങളും' },
@@ -135,27 +136,26 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     selectedDistrict !== 'all' ||
     searchQuery.trim().length > 0;
 
-  // Search input handler with Raw Timber keyword validation
-  const handleSearchChange = (value: string) => {
-    updateFilter('q', value);
-    const lower = value.toLowerCase().trim();
-
+  // Furniture keywords validator passed into ValidatedSearchInput
+  const validateFurnitureKeywords = (val: string) => {
+    const lower = val.toLowerCase().trim();
     const matchedDisallowed = DISALLOWED_FURNITURE_KEYWORDS.find((kw) => lower.includes(kw));
     if (matchedDisallowed) {
-      setValidationAlert({
-        type: 'warning',
-        title: lang === 'en' ? 'Raw Timber Only Platform' : 'റോ തടികൾ മാത്രമുള്ള വിപണി',
+      return {
+        isValid: false,
         message:
           lang === 'en'
             ? 'Timora exclusively trades raw timber logs and rough-sawn lumber. Finished furniture is not listed. Search for Teak, Mahogany, Anjili, or Rubberwood instead.'
             : 'ടിമോറയിൽ ഉരുണ്ട തടികളും അറുത്ത മരങ്ങളും മാത്രമാണ് വ്യാപാരം ചെയ്യുന്നത്. ഫർണിച്ചറോ പ്ലൈവുഡോ ലഭ്യമല്ല. തേക്ക്, മഹാഗണി, ആഞ്ഞിലി എന്നിവ തിരയുക.',
-      });
-      return;
+      };
     }
+    return null;
+  };
 
-    if (validationAlert) {
-      setValidationAlert(null);
-    }
+  // Search query updater with 3-character threshold & 350ms debouncing
+  const handleDebouncedSearch = (debouncedQuery: string) => {
+    updateFilter('q', debouncedQuery);
+    setCurrentPage(1);
   };
 
   // Filter listings across authoritative live items or cached directory
@@ -238,32 +238,21 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             </p>
           </div>
 
-          {/* Prominent Search Bar */}
+          {/* Prominent Search Bar with 3-char minimum & 350ms debouncing */}
           <div className="max-w-2xl mx-auto">
-            <div className="relative group">
-              <Search className="w-5 h-5 absolute left-4 top-3.5 text-[#8E7F6B] group-focus-within:text-[#5B6147] transition-colors" />
-              <input
-                type="text"
-                placeholder={
-                  lang === 'en'
-                    ? 'Search Teak round logs, Anjili beams, Mahogany, or Kottayam depot...'
-                    : 'തേക്ക്, ആഞ്ഞിലി, മഹാഗണി, അല്ലെങ്കിൽ ജില്ല നൽകി തിരയുക...'
-                }
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full pl-12 pr-10 py-3.5 rounded-2xl border-2 border-[#8E7F6B]/30 bg-white text-xs sm:text-sm font-semibold text-[#4A3626] placeholder-[#8E7F6B] shadow-sm focus:border-[#5B6147] focus:ring-4 focus:ring-[#5B6147]/15 focus:outline-none transition-all"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => updateFilter('q', '')}
-                  className="absolute right-3.5 top-3.5 text-[#8E7F6B] hover:text-[#4A3626] p-0.5 rounded-full hover:bg-stone-100 transition"
-                  title="Clear search"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+            <ValidatedSearchInput
+              id="marketplace-search-input"
+              size="lg"
+              value={searchQuery}
+              onSearch={handleDebouncedSearch}
+              customValidator={validateFurnitureKeywords}
+              placeholder={
+                lang === 'en'
+                  ? 'Search Teak round logs, Anjili beams, Mahogany, or Kottayam depot...'
+                  : 'തേക്ക്, ആഞ്ഞിലി, മഹാഗണി, അല്ലെങ്കിൽ ജില്ല നൽകി തിരയുക...'
+              }
+              lang={lang}
+            />
 
             {/* Validation Alert */}
             {validationAlert && (

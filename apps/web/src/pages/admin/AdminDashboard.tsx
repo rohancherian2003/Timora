@@ -32,6 +32,7 @@ import { EditProfileModal } from '../../components/EditProfileModal';
 import { api } from '../../lib/api';
 import { queryClient } from '../../lib/queryClient';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { ValidatedSearchInput } from '../../components/ValidatedSearchInput';
 import {
   translateWoodTitle,
   translateTicketCategory,
@@ -155,6 +156,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const [tickets, setTickets] = useState<SupportTicket[]>(getStoredTickets());
   const openTicketsCount = tickets.filter((t) => t.status === 'open').length;
   const [ticketFilter, setTicketFilter] = useState<'all' | 'open' | 'resolved'>('all');
+  const [adminSearchQuery, setAdminSearchQuery] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
@@ -422,9 +424,52 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   };
 
   const filteredApps = applications.filter((app) => {
-    if (businessFilter === 'all') return true;
-    return app.role === businessFilter;
+    if (businessFilter !== 'all' && app.role !== businessFilter) return false;
+    if (adminSearchQuery.trim()) {
+      const q = adminSearchQuery.toLowerCase().trim();
+      const matchName = (app.name || '').toLowerCase().includes(q);
+      const matchBiz = (app.businessName || '').toLowerCase().includes(q);
+      const matchPhone = (app.phone || '').includes(q);
+      const matchDistrict = (app.district || '').toLowerCase().includes(q);
+      if (!matchName && !matchBiz && !matchPhone && !matchDistrict) return false;
+    }
+    return true;
   });
+
+  const filteredPendingListings = listings.filter((l) => {
+    if (!adminSearchQuery.trim()) return true;
+    const q = adminSearchQuery.toLowerCase().trim();
+    return (
+      (l.title || '').toLowerCase().includes(q) ||
+      (l.species || l.species_name || '').toLowerCase().includes(q) ||
+      (l.district || l.district_name || '').toLowerCase().includes(q) ||
+      (l.business_name || l.seller_name || '').toLowerCase().includes(q)
+    );
+  });
+
+  const filteredActiveListings = activeMarketplaceListings.filter((l) => {
+    if (!adminSearchQuery.trim()) return true;
+    const q = adminSearchQuery.toLowerCase().trim();
+    return (
+      (l.title || '').toLowerCase().includes(q) ||
+      (l.species_name_en || '').toLowerCase().includes(q) ||
+      (l.district_name_en || '').toLowerCase().includes(q)
+    );
+  });
+
+  const filteredTickets = tickets
+    .filter((t) => ticketFilter === 'all' || t.status === ticketFilter)
+    .filter((t) => {
+      if (!adminSearchQuery.trim()) return true;
+      const q = adminSearchQuery.toLowerCase().trim();
+      return (
+        (t.name || '').toLowerCase().includes(q) ||
+        (t.description || '').toLowerCase().includes(q) ||
+        (t.category || '').toLowerCase().includes(q) ||
+        (t.phone || '').includes(q) ||
+        (t.id || '').toLowerCase().includes(q)
+      );
+    });
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-7 animate-fadeIn">
@@ -544,6 +589,31 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             </span>
           )}
         </button>
+      </div>
+
+      {/* Admin Universal Search Bar with 3-char minimum & 350ms debouncing */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="w-full sm:max-w-md">
+          <ValidatedSearchInput
+            id="admin-search-input"
+            value={adminSearchQuery}
+            onSearch={setAdminSearchQuery}
+            placeholder={
+              activeTab === 'business'
+                ? (lang === 'en' ? 'Search business, applicant, phone, district...' : 'സ്ഥാപനം, അപേക്ഷകൻ, ഫോൺ തിരയുക...')
+                : activeTab === 'listings'
+                ? (lang === 'en' ? 'Search listing title, species, depot...' : 'തടിയുടെ പേര്, ഇനം, ഡിപ്പോ തിരയുക...')
+                : (lang === 'en' ? 'Search tickets by subject, user, phone...' : 'പരാതികൾ, ഫോൺ നമ്പർ എന്നിവ തിരയുക...')
+            }
+            lang={lang}
+            size="md"
+          />
+        </div>
+        {adminSearchQuery && (
+          <div className="text-xs text-stone-600 font-semibold px-1">
+            {lang === 'en' ? `Filtered by: "${adminSearchQuery}"` : `തിരഞ്ഞത്: "${adminSearchQuery}"`}
+          </div>
+        )}
       </div>
 
       {/* TAB 1: MULTI-ROLE BUSINESS APPROVALS */}
@@ -718,12 +788,12 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 <Loader2 className="w-4 h-4 animate-spin text-[#5B6147]" />
                 <span>{lang === 'en' ? 'Loading pending listings...' : 'ലിസ്റ്റിംഗുകൾ ലോഡ് ചെയ്യുന്നു...'}</span>
               </div>
-            ) : listings.length === 0 ? (
+            ) : filteredPendingListings.length === 0 ? (
               <div className="p-8 text-center text-stone-500 text-xs">
-                {lang === 'en' ? 'No pending timber listings.' : 'പരിശോധിക്കാനുള്ള തടി ലിസ്റ്റിംഗുകൾ ഇല്ല.'}
+                {lang === 'en' ? 'No matching pending timber listings.' : 'പൊരുത്തപ്പെടുന്ന തടി ലിസ്റ്റിംഗുകൾ ഇല്ല.'}
               </div>
             ) : (
-              listings.map((lst) => {
+              filteredPendingListings.map((lst) => {
                 const speciesDisplay = lst.species_name || lst.species || 'Timber';
                 const districtDisplay = lst.district_name || lst.district || '';
                 const sellerDisplay = lst.business_name || lst.seller_name || 'Individual Seller';
@@ -819,12 +889,12 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 <Loader2 className="w-4 h-4 animate-spin text-[#5B6147]" />
                 <span>{lang === 'en' ? 'Loading marketplace stock...' : 'മാർക്കറ്റ്പ്ലേസ് സ്റ്റോക്ക് ലോഡ് ചെയ്യുന്നു...'}</span>
               </div>
-            ) : activeMarketplaceListings.length === 0 ? (
+            ) : filteredActiveListings.length === 0 ? (
               <div className="p-8 text-center text-stone-500 text-xs">
-                {lang === 'en' ? 'No active marketplace listings found.' : 'സജീവ ലിസ്റ്റിംഗുകൾ ഒന്നും ലഭ്യമല്ല.'}
+                {lang === 'en' ? 'No matching marketplace listings found.' : 'പൊരുത്തപ്പെടുന്ന ലിസ്റ്റിംഗുകൾ ഒന്നും ലഭ്യമല്ല.'}
               </div>
             ) : (
-              activeMarketplaceListings.map((lst) => {
+              filteredActiveListings.map((lst) => {
                 const speciesDisplay = lst.species_name_en || lst.species || 'Timber';
                 const districtDisplay = lst.district_name_en || lst.district || '';
                 const sellerDisplay = lst.business_name || lst.seller_name || 'Licensed Sawmill';
@@ -927,9 +997,12 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
             </div>
           </div>
 
-          {tickets
-            .filter((t) => ticketFilter === 'all' || t.status === ticketFilter)
-            .map((t) => (
+          {filteredTickets.length === 0 ? (
+            <div className="p-8 text-center text-stone-500 text-xs">
+              {lang === 'en' ? 'No matching support tickets found.' : 'പൊരുത്തപ്പെടുന്ന പരാതികൾ ഒന്നും ലഭ്യമല്ല.'}
+            </div>
+          ) : (
+            filteredTickets.map((t) => (
               <div key={t.id} className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -963,7 +1036,8 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                   </button>
                 )}
               </div>
-            ))}
+            ))
+          )}
         </div>
       )}
 

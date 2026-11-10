@@ -36,6 +36,7 @@ import { api } from '../../lib/api';
 import { queryClient } from '../../lib/queryClient';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { translateWoodTitle, translateSpecies, translateCutType, translateUnit } from '../../utils/i18n';
+import { ValidatedSearchInput } from '../../components/ValidatedSearchInput';
 
 export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { user, refreshUser } = useAuth();
@@ -82,6 +83,17 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   });
 
   const sellerListings = serverListings ?? localSellerListings;
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredSellerListings = sellerListings.filter((item: any) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    const title = (item.title || '').toLowerCase();
+    const species = (item.species || item.species_name_en || '').toLowerCase();
+    const district = (item.district || item.district_name_en || '').toLowerCase();
+    const type = (item.type || item.type_name_en || '').toLowerCase();
+    return title.includes(q) || species.includes(q) || district.includes(q) || type.includes(q);
+  });
   const isLoadingListings = isLoadingInventory;
 
   // 2. Mark as Sold TanStack Query Mutation
@@ -606,15 +618,26 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
 
       {/* Current Stock Table */}
       <div className="bg-white rounded-3xl border border-stone-300/80 overflow-hidden shadow-xs">
-        <div className="p-4 border-b border-stone-200 flex items-center justify-between">
-          <h3 className="font-extrabold font-serif text-[#4A3626] text-base">
-            {lang === 'en' ? 'My Timber Stock Inventory' : 'എന്റെ തടി സ്റ്റോക്കുകൾ'}
-          </h3>
-          <span className="text-xs text-[#5B6147] font-semibold">
-            {sellerListings.length > 0
-              ? `${sellerListings.filter((l: any) => l.status === 'approved').length} ${lang === 'en' ? 'Active' : 'സജീവം'} · ${sellerListings.filter((l: any) => l.status === 'pending_review' || l.status === 'pending').length} ${lang === 'en' ? 'Pending Approval' : 'അനുമതി കാക്കുന്നു'}${sellerListings.some((l: any) => l.status === 'sold') ? ` · ${sellerListings.filter((l: any) => l.status === 'sold').length} ${lang === 'en' ? 'Sold' : 'വിറ്റുപോയവ'}` : ''}`
-              : (lang === 'en' ? '0 Stock Items' : 'സ്റ്റോക്കുകൾ ഇല്ല')}
-          </span>
+        <div className="p-4 sm:p-5 border-b border-stone-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="font-extrabold font-serif text-[#4A3626] text-base">
+              {lang === 'en' ? 'My Timber Stock Inventory' : 'എന്റെ തടി സ്റ്റോക്കുകൾ'}
+            </h3>
+            <span className="text-xs text-[#5B6147] font-semibold">
+              {sellerListings.length > 0
+                ? `${sellerListings.filter((l: any) => l.status === 'approved').length} ${lang === 'en' ? 'Active' : 'സജീവം'} · ${sellerListings.filter((l: any) => l.status === 'pending_review' || l.status === 'pending').length} ${lang === 'en' ? 'Pending Approval' : 'അനുമതി കാക്കുന്നു'}${sellerListings.some((l: any) => l.status === 'sold') ? ` · ${sellerListings.filter((l: any) => l.status === 'sold').length} ${lang === 'en' ? 'Sold' : 'വിറ്റുപോയവ'}` : ''}`
+                : (lang === 'en' ? '0 Stock Items' : 'സ്റ്റോക്കുകൾ ഇല്ല')}
+            </span>
+          </div>
+          <div className="w-full sm:w-72">
+            <ValidatedSearchInput
+              value={searchQuery}
+              onSearch={setSearchQuery}
+              placeholder={lang === 'en' ? 'Search stock by title, species, type...' : 'തടിയിനം, പേര് തിരയുക...'}
+              lang={lang}
+              size="sm"
+            />
+          </div>
         </div>
 
         <div className="divide-y divide-stone-200 text-xs sm:text-sm">
@@ -633,8 +656,8 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 </div>
               ))}
             </div>
-          ) : sellerListings.length > 0 ? (
-            sellerListings.map((item: any) => {
+          ) : filteredSellerListings.length > 0 ? (
+            filteredSellerListings.map((item: any) => {
               const primaryImg = Array.isArray(item.images)
                 ? item.images.find((img: any) => img.is_primary)?.url || item.images[0]?.url
                 : null;

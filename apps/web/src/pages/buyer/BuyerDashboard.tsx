@@ -31,6 +31,7 @@ import {
   translateSpecies,
   translateUnit,
 } from '../../utils/i18n';
+import { ValidatedSearchInput } from '../../components/ValidatedSearchInput';
 
 const DEMO_BUYER_ORDERS = [
   {
@@ -187,6 +188,19 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const unreadTicketsCount = tickets.filter(
     (t) => !t.isRead && (t.status === 'resolved' || Boolean(t.resolutionReply))
   ).length;
+
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredLiveOrders = liveOrders.filter((order) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    return (
+      (order.listing_title || '').toLowerCase().includes(q) ||
+      (order.species_name || '').toLowerCase().includes(q) ||
+      (order.seller_name || '').toLowerCase().includes(q) ||
+      (order.id || '').toLowerCase().includes(q)
+    );
+  });
 
   // Auto-clear unread notification badge once user views the resolved reply
   useEffect(() => {
@@ -357,6 +371,31 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
         </button>
       </div>
 
+      {/* Universal Search for Orders & Enquiries with 3-char minimum & 350ms debouncing */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="w-full sm:max-w-md">
+          <ValidatedSearchInput
+            id="buyer-search-input"
+            value={searchQuery}
+            onSearch={setSearchQuery}
+            placeholder={
+              activeTab === 'orders'
+                ? (lang === 'en' ? 'Search orders by wood, yard, order ID...' : 'ഓർഡറുകൾ, തടി ഇനം, ഐഡി തിരയുക...')
+                : activeTab === 'enquiries'
+                ? (lang === 'en' ? 'Search enquiries...' : 'അന്വേഷണങ്ങൾ തിരയുക...')
+                : (lang === 'en' ? 'Search wishlist...' : 'തടികൾ തിരയുക...')
+            }
+            lang={lang}
+            size="md"
+          />
+        </div>
+        {searchQuery && (
+          <div className="text-xs text-stone-600 font-semibold px-1">
+            {lang === 'en' ? `Filtered by: "${searchQuery}"` : `തിരഞ്ഞത്: "${searchQuery}"`}
+          </div>
+        )}
+      </div>
+
       {/* Orders Tab */}
       {activeTab === 'orders' && (
         <div className="space-y-4">
@@ -376,8 +415,12 @@ export function BuyerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
                 </div>
               ))}
             </div>
+          ) : filteredLiveOrders.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-stone-300/80 p-8 text-center text-xs text-stone-500">
+              {lang === 'en' ? 'No matching timber orders found.' : 'പൊരുത്തപ്പെടുന്ന തടി ഓർഡറുകൾ ഒന്നും ലഭ്യമല്ല.'}
+            </div>
           ) : (
-            liveOrders.map((order) => (
+            filteredLiveOrders.map((order) => (
               <div
                 key={order.id}
                 className="bg-white rounded-3xl border border-stone-300/80 p-6 shadow-xs hover:border-stone-400 hover:shadow-md transition flex flex-col sm:flex-row sm:items-center justify-between gap-4"

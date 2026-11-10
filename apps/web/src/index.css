@@ -33,9 +33,14 @@
   animation-play-state: paused;
 }
 
-/* Smooth scroll and mobile swipe-to-go-back gesture prevention */
+/* Responsive layout and mobile swipe-to-go-back gesture prevention */
+html,
+body {
+  min-height: 100%;
+}
+
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto; /* Ensures instant scroll resets on route navigation */
 }
 
 html,
