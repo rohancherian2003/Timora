@@ -111,13 +111,101 @@ api.interceptors.request.use((config) => {
   } else if (token && token.startsWith('demo-')) {
     // In local demo session mode, mock protected background endpoints so they do not fail with 401
     const method = config.method?.toLowerCase();
+
+    // 1. Listings creation & management in demo mode
+    if (url.includes('/listings') && method === 'post' && !url.includes('/images')) {
+      let body: any = {};
+      try {
+        body = typeof config.data === 'string' ? JSON.parse(config.data) : config.data || {};
+      } catch {}
+      const id = `lst-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+      config.adapter = async () => ({
+        data: { success: true, data: { id, ...body } },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config,
+      });
+      return config;
+    }
+
+    // 2. Listing photo uploads in demo mode
+    if ((url.includes('/photos') || url.includes('/images')) && (method === 'patch' || method === 'post')) {
+      config.adapter = async () => ({
+        data: { success: true, message: 'Photo uploaded successfully.' },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config,
+      });
+      return config;
+    }
+
+    // 3. Seller's own inventory listings in demo mode
+    if (url.includes('/listings/seller/me') && method === 'get') {
+      config.adapter = async () => {
+        let pending: any[] = [];
+        let approved: any[] = [];
+        try {
+          const rawPending = localStorage.getItem('timora_pending_listings');
+          if (rawPending) pending = JSON.parse(rawPending);
+          const rawApproved = localStorage.getItem('timora_approved_listings');
+          if (rawApproved) approved = JSON.parse(rawApproved);
+        } catch {}
+        return {
+          data: { success: true, data: [...pending, ...approved] },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config,
+        };
+      };
+      return config;
+    }
+
+    // 4. Admin pending timber listings in demo mode
+    if (url.includes('/admin/listings') && method === 'get') {
+      config.adapter = async () => {
+        let pending: any[] = [];
+        try {
+          const rawPending = localStorage.getItem('timora_pending_listings');
+          if (rawPending) pending = JSON.parse(rawPending);
+        } catch {}
+        return {
+          data: {
+            success: true,
+            data: { listings: pending, total: pending.length },
+            listings: pending,
+            total: pending.length,
+          },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config,
+        };
+      };
+      return config;
+    }
+
+    // 5. Admin listing approval / rejection / deletion in demo mode
+    if (url.includes('/admin/listings') && (method === 'patch' || method === 'post' || method === 'delete')) {
+      config.adapter = async () => ({
+        data: { success: true, message: 'Listing status updated successfully.' },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config,
+      });
+      return config;
+    }
+
+    // 6. Generic demo session mocks
     if (
       url.includes('/support/notifications') ||
-      url.includes('/listings/seller/me') ||
       url.includes('/orders') ||
       url.includes('/admin/sellers/pending') ||
       url.includes('/auth/me') ||
-      (url.includes('/listings') && method && ['post', 'patch', 'put', 'delete'].includes(method))
+      (url.includes('/listings') && method && ['delete', 'patch', 'put'].includes(method))
     ) {
       config.adapter = async () => ({
         data: { success: true, data: [] },

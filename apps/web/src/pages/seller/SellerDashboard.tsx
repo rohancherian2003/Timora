@@ -37,6 +37,11 @@ import { queryClient } from '../../lib/queryClient';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { translateWoodTitle, translateSpecies, translateCutType, translateUnit } from '../../utils/i18n';
 import { ValidatedSearchInput } from '../../components/ValidatedSearchInput';
+import {
+  getSellerListings,
+  getPendingListings,
+  deleteListing,
+} from '../../lib/listingStore';
 
 export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { user, refreshUser } = useAuth();
@@ -73,15 +78,29 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { data: serverListings, isLoading: isLoadingInventory } = useQuery({
     queryKey: ['seller-inventory', user?.id],
     queryFn: async () => {
-      const res = await api.get('/listings/seller/me');
-      if (res.data?.success && Array.isArray(res.data?.data)) {
-        return res.data.data;
+      let apiData: any[] = [];
+      try {
+        const res = await api.get('/listings/seller/me');
+        if (res.data?.success && Array.isArray(res.data?.data)) {
+          apiData = res.data.data;
+        }
+      } catch (err) {
+        console.warn('Seller inventory API fetch fallback:', err);
       }
-      return [];
+
+      // Read local listings for this seller or pending listings
+      const localListings = user?.id ? getSellerListings(user.id) : getPendingListings();
+      const merged = [...apiData];
+      for (const loc of localListings) {
+        if (!merged.some((m) => m.id === loc.id)) {
+          merged.unshift(loc);
+        }
+      }
+      return merged;
     },
     enabled: Boolean(user?.id),
     staleTime: 0,
-    refetchInterval: 5000,
+    refetchInterval: 3000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
@@ -181,6 +200,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       return await api.delete(`/listings/${listingId}`);
     },
     onSuccess: (_, listingId) => {
+      deleteListing(listingId);
       setLocalSellerListings((prev) => prev.filter((l) => l.id !== listingId));
       if (viewingDetailsListing?.id === listingId) {
         setViewingDetailsListing(null);
@@ -201,6 +221,7 @@ export function SellerDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
     },
     onError: (err: any, listingId: string) => {
       console.warn('Backend delete fallback:', err);
+      deleteListing(listingId);
       setLocalSellerListings((prev) => prev.filter((l) => l.id !== listingId));
       if (viewingDetailsListing?.id === listingId) {
         setViewingDetailsListing(null);

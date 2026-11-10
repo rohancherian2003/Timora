@@ -30,6 +30,7 @@ import { TIMBER_LISTINGS, TimberListingItem, mapApiListingToItem } from '../../u
 import { api } from '../../lib/api';
 import { queryClient } from '../../lib/queryClient';
 import { ValidatedSearchInput } from '../../components/ValidatedSearchInput';
+import { getApprovedListings } from '../../lib/listingStore';
 
 const SPECIES_PILLS = [
   { key: 'all', label: 'All Species', ml: 'എല്ലാ ഇനങ്ങളും' },
@@ -101,17 +102,48 @@ export function MarketplacePage({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
   const { data: queryListings, isLoading: isQueryLoading } = useQuery({
     queryKey: ['listings', searchQuery],
     queryFn: async () => {
-      const res = await api.get('/listings', {
-        params: {
-          search: searchQuery.trim() || undefined,
-          limit: 100,
-        },
-      });
-      const rawList = res.data?.listings || res.data?.data?.listings || res.data?.data?.items;
-      if (res.data?.success && Array.isArray(rawList)) {
-        return rawList.map(mapApiListingToItem);
+      let apiItems: TimberListingItem[] = [];
+      try {
+        const res = await api.get('/listings', {
+          params: {
+            search: searchQuery.trim() || undefined,
+            limit: 100,
+          },
+        });
+        const rawList = res.data?.listings || res.data?.data?.listings || res.data?.data?.items;
+        if (res.data?.success && Array.isArray(rawList)) {
+          apiItems = rawList.map(mapApiListingToItem);
+        }
+      } catch (err) {
+        console.warn('Live listings API fallback:', err);
       }
-      return null;
+
+      // Merge approved listings from local store (latest first)
+      const localApproved = getApprovedListings().map((l) =>
+        mapApiListingToItem({
+          id: l.id,
+          title: l.title,
+          species_name_en: l.species_name,
+          type_name_en: l.timber_type_name,
+          district: l.district_name,
+          quantity: l.quantity,
+          unit: l.unit,
+          price_per_cft: l.price_per_cft,
+          business_name: l.business_name || l.seller_name,
+          seller_name: l.seller_name,
+          seller_phone: l.seller_phone,
+          seller_verified: true,
+          images: l.images,
+        })
+      );
+
+      const merged = [...localApproved];
+      for (const item of apiItems) {
+        if (!merged.some((m) => m.id === item.id)) {
+          merged.push(item);
+        }
+      }
+      return merged.length > 0 ? merged : null;
     },
     staleTime: 0,
     refetchInterval: 5000,

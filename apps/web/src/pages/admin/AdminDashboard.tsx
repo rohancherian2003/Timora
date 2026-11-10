@@ -34,6 +34,12 @@ import { queryClient } from '../../lib/queryClient';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { ValidatedSearchInput } from '../../components/ValidatedSearchInput';
 import {
+  getPendingListings,
+  approveListing,
+  rejectListing,
+  deleteListing,
+} from '../../lib/listingStore';
+import {
   translateWoodTitle,
   translateTicketCategory,
   translateTicketStatus,
@@ -228,30 +234,59 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       try {
         res = await api.get('/admin/listings', { params: { status: 'pending' } });
       } catch {
-        res = await api.get('/admin/listings/pending');
+        try {
+          res = await api.get('/admin/listings/pending');
+        } catch {
+          res = null;
+        }
       }
-      const rawList = res.data?.data?.listings || res.data?.data || res.data?.listings || [];
-      if (Array.isArray(rawList)) {
-        return rawList.map((l: any) => ({
-          id: l.id,
-          title: l.title,
-          seller_name: l.business_name || l.seller_name || 'Individual Seller',
-          species: l.species_name || l.species || 'Timber',
-          species_name: l.species_name || l.species || 'Timber',
-          district: l.district_name || l.district || 'Kerala',
-          district_name: l.district_name || l.district || 'Kerala',
-          quantity: Number(l.quantity) || 0,
-          unit: l.unit || 'CFT',
-          price_per_cft: Number(l.price_per_cft) || 0,
-          image_count: Array.isArray(l.images) ? l.images.length : (l.image_count || 0),
-          images: l.images || [],
-          submitted_at: l.created_at ? new Date(l.created_at).toISOString().slice(0, 16).replace('T', ' ') : 'Just now',
-        })) as PendingListing[];
+      const rawList = res?.data?.data?.listings || res?.data?.data || res?.data?.listings || [];
+      const apiItems: PendingListing[] = Array.isArray(rawList)
+        ? rawList.map((l: any) => ({
+            id: l.id,
+            title: l.title,
+            seller_name: l.business_name || l.seller_name || 'Individual Seller',
+            species: l.species_name || l.species || 'Timber',
+            species_name: l.species_name || l.species || 'Timber',
+            district: l.district_name || l.district || 'Kerala',
+            district_name: l.district_name || l.district || 'Kerala',
+            quantity: Number(l.quantity) || 0,
+            unit: l.unit || 'CFT',
+            price_per_cft: Number(l.price_per_cft) || 0,
+            image_count: Array.isArray(l.images) ? l.images.length : (l.image_count || 0),
+            images: l.images || [],
+            submitted_at: l.created_at ? new Date(l.created_at).toISOString().slice(0, 16).replace('T', ' ') : 'Just now',
+          }))
+        : [];
+
+      // Retrieve locally saved pending listings (submitted by individual sellers or demo mode)
+      const localPending: PendingListing[] = getPendingListings().map((l) => ({
+        id: l.id,
+        title: l.title,
+        seller_name: l.seller_name || l.business_name || 'Individual Seller',
+        species: l.species_name || 'Timber',
+        species_name: l.species_name || 'Timber',
+        district: l.district_name || 'Kerala',
+        district_name: l.district_name || 'Kerala',
+        quantity: Number(l.quantity) || 0,
+        unit: l.unit || 'CFT',
+        price_per_cft: Number(l.price_per_cft) || 0,
+        image_count: l.image_count || (l.images ? l.images.length : 0),
+        images: l.images || [],
+        submitted_at: l.created_at ? new Date(l.created_at).toISOString().slice(0, 16).replace('T', ' ') : 'Just now',
+      }));
+
+      // Merge API listings and local pending listings (deduplicate by id)
+      const merged = [...apiItems];
+      for (const loc of localPending) {
+        if (!merged.some((m) => m.id === loc.id)) {
+          merged.unshift(loc);
+        }
       }
-      return [];
+      return merged;
     },
     staleTime: 0,
-    refetchInterval: 5000,
+    refetchInterval: 3000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
@@ -356,6 +391,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       console.warn('Backend approval fallback:', err);
     } finally {
       setListingActionLoadingId(null);
+      approveListing(lst.id);
       setResolvedListingIds((prev) => {
         const next = [...prev, lst.id];
         try { localStorage.setItem('timora_resolved_admin_listings', JSON.stringify(next)); } catch {}
@@ -383,6 +419,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       console.warn('Backend rejection fallback:', err);
     } finally {
       setListingActionLoadingId(null);
+      rejectListing(lst.id);
       setResolvedListingIds((prev) => {
         const next = [...prev, lst.id];
         try { localStorage.setItem('timora_resolved_admin_listings', JSON.stringify(next)); } catch {}
@@ -441,6 +478,7 @@ export function AdminDashboard({ lang = 'en' }: { lang?: 'en' | 'ml' }) {
       }
     } finally {
       setListingActionLoadingId(null);
+      deleteListing(lst.id);
       setResolvedListingIds((prev) => {
         const next = [...prev, lst.id];
         try { localStorage.setItem('timora_resolved_admin_listings', JSON.stringify(next)); } catch {}
